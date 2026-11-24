@@ -1,158 +1,221 @@
+/* Issue tracker SPA — mirrors the classic MPA stylesheet
+   (go-classic-mpa-sample internal/web/static/app.css) for the issues
+   tracker scope. Neutral palette with a single blue accent, light/dark
+   via the OS color scheme: raw per-scheme values live in --*-light /
+   --*-dark, and the tokens below pick one of them — via light-dark()
+   where supported, else via prefers-color-scheme. */
+
 :root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow: rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
-
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
-
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
   color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
 
-  @media (max-width: 1024px) {
-    font-size: 16px;
-  }
+  --bg-light: #f6f8fa;
+  --bg-dark: #0d1117;
+  --surface-light: #ffffff;
+  --surface-dark: #151b23;
+  --surface-hover-light: #fbfcfd;
+  --surface-hover-dark: #1b222c;
+  --border-light: #d0d7de;
+  --border-dark: #3d444d;
+  --border-muted-light: #e4e9ee;
+  --border-muted-dark: #2a313c;
+  --text-light: #1f2328;
+  --text-dark: #f0f6fc;
+  --text-muted-light: #656d76;
+  --text-muted-dark: #9198a1;
+  --accent-light: #0969da;
+  --accent-dark: #4493f8;
+  --accent-emphasis-light: #0969da;
+  --accent-emphasis-dark: #1f6feb;
+  --accent-hover-light: #0757b8;
+  --accent-hover-dark: #1158c7;
+  --accent-soft-light: #ddf4ff;
+  --accent-soft-dark: #0c2d4f;
+  --on-emphasis-light: #ffffff;
+  --on-emphasis-dark: #ffffff;
+  --open-light: #1a7f37;
+  --open-dark: #3fb950;
+  --open-bg-light: #dafbe1;
+  --open-bg-dark: #12261e;
+  --open-border-light: #a8e6b8;
+  --open-border-dark: #238636;
+  --closed-light: #8250df;
+  --closed-dark: #ab7df8;
+  --closed-bg-light: #fbefff;
+  --closed-bg-dark: #241a37;
+  --closed-border-light: #d8b9f8;
+  --closed-border-dark: #6e40c9;
+  --danger-light: #cf222e;
+  --danger-dark: #f85149;
+  --danger-emphasis-light: #cf222e;
+  --danger-emphasis-dark: #b62324;
+  --danger-bg-light: #ffebe9;
+  --danger-bg-dark: #2d1214;
+  --warn-light: #9a6700;
+  --warn-dark: #d29922;
+  --label-border-light: rgb(0 0 0 / 0.08);
+  --label-border-dark: rgb(255 255 255 / 0.12);
+
+  --bg: var(--bg-light);
+  --surface: var(--surface-light);
+  --surface-hover: var(--surface-hover-light);
+  --border: var(--border-light);
+  --border-muted: var(--border-muted-light);
+  --text: var(--text-light);
+  --text-muted: var(--text-muted-light);
+  --accent: var(--accent-light);
+  --accent-emphasis: var(--accent-emphasis-light);
+  --accent-hover: var(--accent-hover-light);
+  --accent-soft: var(--accent-soft-light);
+  --on-emphasis: var(--on-emphasis-light);
+  --open: var(--open-light);
+  --open-bg: var(--open-bg-light);
+  --open-border: var(--open-border-light);
+  --closed: var(--closed-light);
+  --closed-bg: var(--closed-bg-light);
+  --closed-border: var(--closed-border-light);
+  --danger: var(--danger-light);
+  --danger-emphasis: var(--danger-emphasis-light);
+  --danger-bg: var(--danger-bg-light);
+  --warn: var(--warn-light);
+  --label-border: var(--label-border-light);
+
+  --radius: 6px;
+  --radius-lg: 8px;
+  --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
 }
 
+/* Fallback for browsers without light-dark(). */
 @media (prefers-color-scheme: dark) {
   :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow: rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
-
-  #social .button-icon {
-    filter: invert(1) brightness(2);
+    --bg: var(--bg-dark);
+    --surface: var(--surface-dark);
+    --surface-hover: var(--surface-hover-dark);
+    --border: var(--border-dark);
+    --border-muted: var(--border-muted-dark);
+    --text: var(--text-dark);
+    --text-muted: var(--text-muted-dark);
+    --accent: var(--accent-dark);
+    --accent-emphasis: var(--accent-emphasis-dark);
+    --accent-hover: var(--accent-hover-dark);
+    --accent-soft: var(--accent-soft-dark);
+    --on-emphasis: var(--on-emphasis-dark);
+    --open: var(--open-dark);
+    --open-bg: var(--open-bg-dark);
+    --open-border: var(--open-border-dark);
+    --closed: var(--closed-dark);
+    --closed-bg: var(--closed-bg-dark);
+    --closed-border: var(--closed-border-dark);
+    --danger: var(--danger-dark);
+    --danger-emphasis: var(--danger-emphasis-dark);
+    --danger-bg: var(--danger-bg-dark);
+    --warn: var(--warn-dark);
+    --label-border: var(--label-border-dark);
   }
 }
 
-#root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
+/* light-dark() also follows color-scheme set on a subtree. */
+@supports (color: light-dark(#000, #fff)) {
+  :root {
+    --bg: light-dark(var(--bg-light), var(--bg-dark));
+    --surface: light-dark(var(--surface-light), var(--surface-dark));
+    --surface-hover: light-dark(var(--surface-hover-light), var(--surface-hover-dark));
+    --border: light-dark(var(--border-light), var(--border-dark));
+    --border-muted: light-dark(var(--border-muted-light), var(--border-muted-dark));
+    --text: light-dark(var(--text-light), var(--text-dark));
+    --text-muted: light-dark(var(--text-muted-light), var(--text-muted-dark));
+    --accent: light-dark(var(--accent-light), var(--accent-dark));
+    --accent-emphasis: light-dark(var(--accent-emphasis-light), var(--accent-emphasis-dark));
+    --accent-hover: light-dark(var(--accent-hover-light), var(--accent-hover-dark));
+    --accent-soft: light-dark(var(--accent-soft-light), var(--accent-soft-dark));
+    --on-emphasis: light-dark(var(--on-emphasis-light), var(--on-emphasis-dark));
+    --open: light-dark(var(--open-light), var(--open-dark));
+    --open-bg: light-dark(var(--open-bg-light), var(--open-bg-dark));
+    --open-border: light-dark(var(--open-border-light), var(--open-border-dark));
+    --closed: light-dark(var(--closed-light), var(--closed-dark));
+    --closed-bg: light-dark(var(--closed-bg-light), var(--closed-bg-dark));
+    --closed-border: light-dark(var(--closed-border-light), var(--closed-border-dark));
+    --danger: light-dark(var(--danger-light), var(--danger-dark));
+    --danger-emphasis: light-dark(var(--danger-emphasis-light), var(--danger-emphasis-dark));
+    --danger-bg: light-dark(var(--danger-bg-light), var(--danger-bg-dark));
+    --warn: light-dark(var(--warn-light), var(--warn-dark));
+    --label-border: light-dark(var(--label-border-light), var(--label-border-dark));
+  }
+}
+
+*,
+*::before,
+*::after {
   box-sizing: border-box;
+}
+
+/* html is the root scroll-state container: descendants (back-to-top)
+   query its scroll position. scroll-padding keeps focused elements and
+   #fragment targets clear of the sticky header (WCAG 2.4.11). */
+html {
+  container-type: scroll-state;
+  scroll-padding-top: 5rem;
+}
+
+@media (max-width: 40em) {
+  html {
+    /* The header wraps to two rows on narrow screens — keep the offset
+       ahead of the taller header. */
+    scroll-padding-top: 8rem;
+  }
 }
 
 body {
   margin: 0;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+  /* rem, not px: follows the browser font-size setting. */
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  color: var(--text);
+  background: var(--bg);
 }
 
-h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
+.container {
+  max-width: 60rem;
+  margin: 0 auto;
+  padding: 0 16px;
 }
 
+/* Fluid between 1.25rem and 1.5rem with the width of .main-content. */
 h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
-  }
-}
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
-  }
-}
-p {
+  font-size: clamp(1.25rem, 1rem + 2cqi, 1.5rem);
+  font-weight: 600;
   margin: 0;
+  overflow-wrap: anywhere;
+  text-wrap: balance;
 }
 
-code,
-.counter {
-  font-family: var(--mono);
-  display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
+h2 {
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin: 0 0 12px;
+  text-wrap: balance;
 }
 
-code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
+a {
+  color: var(--accent);
+  text-decoration: none;
 }
 
-/* forms */
-.field {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.25rem;
-  margin-block-end: 1rem;
+@media (hover: hover) {
+  a:hover {
+    text-decoration: underline;
+  }
 }
 
-form :is(input, textarea, select, button) {
-  font: inherit;
-  font-size: max(1rem, 1em);
+.muted {
+  color: var(--text-muted);
 }
 
-form :is(input, select, button) {
-  min-height: 2.5rem;
-}
-
-form :is(input, textarea, select) {
-  text-align: start;
-}
-
-:is(input, textarea, select):user-invalid {
-  border-color: #d93025;
-  outline-color: #d93025;
-}
-
-:is(input, textarea, select):user-invalid ~ .error-msg {
-  display: block;
-}
-
-.error-msg {
-  display: none;
-  color: #d93025;
-  font-size: 0.85em;
-}
-
-em[role='alert'] {
-  display: block;
-  color: #d93025;
-  font-size: 0.85em;
-  font-style: normal;
-}
-
-/* hides content visually but keeps it in the accessibility tree */
+/* Keeps content in the accessibility tree without showing it (extra
+   context in link names, e.g. the comment permalinks). Content that can
+   itself take focus opts out via :focus-within / :active so it can
+   reveal instead. */
 .visually-hidden:where(:not(:focus-within, :active)) {
   position: absolute !important;
   clip-path: inset(50%) !important;
@@ -165,10 +228,952 @@ em[role='alert'] {
   white-space: nowrap !important;
 }
 
+/* First element in <body>, so the first Tab stop: invisible until
+   focused, then pinned to the top-left corner of the viewport. */
+.skip-link {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.skip-link:is(:focus, :active) {
+  position: fixed;
+  top: 0.5rem;
+  left: 0.5rem;
+  z-index: 100;
+  width: auto;
+  height: auto;
+  margin: 0;
+  padding: 8px 14px;
+  overflow: visible;
+  clip-path: none;
+  white-space: normal;
+  color: var(--on-emphasis);
+  background: var(--accent-emphasis);
+  border-radius: var(--radius);
+  font-weight: 600;
+}
+
+/* The generic accent ring is invisible on the accent background; a
+   light ring keeps the focus indication readable. */
+.skip-link:focus-visible {
+  outline: 2px solid var(--on-emphasis);
+  outline-offset: 2px;
+}
+
+/* Sticky site header: stays pinned at the top while scrolling. The
+   stuck state is styled via a scroll-state container query (guide
+   state-aware-sticky-headers): the query styles DESCENDANTS of the
+   container, so the visual chrome lives on .header-bar, not
+   .site-header. Unsupported browsers still get a working sticky
+   header, just without the stuck shadow. */
+.site-header {
+  position: sticky;
+  top: 0;
+  container-type: scroll-state;
+  container-name: site-header;
+  z-index: 20;
+}
+
+.header-bar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  transition: box-shadow 0.2s;
+}
+
+@container site-header scroll-state(stuck: block-start) {
+  .header-bar {
+    /* shadow only, no box-model change: no overflow-anchor needed */
+    box-shadow: 0 4px 12px rgb(0 0 0 / 0.14);
+  }
+}
+
+.header-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
+
+.site-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+@media (hover: hover) {
+  .site-title:hover {
+    text-decoration: none;
+    color: var(--accent);
+  }
+}
+
+.site-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+}
+
+.site-nav > a:not(.btn) {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+@media (hover: hover) {
+  .site-nav > a:not(.btn):hover {
+    color: var(--text);
+  }
+}
+
+/* Current section tab (Issues/Labels): underline, not color alone
+   (navbar guide — WCAG 1.4.1). TanStack Router puts aria-current="page"
+   on the active Link; that attribute is the hook. */
+.site-nav > a[aria-current='page']:not(.btn) {
+  color: var(--text);
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-color: var(--accent);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+}
+
+.main-content {
+  container: main / inline-size;
+  padding-top: 24px;
+  padding-bottom: 48px;
+}
+
+.site-footer {
+  border-top: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  padding: 16px 0;
+}
+
+.btn {
+  display: inline-block;
+  padding: 6px 14px;
+  font: inherit;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  text-align: center;
+  white-space: nowrap;
+}
+
+@media (hover: hover) {
+  .btn:hover {
+    background: var(--bg);
+    text-decoration: none;
+  }
+}
+
+.btn-primary {
+  color: var(--on-emphasis);
+  background: var(--accent-emphasis);
+  border-color: var(--accent-emphasis);
+}
+
+@media (hover: hover) {
+  .btn-primary:hover {
+    background: var(--accent-hover);
+    border-color: var(--accent-hover);
+  }
+}
+
+.btn-danger {
+  color: var(--danger);
+  background: var(--surface);
+  border-color: var(--border);
+}
+
+@media (hover: hover) {
+  .btn-danger:hover {
+    color: var(--on-emphasis);
+    background: var(--danger-emphasis);
+    border-color: var(--danger-emphasis);
+  }
+}
+
+.btn-quiet {
+  border-color: transparent;
+  background: transparent;
+  color: var(--text-muted);
+}
+
+@media (hover: hover) {
+  .btn-quiet:hover {
+    background: var(--bg);
+    color: var(--text);
+  }
+}
+
+.btn-disabled,
+.btn[disabled] {
+  color: var(--text-muted);
+  background: var(--bg);
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+/* Visible keyboard focus everywhere. */
+a:focus-visible,
+button:focus-visible,
+.btn:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+summary:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+}
+
+.page-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+/* Open and closed differ by shape (ring vs filled disc), text and
+   color. */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 10px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  line-height: 1.5;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+
+.badge::before {
+  content: '';
+  display: inline-block;
+  width: 0.7em;
+  height: 0.7em;
+  border-radius: 50%;
+}
+
+.badge-open {
+  color: var(--open);
+  background: var(--open-bg);
+  border-color: var(--open-border);
+}
+
+.badge-open::before {
+  /* hollow ring */
+  border: 2px solid var(--open);
+  background: transparent;
+}
+
+.badge-closed {
+  color: var(--closed);
+  background: var(--closed-bg);
+  border-color: var(--closed-border);
+}
+
+.badge-closed::before {
+  /* filled disc */
+  background: var(--closed);
+}
+
+/* Long label names end in an ellipsis instead of widening the row; the
+   full name stays in the DOM (accessible name, find-in-page) and the
+   badge grows to it on hover or keyboard focus. */
+.label-badge {
+  display: inline-block;
+  max-inline-size: min(100%, 12rem);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  vertical-align: bottom;
+  padding: 1px 10px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  line-height: 1.6;
+  border-radius: 999px;
+  /* --label-color is the DB-provided color, set inline by the
+     components. */
+  --label-bg: var(--label-color, var(--border-muted));
+  background-color: var(--label-bg);
+  color: #1f2328; /* fallback when neither branch below is supported */
+  border: 1px solid var(--label-border);
+}
+
+/* Black or white text, whichever contrasts more with the label color
+   (guide contrast-color): relative luminance (XYZ y) below the WCAG
+   crossover 0.17913 → white. */
+@supports (color: color(from red xyz-d65 calc(sign(0.5 - y)) y z)) {
+  .label-badge {
+    --label-y: max(0, sign(0.17913 - y));
+    color: color(
+      from var(--label-bg) xyz-d65 calc(var(--label-y) * 0.9505) var(--label-y)
+        calc(var(--label-y) * 1.089)
+    );
+  }
+}
+
+@supports (color: contrast-color(red)) {
+  .label-badge {
+    color: contrast-color(var(--label-bg));
+  }
+}
+
+/* The badge grows on keyboard focus too (focus is reachable on every
+   input); the hover half is gated so a tap cannot leave it expanded. */
+.label-badge:focus-visible {
+  max-inline-size: 100%;
+}
+
+@media (hover: hover) {
+  .label-badge:hover {
+    max-inline-size: 100%;
+  }
+
+  a.label-badge:hover {
+    text-decoration: none;
+    filter: brightness(0.95);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .label-badge {
+    transition: max-inline-size 0.3s;
+  }
+}
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 16px;
+}
+
+.tab {
+  padding: 8px 14px;
+  color: var(--text-muted);
+  font-weight: 500;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+
+@media (hover: hover) {
+  .tab:hover {
+    color: var(--text);
+    text-decoration: none;
+  }
+}
+
+.tab-active {
+  color: var(--text);
+  border-bottom-color: var(--accent);
+  font-weight: 600;
+}
+
+/* Reflowing columns instead of a breakpoint: four in a row when they
+   fit, then two, then one. rem keeps the threshold in step with the
+   text size. */
+.filter-bar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr));
+  align-items: end;
+  gap: 12px;
+  padding: 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  margin-bottom: 16px;
+}
+
+.filter-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.filter-field label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.filter-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.filter-actions .btn {
+  flex: 1;
+}
+
+input[type='text'],
+input[type='search'],
+select,
+textarea {
+  font: inherit;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  /* 16px+ (at default settings) so iOS Safari does not zoom in on
+     focus. */
+  font-size: max(1rem, 1em);
+  padding: 7px 10px;
+  width: 100%;
+}
+
+textarea {
+  resize: vertical;
+  /* Grow/shrink with content. The rows= attribute stays as the
+     fixed-height fallback in browsers without field-sizing. */
+  field-sizing: content;
+}
+
+/* Per-field vertical bounds, keyed off the current rows= values. */
+#comment-body {
+  min-block-size: 4lh;
+  max-block-size: 16lh;
+}
+
+#issue-body {
+  min-block-size: 10lh;
+  max-block-size: 32lh;
+}
+
+input[type='checkbox'] {
+  width: 1rem;
+  height: 1rem;
+  flex: none;
+  accent-color: var(--accent);
+}
+
+.field {
+  margin-bottom: 16px;
+}
+
+.field > label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.req {
+  color: var(--danger);
+}
+
+.field-hint {
+  margin: 4px 0 0;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.form-note {
+  margin: 0 0 16px;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+/* Two sources mark a field invalid, styled the same way:
+   - the server, after a failed submit: aria-invalid="true" plus a
+     rendered <em role="alert"> message;
+   - the browser, before submitting: :user-invalid, which only matches
+     after the user has edited and left the field. The SPA's .error-msg
+     spans sit next to their input and are revealed by the sibling
+     selector (a11y.ts syncs the aria side). */
+
+.error-msg,
+em[role='alert'] {
+  display: none;
+  align-items: baseline;
+  gap: 6px;
+  margin: 6px 0 0;
+  font-size: 0.85rem;
+  font-weight: 500;
+  font-style: normal;
+  color: var(--danger);
+}
+
+/* Decorative icon; the empty alt text keeps it out of the accessible
+   name. */
+.error-msg::before,
+em[role='alert']::before {
+  content: '!' / '';
+  flex: 0 0 auto;
+  display: inline-grid;
+  place-items: center;
+  width: 1.1em;
+  height: 1.1em;
+  border-radius: 50%;
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--on-emphasis);
+  background: var(--danger-emphasis);
+}
+
+/* The browser-side message stays hidden until its field is
+   :user-invalid. Where :user-invalid is unsupported the message simply
+   never shows. */
+:is(input, select, textarea):user-invalid ~ .error-msg {
+  display: flex;
+}
+
+/* Server-rendered errors (<em role="alert">) are always visible. */
+em[role='alert'] {
+  display: flex;
+}
+
+:is(input, select, textarea):is(:user-invalid, [aria-invalid='true']) {
+  border-color: var(--danger);
+  background-color: var(--danger-bg);
+}
+
+:is(input, select, textarea):is(:user-invalid, [aria-invalid='true']):focus-visible {
+  outline: 2px solid var(--danger);
+  outline-offset: 2px;
+}
+
+.field:has(:is(input, select, textarea):is(:user-invalid, [aria-invalid='true']))
+  > :is(label, legend) {
+  color: var(--danger);
+}
+
+fieldset.field:has(:is(:user-invalid, [aria-invalid='true'])) {
+  border-color: var(--danger);
+}
+
+/* min-inline-size: 0 overrides the fieldset default (min-content),
+   which would let a long label name widen the page instead of
+   truncating. */
+.label-picker {
+  min-inline-size: 0;
+  border: 1px solid var(--border-muted);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  margin-bottom: 16px;
+}
+
+.label-picker legend {
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 0 6px;
+}
+
+/* .label-picker > prefix: .field > label (display: block) would
+   otherwise win, and the truncating badge would then drop below its
+   checkbox. */
+.label-picker > .label-option {
+  display: flex;
+  inline-size: fit-content;
+  max-inline-size: 100%;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 14px 4px 0;
+  cursor: pointer;
+  font-weight: 400;
+}
+
+/* Button order everywhere: cancel-type action on the left, confirming
+   action on the right, the row right-aligned (MPA ui-rules §1). */
+.form-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.result-count {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin: 0 0 8px;
+}
+
+.issue-list {
+  container: issue-list / inline-size;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+/* Stacked by default (title, then status/labels/time); side by side
+   once the list is wide enough. A container query, so the threshold
+   follows the list's own width and its font size rather than the
+   viewport. */
+.issue-row {
+  display: grid;
+  gap: 8px 16px;
+  padding: 14px 16px;
+}
+
+@container issue-list (inline-size >= 48em) {
+  .issue-row {
+    grid-template-columns: minmax(0, 3fr) minmax(min-content, 2fr);
+    align-items: baseline;
+  }
+
+  .issue-row-meta {
+    justify-content: flex-end;
+  }
+}
+
+.issue-row + .issue-row {
+  border-top: 1px solid var(--border-muted);
+}
+
+@media (hover: hover) {
+  .issue-row:hover {
+    background: var(--surface-hover);
+  }
+}
+
+/* The number sits after the title as its own flex item, so it stays
+   visible when the title is clamped. */
+.issue-row-main {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35em;
+  min-width: 0;
+}
+
+/* Long titles are clamped to two lines; the full title is the link's
+   accessible name and is shown in full on the detail page. */
+.issue-title {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  min-width: 0;
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+@media (hover: hover) {
+  .issue-title:hover {
+    color: var(--accent);
+  }
+}
+
+.issue-num {
+  flex: none;
+  color: var(--text-muted);
+  font-weight: 400;
+  white-space: nowrap;
+}
+
+.issue-row-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.issue-time {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 48px 20px;
+  background: var(--surface);
+  border: 1px dashed var(--border);
+  border-radius: var(--radius-lg);
+  color: var(--text-muted);
+}
+
+.empty-lead {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--text);
+  margin: 0 0 6px;
+}
+
+.pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 20px;
+}
+
+.page-info {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.breadcrumb {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+
+/* Structured trail: the ordered list carries the hierarchy and the
+   separator is generated, never in the markup (guide breadcrumbs). */
+.breadcrumb > ol {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+}
+
+.breadcrumb > ol > li {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.breadcrumb > ol > li + li::before {
+  content: '/' / '';
+}
+
+/* The current page reads differently from its ancestors: weight is the
+   non-color cue on top of the accent underline. */
+.breadcrumb a[aria-current='page'] {
+  color: var(--text);
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-color: var(--accent);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+
+.issue-detail {
+  margin-bottom: 28px;
+}
+
+.issue-detail-head {
+  padding-bottom: 14px;
+  border-bottom: 1px solid var(--border-muted);
+  margin-bottom: 16px;
+}
+
+.issue-title-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.issue-title-row .badge {
+  margin-top: 5px;
+}
+
+.issue-title-row h1 .issue-num {
+  font-weight: 400;
+}
+
+.issue-labels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.issue-meta {
+  margin: 10px 0 0;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.issue-body {
+  overflow-wrap: anywhere;
+  margin-bottom: 20px;
+}
+
+.issue-body-empty {
+  color: var(--text-muted);
+}
+
+.issue-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border-muted);
+}
+
+.inline-form {
+  display: inline;
+  margin: 0;
+}
+
+.confirm-dialog {
+  width: min(28rem, calc(100% - 32px));
+  padding: 20px;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.25);
+}
+
+.confirm-dialog:modal {
+  overscroll-behavior: contain;
+}
+
+.confirm-dialog::backdrop {
+  background: rgb(0 0 0 / 0.45);
+  overflow: hidden;
+  overscroll-behavior: contain;
+}
+
+.confirm-dialog h2 {
+  margin: 0 0 8px;
+  font-size: 1.15rem;
+}
+
+.confirm-dialog p {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.confirm-dialog p strong {
+  color: var(--text);
+}
+
+.confirm-dialog .form-actions {
+  margin-top: 20px;
+}
+
+.comment-list {
+  list-style: none;
+  margin: 0 0 20px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.comment {
+  padding: 14px 16px;
+}
+
+/* Long threads only: skip layout and paint of off-screen comment
+   BODIES until they scroll near the viewport. The rule targets
+   .comment-body, not the <li>, so each skipped comment stays a
+   listitem containing its permalink. */
+.comment-list:has(> .comment:nth-child(50)) > .comment:nth-child(n + 3) .comment-body {
+  content-visibility: auto;
+  contain-intrinsic-block-size: auto 5lh;
+}
+
+.comment:target {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
+}
+
+.comment-meta {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin-bottom: 8px;
+}
+
+/* The timestamp doubles as the #comment-N link: kept in the muted meta
+   color but permanently underlined so it reads as a link without
+   hovering (MPA ui-rules §9). */
+.comment-permalink {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: var(--text-muted);
+  text-underline-offset: 3px;
+}
+
+@media (hover: hover) {
+  .comment-permalink:hover {
+    color: var(--accent);
+    text-decoration-color: var(--accent);
+  }
+}
+
+/* copy-link button on each comment header: revealed on
+   hover/focus-within (pointer: fine), always visible on touch (guide:
+   never hover-only) */
+.copy-wrap {
+  position: relative;
+  margin-inline-start: 0.5rem;
+}
+
+.copy-btn {
+  font: inherit;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1px 6px;
+  min-inline-size: 24px;
+  min-block-size: 24px;
+  cursor: pointer;
+}
+
+@media (hover: hover) {
+  .copy-btn:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+}
+
+.copy-btn[data-copy-state='copied'],
+.issue-actions .btn[data-copy-state='copied'] {
+  color: var(--open);
+  border-color: var(--open);
+}
+
+.copy-btn[data-copy-state='failed'],
+.issue-actions .btn[data-copy-state='failed'] {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
 /* copy feedback bubble: opacity keeps it in the accessibility tree */
 .copy-tip {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-inline-start: 0.4rem;
   opacity: 0;
-  font-size: 0.85em;
   transition: opacity 0.15s;
 }
 
@@ -176,52 +1181,453 @@ em[role='alert'] {
   opacity: 1;
 }
 
-/* dialog */
-dialog {
-  border: 1px solid var(--border);
-  border-radius: 0.5rem;
-  padding: 1rem 1.5rem;
-  background: var(--bg);
-  color: var(--text);
-}
-
-dialog:modal {
-  overscroll-behavior: contain;
-}
-
-dialog::backdrop {
-  overflow: hidden;
-  overscroll-behavior: contain;
-  background: rgba(0, 0, 0, 0.4);
-}
-
-/* markdown bodies (issue / comments) */
-.markdown-body {
-  text-align: start;
-}
-.markdown-body img {
-  max-width: 100%;
-}
-.markdown-body blockquote {
+/* "Copy as markdown" on the article action row shares the same
+   copy-tip bubble — the wrap's inline-start margin exists for the
+   comment header, flex gap already spaces the action row. */
+.issue-actions .copy-wrap {
   margin-inline-start: 0;
-  padding-inline-start: 0.75rem;
-  border-inline-start: 0.25rem solid var(--border);
-  opacity: 0.85;
 }
-.markdown-body pre code {
-  display: block;
-  padding: 0.5rem 0.75rem;
+
+@media (hover: hover) {
+  .copy-btn {
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+
+  .comment:hover .copy-btn,
+  .comment:focus-within .copy-btn,
+  .copy-btn:focus-visible,
+  .copy-btn[data-copy-state] {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .copy-btn,
+  .copy-tip {
+    transition: opacity 0.15s;
+  }
+}
+
+.comment-body {
+  overflow-wrap: anywhere;
+}
+
+/* Per-post action row: the moderation actions (Edit / Hide / Delete,
+   Unhide when hidden). */
+.comment-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 8px;
+  font-size: 0.82rem;
+}
+
+/* Moderation actions render as quiet text — the row repeats under
+   every post, so borders on each would read as noise. Danger is only
+   a hover/focus color; the confirm dialog does the real guard. */
+.comment-action {
+  font: inherit;
+  color: var(--text-muted);
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+@media (hover: hover) {
+  .comment-action:hover {
+    color: var(--accent);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  .comment-action-danger:hover {
+    color: var(--danger);
+  }
+}
+
+/* Hidden posts keep their frame (permalink, actions) but dim the card
+   and minimize the body behind a <details>. The reason note replaces
+   the body in flow. */
+.comment-hidden {
+  border-style: dashed;
+  opacity: 0.75;
+}
+
+.comment-hidden-note {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  margin: 0 0 4px;
+}
+
+.comment-hidden-body > summary {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  cursor: pointer;
+  width: fit-content;
+}
+
+@media (hover: hover) {
+  .comment-hidden-body > summary:hover {
+    color: var(--accent);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+}
+
+.comment-hidden-body .comment-body {
+  margin-top: 6px;
+}
+
+/* "edited" sits inside .comment-meta which is already muted — just
+   keep it visually subordinate to the permalink. */
+.comment-edited {
+  font-size: 0.75rem;
+}
+
+.comment-form {
+  padding: 16px;
+}
+
+.comment-form .field {
+  margin-bottom: 12px;
+}
+
+/* html scroll-state container: the chip appears only once the page is
+   scrolled (guide scroll-position-aware-elements). Browsers without
+   scroll-state queries keep it always visible. */
+.back-to-top {
+  position: fixed;
+  inset-block-end: calc(1.25rem + env(safe-area-inset-bottom, 0px));
+  inset-inline-end: calc(1.25rem + env(safe-area-inset-right, 0px));
+  z-index: 30;
+  padding: 0.45rem 0.8rem;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--accent);
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-decoration: none;
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.15);
+}
+
+@media (hover: hover) {
+  .back-to-top:hover {
+    border-color: var(--accent);
+  }
+}
+
+@supports (container-type: scroll-state) {
+  .back-to-top {
+    visibility: hidden;
+    opacity: 0;
+    translate: 0 20px;
+    transition:
+      visibility 0.3s,
+      opacity 0.3s ease,
+      translate 0.3s ease;
+  }
+
+  /* scrollable: top == the user has scrolled down from the top */
+  @container scroll-state(scrollable: top) {
+    .back-to-top {
+      visibility: visible;
+      opacity: 1;
+      translate: 0 0;
+    }
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .back-to-top {
+    transition: visibility 0.3s;
+  }
+}
+
+/* Applied to issue bodies and comments rendered through react-markdown
+   (GFM). Mirrors the MPA's goldmark output styling: block-level
+   elements need explicit spacing. */
+
+.markdown-body > :first-child {
+  margin-top: 0;
+}
+
+.markdown-body > :last-child {
+  margin-bottom: 0;
+}
+
+.markdown-body p {
+  margin: 0 0 12px;
+}
+
+/* Readable line length and fewer orphans in running text. */
+.markdown-body :is(p, li, blockquote) {
+  max-inline-size: 75ch;
+  text-wrap: pretty;
+}
+
+.markdown-body h1,
+.markdown-body h2,
+.markdown-body h3,
+.markdown-body h4,
+.markdown-body h5,
+.markdown-body h6 {
+  margin: 20px 0 10px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.markdown-body h1,
+.markdown-body h2 {
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--border-muted);
+}
+
+.markdown-body h1 {
+  font-size: 1.3rem;
+}
+
+.markdown-body h2 {
+  font-size: 1.15rem;
+}
+
+.markdown-body h3 {
+  font-size: 1.05rem;
+}
+
+.markdown-body h4,
+.markdown-body h5,
+.markdown-body h6 {
+  font-size: 1rem;
+}
+
+.markdown-body ul,
+.markdown-body ol {
+  margin: 0 0 12px;
+  padding-left: 26px;
+}
+
+.markdown-body li + li {
+  margin-top: 4px;
+}
+
+.markdown-body code {
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+  background: var(--bg);
+  border: 1px solid var(--border-muted);
+  border-radius: var(--radius);
+  padding: 1px 5px;
+}
+
+.markdown-body pre {
+  background: var(--bg);
+  border: 1px solid var(--border-muted);
+  border-radius: var(--radius);
+  padding: 12px 14px;
   overflow-x: auto;
+  margin: 0 0 12px;
 }
+
+.markdown-body pre code {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  font-size: 0.85rem;
+  overflow-wrap: normal;
+}
+
+.markdown-body blockquote {
+  margin: 0 0 12px;
+  padding: 2px 14px;
+  border-left: 3px solid var(--border);
+  color: var(--text-muted);
+}
+
+/* GitHub-style alerts (> [!NOTE] etc., remark-github-blockquote-alert).
+   The icon SVGs inherit the title color via fill: currentColor. */
+
 .markdown-alert {
-  border-inline-start: 0.25rem solid var(--accent);
-  padding: 0.1rem 0.75rem;
-  margin-block: 0.5rem;
+  border-left: 3px solid var(--border);
+  padding: 2px 14px;
+  margin: 0 0 12px;
 }
+
+.markdown-alert > :last-child {
+  margin-bottom: 0;
+}
+
 .markdown-alert-title {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
-  color: var(--text-h);
+  gap: 8px;
   font-weight: 600;
+  margin: 0 0 4px;
+}
+
+.markdown-alert-title svg {
+  flex: 0 0 auto;
+  fill: currentColor;
+}
+
+.markdown-alert-note {
+  border-left-color: var(--accent);
+}
+
+.markdown-alert-note > .markdown-alert-title {
+  color: var(--accent);
+}
+
+.markdown-alert-tip {
+  border-left-color: var(--open);
+}
+
+.markdown-alert-tip > .markdown-alert-title {
+  color: var(--open);
+}
+
+.markdown-alert-important {
+  border-left-color: var(--closed);
+}
+
+.markdown-alert-important > .markdown-alert-title {
+  color: var(--closed);
+}
+
+.markdown-alert-warning {
+  border-left-color: var(--warn);
+}
+
+.markdown-alert-warning > .markdown-alert-title {
+  color: var(--warn);
+}
+
+.markdown-alert-caution {
+  border-left-color: var(--danger);
+}
+
+.markdown-alert-caution > .markdown-alert-title {
+  color: var(--danger);
+}
+
+.markdown-body table {
+  border-collapse: collapse;
+  margin: 0 0 12px;
+  display: block;
+  overflow-x: auto;
+}
+
+.markdown-body th,
+.markdown-body td {
+  border: 1px solid var(--border);
+  padding: 6px 12px;
+}
+
+.markdown-body th {
+  background: var(--bg);
+  font-weight: 600;
+}
+
+.markdown-body img {
+  max-width: 100%;
+}
+
+.markdown-body hr {
+  border: 0;
+  border-top: 1px solid var(--border);
+  margin: 20px 0;
+}
+
+.error-page {
+  max-width: 30rem;
+  margin: 48px auto;
+  text-align: center;
+}
+
+.error-code {
+  font-size: 2.4rem;
+  font-weight: 700;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.error-page h1 {
+  margin: 4px 0 12px;
+}
+
+/* Labels admin: the MPA's labels.html intentionally leaves
+   .label-list/.label-row/.label-scope/.form-inline unstyled — plain
+   bulleted rows with inline content, matching its minimal admin look.
+   Only spacing between sections is needed. */
+.label-admin-form {
+  margin-bottom: 24px;
+}
+
+.label-list {
+  margin-bottom: 24px;
+}
+
+.label-scope {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+/* Read-only label used where a form section has no input to label. */
+.field > .field-label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+/* Component layouts adapt on their own above; what is left is
+   page-level. The breakpoint is in em, which media queries resolve
+   against the browser's default font size, so it moves with the user's
+   text size. */
+@media (max-width: 40em) {
+  .page-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .issue-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .issue-actions .btn,
+  .issue-actions .inline-form,
+  .issue-actions .inline-form .btn,
+  .issue-actions .copy-wrap,
+  .issue-actions .copy-wrap .btn {
+    width: 100%;
+    display: block;
+    text-align: center;
+  }
+
+  /* Right-aligned submit buttons sit in the same bottom corner the
+     back-to-top chip occupies: move the chip left on narrow screens. */
+  .back-to-top {
+    inset-inline-end: auto;
+    inset-inline-start: calc(1.25rem + env(safe-area-inset-left, 0px));
+  }
+
+  .main-content {
+    padding-block-end: calc(5.5rem + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* Larger touch targets for touch input, whatever the width. */
+@media (pointer: coarse) {
+  .btn,
+  input:not([type='checkbox'], [type='radio']),
+  select {
+    min-block-size: 44px;
+  }
+
+  .btn {
+    padding: 9px 16px;
+  }
 }
