@@ -42,7 +42,9 @@ export function watchLiveUpdates(router: AnyRouter, url = '/api/v1/events'): () 
   }
 
   const connect = () => {
-    if (stopped || es) return
+    // A retry timer can outlive the tab going hidden; opening in the
+    // background would spend a per-origin connection nobody watches.
+    if (stopped || es || document.visibilityState !== 'visible') return
     es = new EventSource(url)
     es.onmessage = invalidate
     es.onerror = () => {

@@ -151,13 +151,32 @@ func TestEventsStreamFromStoreWrite(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// Scan in a goroutine: the deadline cannot fire while Scan blocks,
+	// and a missing frame would otherwise hang the test until the
+	// heartbeat interval (or forever).
 	lines := bufio.NewScanner(resp.Body)
-	deadline := time.Now().Add(3 * time.Second)
+	frames := make(chan string, 8)
+	go func() {
+		for lines.Scan() {
+			frames <- lines.Text()
+		}
+		close(frames)
+	}()
+	deadline := time.After(3 * time.Second)
 	var data string
-	for time.Now().Before(deadline) && lines.Scan() {
-		if line := lines.Text(); strings.HasPrefix(line, "data: ") && strings.Contains(line, `"kind":"comment"`) {
-			data = line
-			break
+loop:
+	for {
+		select {
+		case line, ok := <-frames:
+			if !ok {
+				break loop
+			}
+			if strings.HasPrefix(line, "data: ") && strings.Contains(line, `"kind":"comment"`) {
+				data = line
+				break loop
+			}
+		case <-deadline:
+			break loop
 		}
 	}
 	if data == "" {
