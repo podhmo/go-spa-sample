@@ -20,11 +20,13 @@ const editReducer = (s: EditUI, a: EditAction): EditUI => {
     case 'start-edit':
       return { ...s, editing: true, draft: a.body }
     case 'cancel':
-      return { ...s, editing: false, replying: false }
+      return { ...s, editing: false, replying: false, draft: '' }
     case 'draft':
       return { ...s, draft: a.value }
     case 'reply':
-      return { ...s, replying: a.replying }
+      // The reply form shares `draft` with the edit forms — always open
+      // it empty so a previous edit/reply body is never reposted.
+      return { ...s, replying: a.replying, draft: '' }
   }
 }
 
@@ -124,7 +126,9 @@ export function HideDialog({
             </span>
           </div>
           <div className="form-actions">
-            <button type="submit" className="btn" value="cancel" autoFocus>
+            {/* Chrome validates required controls even on method="dialog"
+                submits — formnovalidate lets Cancel close without a reason. */}
+            <button type="submit" className="btn" value="cancel" formNoValidate autoFocus>
               Cancel
             </button>
             <button type="submit" className="btn btn-primary" value="hide">
@@ -174,7 +178,11 @@ function InlineEditForm({
           rows={4}
           required
           aria-label="body"
+          data-error={`edit-${id}-error`}
         />
+        <span id={`edit-${id}-error`} className="error-msg">
+          Body is required.
+        </span>
       </div>
       <div className="form-actions">
         <button type="button" className="btn btn-quiet" onClick={onCancel}>
@@ -464,7 +472,11 @@ function ThreadItem({
               rows={3}
               required
               placeholder="Reply…"
+              data-error={`reply-${t.id}-error`}
             />
+            <span id={`reply-${t.id}-error`} className="error-msg">
+              Reply is required.
+            </span>
           </div>
           <div className="form-actions">
             <button type="submit" className="btn" disabled={pending}>
