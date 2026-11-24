@@ -4,6 +4,7 @@ import { HIDE_REASONS, type Comment, type Issue } from '../api'
 import { ConfirmDialog } from './ConfirmDialog'
 import { CopyButton } from './CopyButton'
 import { LabelBadge, StatusBadge } from './IssueList'
+import { Markdown } from './Markdown'
 
 type CommentUIState = { editing: boolean; draft: string }
 type CommentUIAction =
@@ -131,7 +132,7 @@ function CommentItem({
           </button>
         </form>
       ) : (
-        <p style={{ whiteSpace: 'pre-wrap' }}>{c.body}</p>
+        <Markdown text={c.body} />
       )}
       <small>
         {c.author ? c.author.name : 'anonymous'} — {c.created_at}
@@ -233,7 +234,7 @@ export function IssueDetail({
         )}
       </header>
       <section>
-        <p style={{ whiteSpace: 'pre-wrap' }}>{issue.body}</p>
+        <Markdown text={issue.body} />
       </section>
       <section>
         <h3>Comments ({comments.length})</h3>

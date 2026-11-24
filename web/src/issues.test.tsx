@@ -284,4 +284,22 @@ describe('route: /issues/$issueId', () => {
     await expect.element(page.getByText('a comment')).toBeInTheDocument()
     expect(requests.some((r) => r.url.endsWith('/unhide'))).toBe(true)
   })
+
+  it('renders bodies as markdown and neutralizes unsafe markup', async () => {
+    stubAPI(() => ({
+      body: {
+        issue: issue({
+          body: '**bold**\n\n<script>alert(1)</script>\n\n[bad](javascript:alert(1))',
+        }),
+        comments: [comment({ body: '- [x] done' })],
+      },
+    }))
+    renderAt('/issues/1')
+    await expect.element(page.getByText('bold')).toBeInTheDocument()
+    expect(document.querySelector('article strong')?.textContent).toBe('bold')
+    // raw HTML is escaped, unsafe hrefs stripped; task list rendered
+    expect(document.querySelector('article script')).toBeNull()
+    expect(document.querySelector('a[href^="javascript:"]')).toBeNull()
+    expect(document.querySelector('input[type=checkbox]')).not.toBeNull()
+  })
 })

@@ -183,3 +183,34 @@ dialog::backdrop {
   overscroll-behavior: contain;
   background: rgba(0, 0, 0, 0.4);
 }
+
+/* markdown bodies (issue / comments) */
+.markdown-body {
+  text-align: start;
+}
+.markdown-body img {
+  max-width: 100%;
+}
+.markdown-body blockquote {
+  margin-inline-start: 0;
+  padding-inline-start: 0.75rem;
+  border-inline-start: 0.25rem solid var(--border);
+  opacity: 0.85;
+}
+.markdown-body pre code {
+  display: block;
+  padding: 0.5rem 0.75rem;
+  overflow-x: auto;
+}
+.markdown-alert {
+  border-inline-start: 0.25rem solid var(--accent);
+  padding: 0.1rem 0.75rem;
+  margin-block: 0.5rem;
+}
+.markdown-alert-title {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--text-h);
+  font-weight: 600;
+}
