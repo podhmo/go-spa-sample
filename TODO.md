@@ -41,8 +41,8 @@ useReducer / Vitest / playwright-cli) を使った試行錯誤が完全に行え
 - [x] **ライブラリ用法の整理**: context7 で TanStack Router/Query/Form、
   React (Suspense/`use`/`useTransition`) のdocsを収集し
   `docs/sketch/ja/libraries.md` に整理。使い方は `dev-workflow.md` にも
-- [ ] **context7 OAuth login**: `devin mcp login context7` をブラウザで実行
-  (匿名利用は可能だがレート制限あり・ユーザー操作)
+- [x] **context7 OAuth login**: `devin mcp login context7` 完了
+  (2026-11-24)
 
 ### 開発 (far goal)
 
