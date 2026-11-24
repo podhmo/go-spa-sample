@@ -67,7 +67,7 @@ func (h *handler) getIssue(w http.ResponseWriter, r *http.Request, ws *store.Wor
 		h.storeError(w, err)
 		return
 	}
-	if !h.requireScope(w, ws, issue.WorkspaceID) {
+	if !h.requireScope(w, r, ws, issue.WorkspaceID) {
 		return
 	}
 	comments, err := h.store.ListComments(r.Context(), id)
@@ -96,7 +96,7 @@ func (h *handler) issueMarkdown(w http.ResponseWriter, r *http.Request, ws *stor
 		h.storeError(w, err)
 		return
 	}
-	if !h.requireScope(w, ws, issue.WorkspaceID) {
+	if !h.requireScope(w, r, ws, issue.WorkspaceID) {
 		return
 	}
 	comments, err := h.store.ListComments(r.Context(), id)
@@ -165,7 +165,7 @@ func (h *handler) updateIssue(w http.ResponseWriter, r *http.Request, ws *store.
 		h.storeError(w, err)
 		return
 	}
-	if !h.requireScope(w, ws, issue.WorkspaceID) {
+	if !h.requireScope(w, r, ws, issue.WorkspaceID) {
 		return
 	}
 	input := store.IssueInput{Title: issue.Title, Body: issue.Body}
@@ -229,7 +229,7 @@ func (h *handler) setIssueStatus(w http.ResponseWriter, r *http.Request, ws *sto
 		h.storeError(w, err)
 		return
 	}
-	if !h.requireScope(w, ws, issue0.WorkspaceID) {
+	if !h.requireScope(w, r, ws, issue0.WorkspaceID) {
 		return
 	}
 	if err := h.store.SetIssueStatus(r.Context(), id, in.Status); err != nil {
@@ -255,7 +255,7 @@ func (h *handler) deleteIssue(w http.ResponseWriter, r *http.Request, ws *store.
 		h.storeError(w, err)
 		return
 	}
-	if !h.requireScope(w, ws, issue.WorkspaceID) {
+	if !h.requireScope(w, r, ws, issue.WorkspaceID) {
 		return
 	}
 	if err := h.store.DeleteIssue(r.Context(), id); err != nil {
@@ -289,7 +289,7 @@ func (h *handler) createComment(w http.ResponseWriter, r *http.Request, ws *stor
 		h.storeError(w, err)
 		return
 	}
-	if !h.requireScope(w, ws, issue0.WorkspaceID) {
+	if !h.requireScope(w, r, ws, issue0.WorkspaceID) {
 		return
 	}
 	cid, err := h.store.CreateComment(r.Context(), id, body, actorID(r))
