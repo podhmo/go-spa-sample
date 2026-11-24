@@ -202,27 +202,36 @@ func (c *Client) SetPRCommentHidden(ctx context.Context, prID, commentID int64, 
 
 // PullDiff returns GET /pulls/{id}/diff — a unified diff as plain text.
 func (c *Client) PullDiff(ctx context.Context, id int64) (string, error) {
+	text, _, err := c.getText(ctx, fmt.Sprintf("/pulls/%d/diff", id))
+	return text, err
+}
+
+// PullDiffTruncated is PullDiff with the server's X-Diff-Truncated flag:
+// when the response exceeded the server's output cap the caller should
+// warn rather than print a partial patch as if complete.
+func (c *Client) PullDiffTruncated(ctx context.Context, id int64) (string, bool, error) {
 	return c.getText(ctx, fmt.Sprintf("/pulls/%d/diff", id))
 }
 
 // PullMarkdown returns GET /pulls/{id}/markdown — the export rendered
 // by internal/export.
 func (c *Client) PullMarkdown(ctx context.Context, id int64) (string, error) {
-	return c.getText(ctx, fmt.Sprintf("/pulls/%d/markdown", id))
+	text, _, err := c.getText(ctx, fmt.Sprintf("/pulls/%d/markdown", id))
+	return text, err
 }
 
 // getText reads a non-JSON endpoint; non-2xx becomes *Error like do().
-func (c *Client) getText(ctx context.Context, path string) (string, error) {
+func (c *Client) getText(ctx context.Context, path string) (string, bool, error) {
 	req, err := http.NewRequestWithContext(ctx, "GET", c.base+path, nil)
 	if err != nil {
-		return "", err
+		return "", false, err
 	}
 	if c.token != "" {
 		req.Header.Set("Authorization", "Bearer "+c.token)
 	}
 	resp, err := c.hc.Do(req)
 	if err != nil {
-		return "", fmt.Errorf("GET %s: %w", req.URL, err)
+		return "", false, fmt.Errorf("GET %s: %w", req.URL, err)
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode >= 400 {
@@ -235,10 +244,10 @@ func (c *Client) getText(ctx context.Context, path string) (string, error) {
 		if json.NewDecoder(resp.Body).Decode(&e) == nil && e.Err.Message != "" {
 			ae.Message = e.Err.Message
 		}
-		return "", ae
+		return "", false, ae
 	}
 	raw, err := io.ReadAll(resp.Body)
-	return string(raw), err
+	return string(raw), resp.Header.Get("X-Diff-Truncated") == "true", err
 }
 
 func pullRequestFromDTO(p api.PullRequest) *store.PullRequest {
