@@ -137,26 +137,35 @@ function SiteNav({
 // state flip to anonymous.
 function LogoutButton() {
   const router = useRouter()
-  const [pending, setPending] = useReducer((_: boolean, v: boolean) => v, false)
+  const [state, setState] = useReducer(
+    (_: 'idle' | 'pending' | 'failed', v: 'idle' | 'pending' | 'failed') => v,
+    'idle',
+  )
   return (
-    <button
-      type="button"
-      className="btn"
-      disabled={pending}
-      onClick={() => {
-        setPending(true)
-        void (async () => {
-          try {
-            await api.logout()
-          } finally {
-            setPending(false)
-            void router.invalidate()
-          }
-        })()
-      }}
-    >
-      Log out
-    </button>
+    <>
+      <button
+        type="button"
+        className="btn"
+        disabled={state === 'pending'}
+        onClick={() => {
+          setState('pending')
+          void (async () => {
+            try {
+              await api.logout()
+              setState('idle')
+              void router.invalidate()
+            } catch {
+              // The session may still be live server-side — say so
+              // rather than silently re-arming the button.
+              setState('failed')
+            }
+          })()
+        }}
+      >
+        Log out
+      </button>
+      {state === 'failed' && <em role="alert">Log out failed — still signed in.</em>}
+    </>
   )
 }
 
@@ -168,7 +177,12 @@ const rootRoute = createRootRoute({
   // re-runs both, so the link and the login state refresh after changes.
   staleTime: 60_000,
   loader: async () => {
-    const [pulls, user] = await Promise.all([api.pullsAvailable(), api.me()])
+    const [pulls, user] = await Promise.all([
+      api.pullsAvailable(),
+      // A broken session probe must not take the whole page down — the
+      // nav simply falls back to anonymous.
+      api.me().catch(() => null),
+    ])
     return { pulls, user }
   },
   component: function RootLayout() {
@@ -486,10 +500,11 @@ function AuthPage({ mode, next }: { mode: 'login' | 'register'; next: string | u
             try {
               if (mode === 'login') await api.login(name, password)
               else await api.register(name, password)
-              // The session cookie just landed: drop the stale loader
-              // data before rendering `next` so nav greets the user.
+              // The session cookie just landed. invalidate() re-runs
+              // this route's beforeLoad, which now sees the session and
+              // bounces to `next` — no explicit navigation (a second
+              // push would leave a duplicate history entry).
               await router.invalidate()
-              router.history.push(safeNext(next))
             } catch (err) {
               // 422 field errors light up their inputs; the credential
               // failure deliberately carries none, so its message fills
