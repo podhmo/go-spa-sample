@@ -178,6 +178,20 @@ func TestCrossWorkspaceScopeHint(t *testing.T) {
 	if _, ok := out["error"].(map[string]any)["workspace"]; ok {
 		t.Fatalf("cross-ws PATCH must not carry error.workspace: %v", out)
 	}
+
+	// HEAD strips the body, so the slug also rides the X-Workspace-Slug
+	// header (on GETs too — one code path).
+	req, _ := http.NewRequest("HEAD", srv.URL+fmt.Sprintf("/api/v1/w/other/issues/%d", id), nil)
+	req.Header.Set("Authorization", "Bearer "+testToken)
+	resp, err := srv.Client().Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp.Body.Close()
+	if resp.StatusCode != http.StatusNotFound || resp.Header.Get("X-Workspace-Slug") != "default" {
+		t.Fatalf("cross-ws HEAD = %d X-Workspace-Slug=%q, want 404 default",
+			resp.StatusCode, resp.Header.Get("X-Workspace-Slug"))
+	}
 }
 
 func TestIssueValidation(t *testing.T) {

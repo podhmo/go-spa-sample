@@ -309,10 +309,12 @@ func (h *handler) scoped(fn func(http.ResponseWriter, *http.Request, *store.Work
 
 // requireScope replies 404 when the resource belongs to another
 // workspace — the API's slug-mismatch contract (no redirect like HTML).
-// For GET/HEAD the error body carries the real workspace's slug in
-// "workspace" so a client can rebase onto the canonical /w/{slug}/...
-// URL itself (the in-band counterpart of the MPA's 302). Mutations get
-// no hint — a rejected write must not invite a replay elsewhere.
+// For GET/HEAD the real workspace's slug is returned two ways: in the
+// error body as "workspace" and in the X-Workspace-Slug header (the
+// header survives HEAD's stripped body). A client can rebase onto the
+// canonical /w/{slug}/... URL itself — the in-band counterpart of the
+// MPA's 302. Mutations get no hint — a rejected write must not invite a
+// replay elsewhere.
 func (h *handler) requireScope(w http.ResponseWriter, r *http.Request, ws *store.Workspace, realWSID int64) bool {
 	if realWSID == ws.ID {
 		return true
@@ -320,6 +322,7 @@ func (h *handler) requireScope(w http.ResponseWriter, r *http.Request, ws *store
 	e := map[string]any{"message": "Not found."}
 	if r.Method == http.MethodGet || r.Method == http.MethodHead {
 		if real, err := h.store.WorkspaceByID(r.Context(), realWSID); err == nil {
+			w.Header().Set("X-Workspace-Slug", real.Slug)
 			e["workspace"] = real.Slug
 		}
 	}
