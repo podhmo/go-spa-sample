@@ -30,7 +30,7 @@
 
 - componentのスタイルは `<Name>.module.css` に書き、
   `import styles from './Name.module.css'` で使う
-- グローバルは `src/app.css` のみ (tokens, reset, body/navなど)
+- グローバルは `src/index.css` のみ (tokens, reset, body/navなど)
 - インライン `style={{}}` は禁止せず緊急回避のみとし、原則module.cssへ
 - variantが増えて管理が辛くなったら Panda CSS を再検討する
 
@@ -39,3 +39,14 @@
 現状のcomponentは仮実装でinline styleを使っている箇所がある
 (`IssueList.tsx`, `IssueDetail.tsx`, `routes.tsx` のnav等)。
 modern-web-guidance適用のタイミングでmodule.cssへ移す。
+
+### 2026-11-25 更新: issues UI は MPA 移植のグローバル CSS を採用
+
+MPA parity の作業 (`docs/sketch/ja/ui-parity.md`) では、component を
+個別の `*.module.css` に分ける代わりに、参照実装の
+`internal/web/static/app.css` をほぼそのまま移植した **単一の
+グローバル stylesheet (`src/index.css`)** を使う方針を取った。
+理由は class 語彙を MPA テンプレと一致させるのが parity 確認
+(スクショ比較・テスト) の要点であり、module 化すると class 名が
+変わって照合が難しくなるため。component 単位の module.css 方針は
+issues UI 以外の新規 component には引き続き使ってよい。

@@ -144,3 +144,16 @@ SPA に適用したもの:
   state に持ち clearTimeout で重複防止、feedback中もボタンは無効化しない
 - **コメントの編集/削除/hide は `<dialog>` + `form method="dialog"` +
   `returnValue` パターンを再利用** (ConfirmDialog と同型)
+
+### MPA parity 実装で追加適用したもの (`docs/sketch/ja/ui-parity.md`)
+
+- **Ctrl+Enter / Cmd+Enter でフォーム送信** — MPA の `enter-submit.js`
+  (ime-safe-enter-submit ガイド) の React 版 `submitOnCtrlEnter`
+  (`src/enter-submit.ts`)。modifier combo は IME composition と衝突
+  しないので isComposing チェック不要
+- **textarea の `field-sizing: content`** + `lh` 単位の上下限 —
+  `rows=` をフォールバックに残す MPA 方式
+- **hover-reveal は `opacity` のみ** (`.copy-btn`) — `display:none`/
+  `visibility:hidden` は a11y tree から消えるため、常時 focus可能に
+- **navbar ガイド**: sticky header + skip-link + `aria-current` な
+  nav を `.site-header`/`.site-nav` 語彙で再現
