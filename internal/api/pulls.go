@@ -470,25 +470,6 @@ func (h *handler) createPRComment(w http.ResponseWriter, r *http.Request) {
 		if side == "" {
 			side = "right"
 		}
-		// A review comment must anchor to a file the PR actually touches:
-		// accepting any repo path would let a token holder read unrelated
-		// files via the returned diff_snippet.
-		from, to := h.diffRange(r, pr)
-		changes, cherr := h.repo.ChangedFiles(ctx, from, to)
-		inDiff := false
-		if cherr == nil {
-			for _, c := range changes {
-				if c.NewPath == *in.Path || c.OldPath == *in.Path {
-					inDiff = true
-					break
-				}
-			}
-		}
-		if cherr != nil || !inDiff {
-			writeError(w, http.StatusUnprocessableEntity, "Validation failed.",
-				map[string]string{"path": "Path is not part of the pull request diff."})
-			return
-		}
 		input.Path, input.Line, input.Side = *in.Path, line, side
 		// Anchor + snippet rules mirror the HTML handler: the head tip
 		// while open (recorded sha once closed), the merge-base blob for
@@ -511,14 +492,38 @@ func (h *handler) createPRComment(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 		input.AnchorSHA = anchorSHA
+		// The comment is judged against the diff the client rendered:
+		// merge-base(base, anchor) → anchor while open, the recorded shas
+		// once closed. A live merge-base→head range would reject files
+		// that a newer head already dropped out of the diff.
+		from, to := h.diffRange(r, pr)
 		snippetSHA := anchorSHA
+		if pr.Open() && anchorSHA != "" {
+			to = anchorSHA
+			if mb, err := h.repo.MergeBase(ctx, pr.BaseRef, anchorSHA); err == nil && mb != "" {
+				from = mb
+			}
+		}
 		if side == "left" {
-			snippetSHA = pr.MergeBaseSHA
-			if pr.Open() {
-				if mb, err := h.repo.MergeBase(ctx, pr.BaseRef, pr.HeadRef); err == nil {
-					snippetSHA = mb
+			snippetSHA = from
+		}
+		// A review comment must anchor to a file the PR actually touches:
+		// accepting any repo path would let a token holder read unrelated
+		// files via the returned diff_snippet.
+		changes, cherr := h.repo.ChangedFiles(ctx, from, to)
+		inDiff := false
+		if cherr == nil {
+			for _, c := range changes {
+				if c.NewPath == *in.Path || c.OldPath == *in.Path {
+					inDiff = true
+					break
 				}
 			}
+		}
+		if cherr != nil || !inDiff {
+			writeError(w, http.StatusUnprocessableEntity, "Validation failed.",
+				map[string]string{"path": "Path is not part of the pull request diff."})
+			return
 		}
 		if snippetSHA != "" {
 			if snippet, _, err := h.repo.Snippet(ctx, snippetSHA, input.Path, line, 2); err == nil {

@@ -1548,7 +1548,7 @@ const pullFilesRoute = createRoute({
           pending={isPending}
           onComment={(input: PRCommentInput) => {
             setPending(true)
-            void (async () => {
+            return (async () => {
               try {
                 const { comment } = await api.createPRComment(Number(pullId), {
                   ...input,

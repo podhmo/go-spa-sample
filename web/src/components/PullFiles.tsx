@@ -27,7 +27,13 @@ function unquoteGitPath(p: string): string {
   let out = ''
   const flush = () => {
     if (bytes.length === 0) return
-    out += decodeURIComponent(bytes.map((b) => '%' + b.toString(16).padStart(2, '0')).join(''))
+    try {
+      out += decodeURIComponent(bytes.map((b) => '%' + b.toString(16).padStart(2, '0')).join(''))
+    } catch {
+      // Non-UTF-8 bytes (a latin-1 filename, etc.) can't decode — render
+      // the bytes lossily rather than failing the whole Files tab.
+      out += String.fromCharCode(...bytes)
+    }
     bytes.length = 0
   }
   for (let i = 0; i < body.length; i++) {
@@ -52,11 +58,13 @@ function unquoteGitPath(p: string): string {
 }
 
 // diffSide reads a `--- a/x` / `+++ b/x` operand, quoted or not.
+// Unquoted operands may end with a separator tab (worktree diffs add a
+// timestamp after it) or a marker space for names ending in blanks.
 function diffSide(rest: string): string | undefined {
   if (rest === '/dev/null') return undefined
   const q = /^"[ab]\/(?:\\.|[^"])*"$/.exec(rest)
   if (q) return unquoteGitPath(q[0]).slice(2)
-  const u = /^[ab]\/(.+)$/.exec(rest)
+  const u = /^[ab]\/(.+?)\s*$/.exec(rest)
   return u?.[1]
 }
 
@@ -74,7 +82,11 @@ function parseDiff(text: string): DiffFile[] {
     if (raw.startsWith('diff --git ')) {
       const m = /^diff --git ("a\/(?:\\.|[^"])*"|a\/.+) ("b\/(?:\\.|[^"])*"|b\/.+)$/.exec(raw)
       const b = m?.[2]
-      path = b ? (b.startsWith('"') ? unquoteGitPath(b).slice(2) : b.slice(2)) : ''
+      path = b
+        ? b.startsWith('"')
+          ? unquoteGitPath(b).slice(2)
+          : b.slice(2).replace(/\s+$/, '')
+        : ''
       cur = { path, lines: [] }
       files.push(cur)
       inHunk = false
@@ -150,7 +162,10 @@ export function PullFiles({
 }: {
   diff: string
   pending?: boolean | undefined
-  onComment?: (input: PRCommentInput) => void
+  // Rejected posts propagate: DiffRow keeps the form open with the
+  // draft and shows the API's error (e.g. a stale anchor after a
+  // force-push).
+  onComment?: (input: PRCommentInput) => Promise<void> | void
 }) {
   const [ui, dispatch] = useReducer(
     (s: FormUI, a: FormAction): FormUI => ({ openAt: s.openAt === a.key ? null : a.key }),
@@ -180,11 +195,10 @@ export function PullFiles({
                     pending={pending}
                     canComment={onComment !== undefined && l.path !== undefined}
                     onToggle={() => dispatch({ type: 'toggle', key })}
-                    onSubmit={(body) => {
+                    onSubmit={async (body) => {
                       if (l.path && l.line && l.side) {
-                        onComment?.({ body, path: l.path, line: l.line, side: l.side })
+                        await onComment?.({ body, path: l.path, line: l.line, side: l.side })
                       }
-                      dispatch({ type: 'toggle', key: null })
                     }}
                   />
                 )
@@ -210,8 +224,11 @@ function DiffRow({
   pending?: boolean | undefined
   canComment: boolean
   onToggle: () => void
-  onSubmit: (body: string) => void
+  // Resolves when the comment posted; rejection keeps the draft and
+  // shows the error.
+  onSubmit: (body: string) => Promise<void> | void
 }) {
+  const [postError, setPostError] = useReducer((_: string | null, v: string | null) => v, null)
   if (line.kind === 'meta') {
     return (
       <tr className="diff-line diff-meta">
@@ -253,7 +270,16 @@ function DiffRow({
               aria-label={`comment on ${line.path} line ${line.line}`}
               onSubmit={(e) => {
                 e.preventDefault()
-                onSubmit(String(new FormData(e.currentTarget).get('body') ?? ''))
+                const body = String(new FormData(e.currentTarget).get('body') ?? '')
+                setPostError(null)
+                void (async () => {
+                  try {
+                    await onSubmit(body)
+                    onToggle()
+                  } catch (err) {
+                    setPostError(err instanceof Error ? err.message : 'Comment failed.')
+                  }
+                })()
               }}
             >
               <div className="field">
@@ -275,6 +301,7 @@ function DiffRow({
                 <span id={`dc-${line.path}-${line.line}-error`} className="error-msg">
                   Body is required.
                 </span>
+                {postError && <em role="alert">{postError}</em>}
               </div>
               <div className="form-actions">
                 <button type="button" className="btn btn-quiet" onClick={onToggle}>

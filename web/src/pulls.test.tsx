@@ -221,6 +221,60 @@ describe('route: /pulls/{id}/files', () => {
       side: 'right',
     })
   })
+
+  it('pins the comment to the rendered head via the anchor header', async () => {
+    const requests: { url: string; init?: RequestInit | undefined }[] = []
+    stubAPI((url, init) => {
+      requests.push({ url, init })
+      if (url.endsWith('/diff')) return { body: DIFF, headers: { 'x-anchor-sha': 'abc123' } }
+      if (url.endsWith('/comments') && init?.method === 'POST') {
+        return { body: { comment: prComment({ id: 9 }) } }
+      }
+      return { body: { pull_request: pull(), comments: [], commits: [] } }
+    })
+    renderAt('/pulls/1/files')
+    await page.getByRole('button', { name: 'Comment on a.txt line 2 (right side)' }).click()
+    await page.getByLabelText('comment').fill('seen at abc123')
+    await page.getByRole('button', { name: 'Comment', exact: true }).click()
+    await expect
+      .poll(() => requests.find((r) => r.url.endsWith('/comments') && r.init?.method === 'POST'))
+      .toBeTruthy()
+    const post = requests.find((r) => r.url.endsWith('/comments') && r.init?.method === 'POST')
+    expect(JSON.parse(String(post?.init?.body))).toMatchObject({ anchor: 'abc123' })
+  })
+
+  it('warns when the diff response is truncated', async () => {
+    stubAPI((url) => {
+      if (url.endsWith('/diff')) return { body: DIFF, headers: { 'x-diff-truncated': 'true' } }
+      return { body: { pull_request: pull(), comments: [], commits: [] } }
+    })
+    renderAt('/pulls/1/files')
+    await expect.element(page.getByText(/truncated/)).toBeInTheDocument()
+  })
+
+  it('keeps the draft and shows the error when the comment post fails', async () => {
+    stubAPI((url, init) => {
+      if (url.endsWith('/diff')) return { body: DIFF, headers: { 'x-anchor-sha': 'abc123' } }
+      if (url.endsWith('/comments') && init?.method === 'POST') {
+        return {
+          status: 422,
+          body: {
+            error: {
+              message: 'Validation failed.',
+              fields: { anchor: 'Anchor must be a commit on the head branch.' },
+            },
+          },
+        }
+      }
+      return { body: { pull_request: pull(), comments: [], commits: [] } }
+    })
+    renderAt('/pulls/1/files')
+    await page.getByRole('button', { name: 'Comment on a.txt line 2 (right side)' }).click()
+    await page.getByLabelText('comment').fill('draft survives')
+    await page.getByRole('button', { name: 'Comment', exact: true }).click()
+    await expect.element(page.getByRole('alert')).toBeInTheDocument()
+    expect(page.getByLabelText('comment')).toHaveValue('draft survives')
+  })
 })
 
 describe('nav: pulls availability', () => {
