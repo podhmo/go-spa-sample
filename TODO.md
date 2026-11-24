@@ -85,11 +85,11 @@ workspace → discussions → pulls → accounts へ展開する。
   - [x] **SPA**: 一覧 (category/answered/q/sort/page)・詳細
     (threads+replies 1段ネスト)・作成 (category 必須)・編集/削除・
     thread/reply モデレーション・qa カテゴリの answer マーク
-- [ ] **Pull Requests 移植** (features.md 3.6, §6-Pull Requests):
+- [x] **Pull Requests 移植** (features.md 3.6, §6-Pull Requests):
   git バック + repo ゲーティングが最大の残り塊
-  - [ ] **Go**: `internal/gitrepo` + pulls API 移植、`-repo` フラグと
+  - [x] **Go**: `internal/gitrepo` + pulls API 移植、`-repo` フラグと
     `.git` 自動検出 (repo 無しは `/pulls*` 404)
-  - [ ] **SPA**: 一覧 (status/q/sort/page)・詳細 (commits/merge可否)・
+  - [x] **SPA**: 一覧 (status/q/sort/page)・詳細 (commits/merge可否)・
     作成 (base/head)・Files (diff + 行アンカー review コメント)・
     status 遷移・merge (merge/squash/rebase)
 - [ ] **アカウント・セッション** (features.md 3.7, §6-アカウント):
@@ -100,8 +100,8 @@ workspace → discussions → pulls → accounts へ展開する。
 - [ ] **i18n** (features.md 3.10): 元は en/ja 2ロケール (cookie +
   Accept-Language 解決)。SPA では URL/localStorage/Accept-Language の
   どれで持つか方針から
-- [ ] **markdown エクスポート拡張** (features.md 3.12): issue は済。
-  discussions/PR 移植時に対応分を追加
+- [x] **markdown エクスポート拡張** (features.md 3.12): issue は済。
+  discussions/PR 移植時に対応分を追加 (PR の `Copy as markdown` 済)
 - [ ] **`cmd/fakeapi` の撤去**: スパイク用コードの整理
 - [ ] **本番構成の決定**: dev proxy の `Bearer dev-token` 注入は開発専用。
   embed 配信+セッション or 別配備+token のどちらにするか
