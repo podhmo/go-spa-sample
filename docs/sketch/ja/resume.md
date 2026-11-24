@@ -59,14 +59,16 @@ API サーバー部分を移植し、フロントを **SPA として作り直す
   で `ja: typeof en` が欠キーをコンパイル時に弾く。`{name}` プレース
   ホルダは `fmt()`、時刻は `fmtTimeFor(locale)` (ja は `YYYY年M月D日
   HH:MM`)。nav に言語スイッチ (`lang-switch`)。`document.lang` 同期済
-- **次の一手**: `cmd/fakeapi` 撤去 → 本番構成 (TODO.md 順序)
+- **`cmd/fakeapi` 撤去済**: dev-workflow.md も zatudan 直起動に更新
+- **次の一手**: 本番構成 (TODO.md 最後の項目。embed+セッション or
+  別配備+token の方針決めから)
 
 ## 残りタスク (`TODO.md` が正)
 
 | タスク | 補足 |
 | --- | --- |
 | discussions/pulls の移植判断 | spec: `docs/ja/features.md` 3.5/3.6。store には残存。API routes は削除済み |
-| `cmd/fakeapi` 撤去 | 疎通スパイク用の残骸 |
+| `cmd/fakeapi` 撤去 | 完了 |
 | i18n | 完了: localStorage+navigator 解決、`docs/sketch/ja/i18n.md` |
 | 本番構成 | dev proxy の `Bearer dev-token` 注入は開発専用。embed 配信+認証 or 別配備+token |
 | (保留) TanStack Query | 評価済み・見送り。再検討条件は `docs/sketch/ja/tanstack-query.md` |

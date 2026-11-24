@@ -33,7 +33,6 @@ useReducer / Vitest / playwright-cli) を使った試行錯誤が完全に行え
     routing) + vite proxy `/api` → `127.0.0.1:8080`
   - [x] **playwright-cli での動作確認**: `/` で `/api/ping` の表示、
     `/counter` で POST→invalidate の反映をブラウザで確認
-    (`docs/sketch/ja/spike-counter.png`)
 - [x] **Vitest 導入**: `web/` に vitest を入れ `npm test` が通る。
   **browser mode 採用** (jsdomではなく実Chrome、playwright provider +
   `channel: 'chrome'` でDL不要) — componentの見た目確認はこれを主軸にし
