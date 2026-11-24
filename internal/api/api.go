@@ -18,6 +18,7 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/podhmo/go-spa-sample/internal/gitrepo"
@@ -256,6 +257,9 @@ func actorID(r *http.Request) int64 {
 type handler struct {
 	store Store
 	repo  *gitrepo.Repo // nil → /api/v1/pulls* unmounted
+	// pullsMu serializes PR status transitions against merges: a close
+	// racing an in-flight merge must not let the merge land unrecorded.
+	pullsMu sync.Mutex
 }
 
 type User struct {

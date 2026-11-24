@@ -5,6 +5,7 @@
 package api
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -237,6 +238,13 @@ func (h *handler) createPull(w http.ResponseWriter, r *http.Request) {
 			fe = store.FieldErrors{}
 		}
 		fe["refs"] = store.FieldError{Code: "refs_invalid", Message: "Base and head must name existing refs or commits."}
+	} else if !strings.HasPrefix(input.BaseRef, "refs/heads/") {
+		// Merge requires a local branch (it advances the ref), so reject
+		// tags, remote-tracking refs, and shas at create, not at merge.
+		if fe == nil {
+			fe = store.FieldErrors{}
+		}
+		fe["base"] = store.FieldError{Code: "base_not_branch", Message: "Base must be a local branch."}
 	}
 	if fe.Any() {
 		writeError(w, http.StatusUnprocessableEntity, "Validation failed.", fields(fe))
@@ -422,13 +430,16 @@ func (h *handler) createPRComment(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusUnprocessableEntity, "Validation failed.", map[string]string{"body": fe.Message})
 		return
 	}
-	if in.Path != nil && *in.Path != "" {
+	// An anchor needs both path and line: a lone line silently degrading
+	// to a general comment would surprise the caller, so reject it.
+	if (in.Path != nil && *in.Path != "") || in.Line != nil {
+		path := deref(in.Path)
 		line := 0
 		if in.Line != nil {
 			line = *in.Line
 		}
 		side := deref(in.Side)
-		if err := gitrepo.ValidatePath(*in.Path); err != nil || line < 1 ||
+		if err := gitrepo.ValidatePath(path); err != nil || line < 1 ||
 			(side != "" && side != "right" && side != "left") {
 			writeError(w, http.StatusUnprocessableEntity, "Validation failed.",
 				map[string]string{"path": "Invalid review-comment anchor."})
@@ -612,6 +623,17 @@ func (h *handler) setPullStatus(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ctx := r.Context()
+	// Serialize against an in-flight merge: closing while mergePull runs
+	// would let the merge land on an already-closed record (MarkMerged
+	// rejects it) — re-read the status under the lock.
+	h.pullsMu.Lock()
+	defer h.pullsMu.Unlock()
+	if fresh, ferr := h.store.GetPullRequest(ctx, pr.ID); ferr != nil {
+		h.prStoreError(w, ferr)
+		return
+	} else {
+		pr = fresh
+	}
 	switch in.Status {
 	case "closed":
 		if !pr.Open() {
@@ -620,7 +642,9 @@ func (h *handler) setPullStatus(w http.ResponseWriter, r *http.Request) {
 		}
 		headSHA, err := h.repo.RevParse(ctx, pr.HeadRef)
 		if err != nil {
-			headSHA = "" // head may be deleted already — close anyway
+			// The head branch may be deleted already — fall back to the
+			// sha pinned at create so the closed PR keeps its history.
+			headSHA = pr.HeadSHA
 		}
 		if headSHA != "" {
 			if err := h.repo.UpdatePin(ctx, pr.ID, headSHA); err != nil {
@@ -669,6 +693,16 @@ func (h *handler) mergePull(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	ctx := r.Context()
+	// Serialize against a racing close: re-read under the lock so a close
+	// that landed while we waited blocks the merge, and vice versa.
+	h.pullsMu.Lock()
+	defer h.pullsMu.Unlock()
+	if fresh, ferr := h.store.GetPullRequest(ctx, pr.ID); ferr != nil {
+		h.prStoreError(w, ferr)
+		return
+	} else {
+		pr = fresh
+	}
 	if !pr.Open() {
 		writeError(w, http.StatusConflict, "Only an open pull request can be merged.", nil)
 		return
@@ -695,9 +729,12 @@ func (h *handler) mergePull(w http.ResponseWriter, r *http.Request) {
 	}
 	// Pin the resolved head so the recorded merge survives head-branch
 	// deletion; the merge is already applied, so a failure degrades to a
-	// stray unprotected commit rather than a false "merge failed".
-	_ = h.repo.UpdatePin(ctx, pr.ID, res.HeadSHA)
-	if err := h.store.MarkMerged(ctx, pr.ID, store.PRMergeInfo{
+	// stray unprotected commit rather than a false "merge failed". The
+	// record must outlive the client connection — a canceled request
+	// would leave the base advanced but the PR unmerged.
+	recordCtx := context.WithoutCancel(ctx)
+	_ = h.repo.UpdatePin(recordCtx, pr.ID, res.HeadSHA)
+	if err := h.store.MarkMerged(recordCtx, pr.ID, store.PRMergeInfo{
 		MergeSHA:     res.MergeSHA,
 		MergeMethod:  string(res.Method),
 		HeadSHA:      res.HeadSHA,
