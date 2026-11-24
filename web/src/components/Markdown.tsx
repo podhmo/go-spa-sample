@@ -1,6 +1,4 @@
-import ReactMarkdown from 'react-markdown'
-import remarkGfm from 'remark-gfm'
-import { remarkAlert } from 'remark-github-blockquote-alert'
+import { Component, Suspense, lazy, type ReactNode } from 'react'
 
 // GFM (tables, task lists, strikethrough, autolinks) + GitHub-style
 // [!NOTE] alerts, matching the MPA's goldmark setup. Rendering stays in
@@ -11,12 +9,49 @@ import { remarkAlert } from 'remark-github-blockquote-alert'
 // react-markdown flattens to text). Unsafe link schemes such as
 // javascript: are neutralized structurally by the default urlTransform,
 // which drops the href of any non-safe protocol.
-const remarkPlugins = [remarkGfm, remarkAlert]
+//
+// The unified/remark tree is the app's heaviest dependency, so it loads
+// as a split chunk: the raw source shows until it arrives, then swaps
+// to rendered markdown. Plain text as the fallback keeps layout shape
+// and stays readable during the one-time chunk fetch.
+const LazyMarkdown = lazy(async () => {
+  const [{ default: ReactMarkdown }, { default: remarkGfm }, { remarkAlert }] = await Promise.all([
+    import('react-markdown'),
+    import('remark-gfm'),
+    import('remark-github-blockquote-alert'),
+  ])
+  const remarkPlugins = [remarkGfm, remarkAlert]
+  return {
+    default: ({ text }: { text: string }) => (
+      <ReactMarkdown remarkPlugins={remarkPlugins}>{text}</ReactMarkdown>
+    ),
+  }
+})
+
+// A failed chunk fetch (offline, stale deploy) must not take the whole
+// detail page to the route error boundary — fall back to the raw text
+// permanently for this render, same shape as the loading fallback.
+class MarkdownBoundary extends Component<
+  { text: string; children: ReactNode },
+  { failed: boolean }
+> {
+  state = { failed: false }
+  static getDerivedStateFromError() {
+    return { failed: true }
+  }
+  render() {
+    return this.state.failed ? this.props.text : this.props.children
+  }
+}
 
 export function Markdown({ text }: { text: string }) {
   return (
     <div className="markdown-body">
-      <ReactMarkdown remarkPlugins={remarkPlugins}>{text}</ReactMarkdown>
+      <MarkdownBoundary text={text}>
+        <Suspense fallback={text}>
+          <LazyMarkdown text={text} />
+        </Suspense>
+      </MarkdownBoundary>
     </div>
   )
 }

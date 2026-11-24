@@ -166,3 +166,27 @@ SPA に適用したもの:
   `visibility:hidden` は a11y tree から消えるため、常時 focus可能に
 - **navbar ガイド**: sticky header + skip-link + `aria-current` な
   nav を `.site-header`/`.site-nav` 語彙で再現
+
+### SPA 固有の追加適用 (MPA が full-page load で無料だったもの)
+
+- **`scrollRestoration: true`** (createRouter) — 戻る/進むでの
+  スクロール位置復元をブラウザ相当に
+- **`defaultPreload: 'intent'`** (createRouter) — hover/focus で
+  遷移先 route の loader を先行実行 (improve-next-page-load-performance
+  ガイドの intent prefetch 相当)
+- **`usePageTitle` / `pageTitle`** (`src/page-title.ts`) — pathname →
+  辞書キーで `document.title` を更新 (詳細は `#id` まで)。
+  RootLayout で1箇所に集約、locale 切替で追従
+- **遷移時フォーカス** — `router.subscribe('onResolved')` で pathname
+  変化時に `#main-content` (`tabIndex={-1}`) へ `preventScroll` 付きで
+  focus (accessibility ガイドの route focus management)
+- **遷移中 pending bar** — RootLayout に `<progress class="route-progress">`
+  (indeterminate = spinner ガイドの semantic base)。
+  `useRouterState` の pending で mount、CSS の 0.15s 遅延 fade-in で
+  速い遷移では出ない
+- **Markdown を lazy chunk 化** — `Markdown.tsx` で
+  `React.lazy`+`Suspense` (fallback は生テキストで形状維持)。
+  react-markdown + remark 系 ~160KB が別チャンクに (582KB→418KB)
+- **`content-visibility: auto`** on `.issue-row`/`.comment` —
+  画面外アイテムのレイアウト/描画をスキップ
+  (faster-spa-view-transitions ガイドの DOM コスト削減)

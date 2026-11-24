@@ -10,6 +10,7 @@ import {
   useNavigate,
   useParams,
   useRouter,
+  useRouterState,
   type ErrorComponentProps,
 } from '@tanstack/react-router'
 import { useReducer, useTransition } from 'react'
@@ -32,6 +33,7 @@ import { PRCommentList, PullCommitList, PullDetail } from './components/PullDeta
 import { PullFiles } from './components/PullFiles'
 import { WorkspaceList } from './components/Workspaces'
 import { fmt, getLocale, setLocale, useMessages, type Locale } from './i18n'
+import { usePageTitle } from './page-title'
 
 // A scoped API call: a plain 404 becomes the router's notFound, while a
 // cross-scope 404 names the owning workspace in error.workspace — the
@@ -211,8 +213,12 @@ const rootRoute = createRootRoute({
     const { ws } = useParams({ strict: false })
     const { pulls, user } = rootRoute.useLoaderData()
     const m = useMessages()
+    const loc = useLocation()
+    usePageTitle(loc.pathname, m)
+    const isPending = useRouterState({ select: (s) => s.status === 'pending' })
     return (
       <>
+        {isPending && <progress className="route-progress" aria-label={m.chrome.loading} />}
         <a className="skip-link" href="#main-content">
           {m.nav.skip}
         </a>
@@ -1698,7 +1704,7 @@ const editPullRoute = createRoute({
           initial={{ title: pull_request.title, body: pull_request.body }}
           submitLabel={m.form.saveChanges}
           cancelLink={
-            <Link className="btn btn-quiet" to="/pulls/$pullId" params={{ pullId }}>
+            <Link preload={false} className="btn btn-quiet" to="/pulls/$pullId" params={{ pullId }}>
               {m.copy.cancel}
             </Link>
           }
@@ -1749,7 +1755,7 @@ const pullFilesRoute = createRoute({
               </Link>
             </li>
             <li>
-              <Link to="/pulls/$pullId" params={{ pullId }}>
+              <Link preload={false} to="/pulls/$pullId" params={{ pullId }}>
                 #{pull_request.id}
               </Link>
             </li>
@@ -1765,7 +1771,7 @@ const pullFilesRoute = createRoute({
           <h1>
             {pull_request.title} <span className="issue-num">#{pull_request.id}</span>
           </h1>
-          <Link className="btn" to="/pulls/$pullId" params={{ pullId }}>
+          <Link preload={false} className="btn" to="/pulls/$pullId" params={{ pullId }}>
             {m.pulls.conversation}
           </Link>
         </div>

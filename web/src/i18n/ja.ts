@@ -24,6 +24,7 @@ export const ja: Messages = {
     breadcrumb: 'パンくずリスト',
     backToTop: '↑ トップへ',
     backToTopAria: 'トップへ戻る',
+    loading: '読み込み中',
   },
   error: {
     notFoundTitle: '404 — 見つかりません',
