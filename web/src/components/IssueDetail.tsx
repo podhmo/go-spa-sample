@@ -4,7 +4,8 @@ import { HIDE_REASONS, type Comment, type Issue } from '../api'
 import { ConfirmDialog } from './ConfirmDialog'
 import { CopyButton } from './CopyButton'
 import { submitOnCtrlEnter } from '../enter-submit'
-import { fmtTime, labelStyle } from '../format'
+import { labelStyle } from '../format'
+import { fmt, useFmtTime, useMessages } from '../i18n'
 import { StatusBadge } from './IssueList'
 import { Markdown } from './Markdown'
 
@@ -47,6 +48,7 @@ function HideCommentDialog({
   pending?: boolean | undefined
   onHide: (reason: string) => void
 }) {
+  const m = useMessages()
   const id = useId().replace(/[^a-zA-Z0-9_-]/g, '')
   const dialogId = `hide-${id}`
   return (
@@ -56,9 +58,9 @@ function HideCommentDialog({
         className="comment-action"
         {...({ commandfor: dialogId, command: 'show-modal' } as Record<string, string>)}
         disabled={pending}
-        aria-label={`Hide comment ${commentId}`}
+        aria-label={fmt(m.comments.ariaHide, { noun: m.comments.nounComment, id: commentId })}
       >
-        Hide
+        {m.comments.hide}
       </button>
       <dialog
         id={dialogId}
@@ -77,11 +79,13 @@ function HideCommentDialog({
           d.returnValue = ''
         }}
       >
-        <h2 id={`${dialogId}-title`}>Hide comment #{commentId}?</h2>
+        <h2 id={`${dialogId}-title`}>
+          {fmt(m.comments.hideTitle, { noun: m.comments.nounComment, id: commentId })}
+        </h2>
         <form method="dialog">
           <div className="field">
             <label htmlFor={`${dialogId}-reason`}>
-              Reason{' '}
+              {m.comments.reason}{' '}
               <span className="req" aria-hidden="true">
                 *
               </span>
@@ -94,7 +98,7 @@ function HideCommentDialog({
               defaultValue=""
             >
               <option value="" disabled>
-                Select…
+                {m.form.select}
               </option>
               {HIDE_REASONS.map((r) => (
                 <option key={r} value={r}>
@@ -103,17 +107,17 @@ function HideCommentDialog({
               ))}
             </select>
             <span id={`${dialogId}-reason-error`} className="error-msg">
-              A reason is required.
+              {m.comments.reasonRequired}
             </span>
           </div>
           <div className="form-actions">
             {/* Chrome validates required controls even on method="dialog"
                 submits — formnovalidate lets Cancel close without a reason. */}
             <button type="submit" className="btn" value="cancel" formNoValidate autoFocus>
-              Cancel
+              {m.copy.cancel}
             </button>
             <button type="submit" className="btn btn-primary" value="hide">
-              Hide comment
+              {fmt(m.comments.hideSubmit, { noun: m.comments.nounComment })}
             </button>
           </div>
         </form>
@@ -131,29 +135,36 @@ function CommentItem({
   onUnhide,
 }: { comment: Comment } & CommentHandlers) {
   const [ui, dispatch] = useReducer(commentUIReducer, { editing: false, draft: '' })
+  const m = useMessages()
+  const fmtTime = useFmtTime()
   const permalink = () => `${location.origin}${location.pathname}#comment-${c.id}`
   return (
     <li className={`card comment${c.hidden ? ' comment-hidden' : ''}`} id={`comment-${c.id}`}>
       <header className="comment-meta">
-        <span className="comment-author">{c.author?.name ?? 'anonymous'} commented</span>{' '}
+        <span className="comment-author">
+          {fmt(m.comments.commented, { name: c.author?.name ?? m.comments.anonymous })}
+        </span>{' '}
         <a className="comment-permalink" href={`#comment-${c.id}`}>
           <time dateTime={c.created_at}>{fmtTime(c.created_at)}</time>
         </a>
         {c.edited_at && (
           <>
             {' '}
-            · <span className="comment-edited">edited</span>
+            · <span className="comment-edited">{m.comments.edited}</span>
           </>
         )}
-        <CopyButton className="copy-btn" label="copy link" getText={permalink} pending={pending} />
+        <CopyButton className="copy-btn" label={m.comments.copyLink} getText={permalink} pending={pending} />
       </header>
       {c.hidden ? (
         <>
           <p className="comment-hidden-note">
-            This comment was marked as {c.hidden_reason ?? 'hidden'}.
+            {fmt(m.comments.markedAs, {
+              noun: m.comments.nounComment,
+              reason: c.hidden_reason ?? 'hidden',
+            })}
           </p>
           <details className="comment-hidden-body">
-            <summary>show comment</summary>
+            <summary>{fmt(m.comments.show, { noun: m.comments.nounComment })}</summary>
             <div className="comment-body">
               <Markdown text={c.body} />
             </div>
@@ -161,7 +172,7 @@ function CommentItem({
         </>
       ) : ui.editing ? (
         <form
-          aria-label={`edit comment ${c.id}`}
+          aria-label={fmt(m.comments.editFormAria, { noun: m.comments.nounComment, id: c.id })}
           onSubmit={(e) => {
             e.preventDefault()
             onEdit?.(c.id, ui.draft)
@@ -170,7 +181,7 @@ function CommentItem({
         >
           <div className="field">
             <label htmlFor={`comment-edit-${c.id}`} className="visually-hidden">
-              comment body
+              {m.comments.commentBodyLabel}
             </label>
             <textarea
               id={`comment-edit-${c.id}`}
@@ -179,7 +190,7 @@ function CommentItem({
               onKeyDown={submitOnCtrlEnter}
               rows={4}
               required
-              aria-label="comment body"
+              aria-label={m.comments.commentBodyLabel}
             />
           </div>
           <div className="form-actions">
@@ -188,10 +199,10 @@ function CommentItem({
               className="btn btn-quiet"
               onClick={() => dispatch({ type: 'cancel' })}
             >
-              Cancel
+              {m.copy.cancel}
             </button>
             <button type="submit" className="btn btn-primary" disabled={pending}>
-              Save changes
+              {m.form.saveChanges}
             </button>
           </div>
         </form>
@@ -207,9 +218,9 @@ function CommentItem({
               type="button"
               className="comment-action"
               onClick={() => dispatch({ type: 'start-edit', body: c.body })}
-              aria-label={`Edit comment ${c.id}`}
+              aria-label={fmt(m.comments.ariaEdit, { noun: m.comments.nounComment, id: c.id })}
             >
-              Edit
+              {m.comments.edit}
             </button>
           )}
           {c.hidden
@@ -219,9 +230,9 @@ function CommentItem({
                   className="comment-action"
                   disabled={pending}
                   onClick={() => onUnhide(c.id)}
-                  aria-label={`Unhide comment ${c.id}`}
+                  aria-label={fmt(m.comments.ariaUnhide, { noun: m.comments.nounComment, id: c.id })}
                 >
-                  Unhide
+                  {m.comments.unhide}
                 </button>
               )
             : onHide && (
@@ -233,10 +244,10 @@ function CommentItem({
               )}
           {onDelete && (
             <ConfirmDialog
-              label="Delete"
-              title={`Delete comment #${c.id}?`}
-              description="This permanently removes the comment. This action cannot be undone."
-              confirmLabel="Delete comment"
+              label={m.comments.delete}
+              title={fmt(m.comments.deleteTitle, { noun: m.comments.nounComment, id: c.id })}
+              description={m.comments.deleteCommentBody}
+              confirmLabel={fmt(m.comments.deleteConfirm, { noun: m.comments.nounComment })}
               triggerClass="comment-action comment-action-danger"
               pending={pending}
               onConfirm={() => onDelete(c.id)}
@@ -249,8 +260,9 @@ function CommentItem({
 }
 
 export function CommentList({ comments, ...handlers }: { comments: Comment[] } & CommentHandlers) {
+  const m = useMessages()
   if (comments.length === 0) {
-    return <p className="muted">No comments yet.</p>
+    return <p className="muted">{m.comments.empty}</p>
   }
   return (
     <ol className="comment-list" role="list">
@@ -279,6 +291,8 @@ export function IssueDetail({
   onCopyMarkdown?: () => Promise<string>
   pending?: boolean
 }) {
+  const m = useMessages()
+  const fmtTime = useFmtTime()
   const next = issue.status === 'open' ? 'closed' : 'open'
   return (
     <article className="card issue-detail" id="issue-article">
@@ -306,8 +320,9 @@ export function IssueDetail({
           </div>
         )}
         <p className="issue-meta">
-          Opened by {issue.author?.name ?? 'anonymous'}{' '}
-          <time dateTime={issue.created_at}>{fmtTime(issue.created_at)}</time> · Last updated{' '}
+          {fmt(m.issues.openedBy, { name: issue.author?.name ?? m.comments.anonymous })}{' '}
+          <time dateTime={issue.created_at}>{fmtTime(issue.created_at)}</time> ·{' '}
+          {m.issues.lastUpdated}{' '}
           <time dateTime={issue.updated_at}>{fmtTime(issue.updated_at)}</time>
         </p>
       </header>
@@ -318,7 +333,7 @@ export function IssueDetail({
         </div>
       ) : (
         <div className="issue-body issue-body-empty">
-          <em>No description provided.</em>
+          <em>{m.issues.noDescription}</em>
         </div>
       )}
 
@@ -328,7 +343,7 @@ export function IssueDetail({
           to="/w/$ws/issues/$issueId/edit"
           params={{ ws, issueId: String(issue.id) }}
         >
-          Edit
+          {m.comments.edit}
         </Link>
         {onSetStatus && (
           <button
@@ -337,18 +352,18 @@ export function IssueDetail({
             onClick={() => onSetStatus(next)}
             disabled={pending}
           >
-            {next === 'closed' ? 'Close issue' : 'Reopen issue'}
+            {next === 'closed' ? m.issues.close : m.issues.reopen}
           </button>
         )}
         {onCopyMarkdown && (
-          <CopyButton label="Copy as markdown" getText={onCopyMarkdown} pending={pending} />
+          <CopyButton label={m.copy.asMarkdown} getText={onCopyMarkdown} pending={pending} />
         )}
         {onDelete && (
           <ConfirmDialog
-            label="Delete"
-            title={`Delete issue #${issue.id}?`}
-            description={`This permanently removes ${issue.title} and all of its comments. This action cannot be undone.`}
-            confirmLabel="Delete issue"
+            label={m.issues.delete}
+            title={fmt(m.issues.deleteTitle, { id: issue.id })}
+            description={fmt(m.issues.deleteBody, { title: issue.title })}
+            confirmLabel={m.issues.deleteConfirm}
             pending={pending}
             onConfirm={onDelete}
           />

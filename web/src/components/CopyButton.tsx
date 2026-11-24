@@ -1,4 +1,5 @@
 import { useReducer } from 'react'
+import { useMessages } from '../i18n'
 
 type CopyState = 'idle' | 'copied' | 'failed'
 // `timer` is present-but-undefined after a dispatch without one
@@ -32,6 +33,7 @@ export function CopyButton({
     },
     { state: 'idle' } as CopyUIState,
   )
+  const m = useMessages()
   return (
     <span className="copy-wrap">
       <button
@@ -57,7 +59,7 @@ export function CopyButton({
         {label}
       </button>{' '}
       <span className="copy-tip" role="status" data-shown={s.state !== 'idle' || undefined}>
-        {s.state === 'idle' ? '' : s.state}
+        {s.state === 'idle' ? '' : s.state === 'copied' ? m.copy.copied : m.copy.failed}
       </span>
     </span>
   )

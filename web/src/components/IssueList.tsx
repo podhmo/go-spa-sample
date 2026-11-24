@@ -1,9 +1,15 @@
 import { Link } from '@tanstack/react-router'
 import type { Issue, IssueListFilter, Label } from '../api'
-import { fmtTime, labelStyle } from '../format'
+import { labelStyle } from '../format'
+import { fmt, useFmtTime, useMessages } from '../i18n'
 
 export function StatusBadge({ status }: { status: Issue['status'] }) {
-  return <span className={`badge badge-${status}`}>{status === 'open' ? 'Open' : 'Closed'}</span>
+  const m = useMessages()
+  return (
+    <span className={`badge badge-${status}`}>
+      {status === 'open' ? m.issues.badgeOpen : m.issues.badgeClosed}
+    </span>
+  )
 }
 
 export function LabelBadge({ label }: { label: Label }) {
@@ -31,15 +37,17 @@ export function IssueList({
   // like the MPA's labelURL. Optional for standalone component tests.
   search?: IssueListFilter | undefined
 }) {
+  const m = useMessages()
+  const fmtTime = useFmtTime()
   if (issues.length === 0) {
     if (filtered) {
       return (
         <div className="empty-state">
-          <p className="empty-lead">No issues match the current filters.</p>
+          <p className="empty-lead">{m.issues.filteredEmpty}</p>
           <p>
-            Try a different keyword or{' '}
+            {m.issues.tryOther}{' '}
             <Link to="/w/$ws/issues" params={{ ws }}>
-              clear the filters
+              {m.issues.clearFilters}
             </Link>
             .
           </p>
@@ -48,10 +56,10 @@ export function IssueList({
     }
     return (
       <div className="empty-state">
-        <p className="empty-lead">No issues here yet.</p>
+        <p className="empty-lead">{m.issues.blankEmpty}</p>
         <p>
           <Link className="btn btn-primary" to="/w/$ws/issues/new" params={{ ws }}>
-            Create the first issue
+            {m.issues.createFirst}
           </Link>
         </p>
       </div>
@@ -86,7 +94,7 @@ export function IssueList({
               </Link>
             ))}
             <time className="issue-time" dateTime={issue.created_at}>
-              opened {fmtTime(issue.created_at)}
+              {fmt(m.issues.openedAt, { time: fmtTime(issue.created_at) })}
             </time>
           </div>
         </li>
