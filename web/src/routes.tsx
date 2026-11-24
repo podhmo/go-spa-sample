@@ -1366,7 +1366,17 @@ const discussionRoute = createRoute({
           setError(null)
           return true
         } catch (err) {
-          setError(err instanceof RequestError ? err.message : m.error.requestFailed)
+          const fields = err instanceof RequestError ? err.apiError?.fields : undefined
+          // Field errors name the actual rejection reason (e.g. a
+          // whitespace-only reply); the bare message just says
+          // "Validation failed.".
+          setError(
+            fields
+              ? Object.values(fields).join(' ')
+              : err instanceof RequestError
+                ? err.message
+                : m.error.requestFailed,
+          )
           return false
         } finally {
           setPending(false)
@@ -1805,6 +1815,12 @@ const pullFilesRoute = createRoute({
                   params: { pullId },
                   hash: `comment-${comment.id}`,
                 })
+              } catch (err) {
+                // A stale anchor (e.g. a force-push moved head) fails
+                // until the diff reloads — invalidate so a retry posts
+                // against the live head.
+                void router.invalidate()
+                throw err
               } finally {
                 setPending(false)
               }
