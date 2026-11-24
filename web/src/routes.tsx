@@ -12,7 +12,7 @@ import {
 import { useReducer, useTransition } from 'react'
 import { RequestError, WS, api } from './api'
 import { CommentForm, IssueForm } from './components/forms'
-import { IssueDetail } from './components/IssueDetail'
+import { CommentList, IssueDetail } from './components/IssueDetail'
 import { IssueList } from './components/IssueList'
 import { LabelsAdmin } from './components/LabelsAdmin'
 
@@ -28,20 +28,46 @@ const notFoundOn404 = async <T,>(p: Promise<T>): Promise<T> => {
 }
 
 const rootRoute = createRootRoute({
+  // Same page chrome as the MPA's layout.html: skip link, sticky header
+  // (site title + nav + primary action), main landmark, footer.
   component: () => (
     <>
-      <nav style={{ display: 'flex', gap: '1rem' }}>
-        <Link to="/issues">Issues</Link>
-        <Link to="/issues/new">New issue</Link>
-        <Link to="/labels">Labels</Link>
-      </nav>
-      <hr />
-      <Outlet />
+      <a className="skip-link" href="#main-content">
+        Skip to content
+      </a>
+      <header className="site-header">
+        <div className="header-bar">
+          <div className="container header-inner">
+            <Link className="site-title" to="/issues">
+              zatudan
+            </Link>
+            <nav className="site-nav" aria-label="Main">
+              <Link to="/issues">Issues</Link>
+              <Link to="/labels">Labels</Link>
+              <Link className="btn" to="/issues/new">
+                New issue
+              </Link>
+            </nav>
+          </div>
+        </div>
+      </header>
+      <main className="container main-content" id="main-content" tabIndex={-1}>
+        <Outlet />
+      </main>
+      <footer className="site-footer">
+        <div className="container">
+          <p>
+            A single-page app port of zatudan — Go API + React, TanStack Router, minimal JavaScript
+            where it earns its place.
+          </p>
+        </div>
+      </footer>
     </>
   ),
   notFoundComponent: () => (
-    <div>
-      <h2>404 — not found</h2>
+    <div className="error-page">
+      <p className="error-code">404</p>
+      <h1>404 — not found</h1>
       <p>
         The page or resource you are looking for does not exist.{' '}
         <Link to="/issues">Back to issues</Link>
@@ -49,8 +75,8 @@ const rootRoute = createRootRoute({
     </div>
   ),
   errorComponent: ({ error }) => (
-    <div>
-      <h2>Something went wrong</h2>
+    <div className="error-page">
+      <h1>Something went wrong</h1>
       {isNotFound(error) ? (
         <p>
           The page or resource you are looking for does not exist.{' '}
@@ -87,6 +113,8 @@ const num = (v: unknown) => {
   return Number.isInteger(n) && n >= 1 ? n : undefined
 }
 
+const STATUS_TABS = ['open', 'closed', 'all'] as const
+
 const issuesRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/issues',
@@ -109,16 +137,41 @@ const issuesRoute = createRoute({
     const { list: data, labels } = issuesRoute.useLoaderData()
     const search = issuesRoute.useSearch()
     const navigate = useNavigate()
+    const status = search.status ?? 'open'
     const totalPages = Math.max(1, Math.ceil(data.total / data.per_page))
+    const hasActiveFilter =
+      search.q !== undefined ||
+      search.label !== undefined ||
+      (search.sort !== undefined && search.sort !== 'newest')
+    const rangeStart = data.total === 0 ? 0 : (data.page - 1) * data.per_page + 1
+    const rangeEnd = rangeStart + data.issues.length - 1
     return (
       <div>
-        <h2>Issues</h2>
+        <div className="page-head">
+          <h1>Issues</h1>
+        </div>
+
+        <nav className="tabs" aria-label="Filter by status">
+          {STATUS_TABS.map((s) => (
+            <Link
+              key={s}
+              className={`tab${status === s ? ' tab-active' : ''}`}
+              to="/issues"
+              search={{ ...search, status: s, page: undefined }}
+              aria-current={status === s ? 'page' : undefined}
+            >
+              {s.charAt(0).toUpperCase() + s.slice(1)}
+            </Link>
+          ))}
+        </nav>
+
         <search>
           {/* key remounts the uncontrolled inputs when the URL filters
               change (e.g. pagination links), keeping defaults in sync */}
           <form
             key={JSON.stringify(search)}
-            aria-label="filter issues"
+            className="filter-bar"
+            aria-label="Filter issues"
             onSubmit={(e) => {
               e.preventDefault()
               const fd = new FormData(e.currentTarget)
@@ -133,61 +186,80 @@ const issuesRoute = createRoute({
               })
             }}
           >
-            <label htmlFor="filter-status" className="visually-hidden">
-              Status
-            </label>
-            <select id="filter-status" name="status" defaultValue={search.status ?? 'open'}>
-              <option value="all">all</option>
-              <option value="open">open</option>
-              <option value="closed">closed</option>
-            </select>{' '}
-            <label htmlFor="filter-label" className="visually-hidden">
-              Label
-            </label>
-            <select id="filter-label" name="label" defaultValue={search.label ?? ''}>
-              <option value="">any label</option>
-              {labels.map((l) => (
-                <option key={l.id} value={l.name}>
-                  {l.name}
-                </option>
-              ))}
-            </select>{' '}
-            <label htmlFor="filter-sort" className="visually-hidden">
-              Sort
-            </label>
-            <select id="filter-sort" name="sort" defaultValue={search.sort ?? 'newest'}>
-              <option value="newest">newest</option>
-              <option value="oldest">oldest</option>
-            </select>{' '}
-            <label htmlFor="filter-q" className="visually-hidden">
-              Search
-            </label>
-            <input
-              id="filter-q"
-              type="search"
-              name="q"
-              placeholder="search"
-              defaultValue={search.q}
-            />{' '}
-            <button type="submit">filter</button>
+            <input type="hidden" name="status" value={status} />
+            <div className="filter-field">
+              <label htmlFor="filter-q">Search</label>
+              <input
+                type="search"
+                id="filter-q"
+                name="q"
+                placeholder="Title or body"
+                defaultValue={search.q}
+              />
+            </div>
+            <div className="filter-field">
+              <label htmlFor="filter-label">Label</label>
+              <select id="filter-label" name="label" defaultValue={search.label ?? ''}>
+                <option value="">All labels</option>
+                {labels.map((l) => (
+                  <option key={l.id} value={l.name}>
+                    {l.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="filter-field">
+              <label htmlFor="filter-sort">Sort</label>
+              <select id="filter-sort" name="sort" defaultValue={search.sort ?? 'newest'}>
+                <option value="newest">Newest first</option>
+                <option value="oldest">Oldest first</option>
+              </select>
+            </div>
+            <div className="filter-actions">
+              <button type="submit" className="btn">
+                Apply
+              </button>
+              {hasActiveFilter && (
+                <Link className="btn btn-quiet" to="/issues">
+                  Clear
+                </Link>
+              )}
+            </div>
           </form>
         </search>
-        <IssueList issues={data.issues} />
-        <p>
-          {data.total} issues (page {data.page} / {totalPages}){' '}
-          {data.page > 1 && (
-            <>
-              <Link to="/issues" search={{ ...search, page: data.page - 1 }}>
-                prev
-              </Link>{' '}
-            </>
-          )}
-          {data.page < totalPages && (
-            <Link to="/issues" search={{ ...search, page: data.page + 1 }}>
-              next
-            </Link>
-          )}
-        </p>
+
+        {data.issues.length > 0 && (
+          <p className="result-count">
+            Showing {rangeStart}–{rangeEnd} of {data.total} issues
+          </p>
+        )}
+        <IssueList issues={data.issues} filtered={hasActiveFilter} search={search} />
+
+        {totalPages > 1 && (
+          <nav className="pagination" aria-label="Pagination">
+            {data.page > 1 ? (
+              <Link className="btn" to="/issues" search={{ ...search, page: data.page - 1 }}>
+                Previous
+              </Link>
+            ) : (
+              <span className="btn btn-disabled" aria-disabled="true">
+                Previous
+              </span>
+            )}
+            <span className="page-info">
+              Page {data.page} of {totalPages}
+            </span>
+            {data.page < totalPages ? (
+              <Link className="btn" to="/issues" search={{ ...search, page: data.page + 1 }}>
+                Next
+              </Link>
+            ) : (
+              <span className="btn btn-disabled" aria-disabled="true">
+                Next
+              </span>
+            )}
+          </nav>
+        )}
       </div>
     )
   },
@@ -214,7 +286,9 @@ const newIssueRoute = createRoute({
     )
     return (
       <div>
-        <h2>New issue</h2>
+        <div className="page-head">
+          <h1>New issue</h1>
+        </div>
         <IssueForm
           submitting={isPending}
           errors={errors}
@@ -261,7 +335,9 @@ const editIssueRoute = createRoute({
     )
     return (
       <div>
-        <h2>Edit issue #{issue.id}</h2>
+        <div className="page-head">
+          <h1>Edit issue #{issue.id}</h1>
+        </div>
         <IssueForm
           submitting={isPending}
           errors={errors}
@@ -271,7 +347,12 @@ const editIssueRoute = createRoute({
             body: issue.body,
             label_ids: issue.labels.map((l) => l.id),
           }}
-          submitLabel="save"
+          submitLabel="Save changes"
+          cancelLink={
+            <Link className="btn btn-quiet" to="/issues/$issueId" params={{ issueId }}>
+              Cancel
+            </Link>
+          }
           onSubmit={(input) => {
             startTransition(async () => {
               try {
@@ -320,9 +401,23 @@ const issueRoute = createRoute({
     }
     return (
       <div>
+        <nav className="breadcrumb" aria-label="Breadcrumb">
+          <ol>
+            <li>
+              <Link to="/issues" activeOptions={{ exact: true }}>
+                Issues
+              </Link>
+            </li>
+            <li>
+              <a href="#" aria-current="page">
+                #{issue.id}
+              </a>
+            </li>
+          </ol>
+        </nav>
+
         <IssueDetail
           issue={issue}
-          comments={comments}
           pending={isPending}
           onSetStatus={(status) => mutate(() => api.setIssueStatus(WS, issueID, status))}
           onDelete={() => {
@@ -337,17 +432,30 @@ const issueRoute = createRoute({
             })()
           }}
           onCopyMarkdown={() => api.getIssueMarkdown(WS, issueID)}
-          commentHandlers={{
-            onEdit: (cid, body) => mutate(() => api.updateComment(WS, issueID, cid, body)),
-            onDelete: (cid) => mutate(() => api.deleteComment(WS, issueID, cid)),
-            onHide: (cid, reason) => mutate(() => api.hideComment(WS, issueID, cid, reason)),
-            onUnhide: (cid) => mutate(() => api.unhideComment(WS, issueID, cid)),
-          }}
         />
-        <CommentForm
-          submitting={isPending}
-          onSubmit={(body) => mutate(() => api.createComment(WS, issueID, body))}
-        />
+
+        <section id="comments" className="comments">
+          <h2>
+            Comments
+            {comments.length > 0 && <span className="comment-count"> ({comments.length})</span>}
+          </h2>
+          <CommentList
+            comments={comments}
+            pending={isPending}
+            onEdit={(cid, body) => mutate(() => api.updateComment(WS, issueID, cid, body))}
+            onDelete={(cid) => mutate(() => api.deleteComment(WS, issueID, cid))}
+            onHide={(cid, reason) => mutate(() => api.hideComment(WS, issueID, cid, reason))}
+            onUnhide={(cid) => mutate(() => api.unhideComment(WS, issueID, cid))}
+          />
+          <CommentForm
+            submitting={isPending}
+            onSubmit={(body) => mutate(() => api.createComment(WS, issueID, body))}
+          />
+        </section>
+
+        <a className="back-to-top" href="#main-content" aria-label="Back to top">
+          ↑ Top
+        </a>
       </div>
     )
   },
