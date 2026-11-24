@@ -569,6 +569,9 @@ export function PullForm({
     head: '',
   })
   const branches = (refs ?? []).filter((r) => r.name.startsWith('refs/heads/'))
+  // Head may be a remote-tracking ref too (createPull accepts any ref);
+  // base must stay a local branch because merging advances it.
+  const headRefs = (refs ?? []).filter((r) => !r.name.startsWith('refs/tags/'))
   return (
     <form
       className="card issue-form"
@@ -607,7 +610,7 @@ export function PullForm({
               <option value="" disabled>
                 Compare branch…
               </option>
-              {branches.map((r) => (
+              {headRefs.map((r) => (
                 <option key={r.name} value={r.name}>
                   {r.short}
                 </option>

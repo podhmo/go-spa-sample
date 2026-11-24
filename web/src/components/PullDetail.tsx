@@ -40,6 +40,9 @@ export function MergeDialog({
 }) {
   const id = useId().replace(/[^a-zA-Z0-9_-]/g, '')
   const dialogId = `merge-${id}`
+  // Rebase replays each commit's own message — a custom message would
+  // be silently discarded, so the field hides for that method.
+  const [method, setMethod] = useReducer((_: string, v: string) => v, 'merge')
   return (
     <>
       <button
@@ -74,7 +77,13 @@ export function MergeDialog({
           <div className="field" role="radiogroup" aria-label="Merge method">
             {(['merge', 'squash', 'rebase'] as const).map((m) => (
               <label key={m} className="merge-method">
-                <input type="radio" name="method" value={m} defaultChecked={m === 'merge'} />{' '}
+                <input
+                  type="radio"
+                  name="method"
+                  value={m}
+                  checked={method === m}
+                  onChange={() => setMethod(m)}
+                />{' '}
                 {m === 'merge'
                   ? 'Create a merge commit'
                   : m === 'squash'
@@ -83,15 +92,17 @@ export function MergeDialog({
               </label>
             ))}
           </div>
-          <div className="field">
-            <label htmlFor={`${dialogId}-message`}>Commit message (optional)</label>
-            <textarea
-              id={`${dialogId}-message`}
-              name="message"
-              rows={3}
-              placeholder="Leave empty for the default message"
-            />
-          </div>
+          {method !== 'rebase' && (
+            <div className="field">
+              <label htmlFor={`${dialogId}-message`}>Commit message (optional)</label>
+              <textarea
+                id={`${dialogId}-message`}
+                name="message"
+                rows={3}
+                placeholder="Leave empty for the default message"
+              />
+            </div>
+          )}
           <div className="form-actions">
             <button type="submit" className="btn" value="cancel" formNoValidate autoFocus>
               Cancel
@@ -110,6 +121,7 @@ export function MergeDialog({
 export function PullDetail({
   pull,
   mergeable,
+  actionError,
   onDelete,
   onCopyMarkdown,
   onSetStatus,
@@ -118,6 +130,7 @@ export function PullDetail({
 }: {
   pull: PullRequest
   mergeable?: PullMergeable | undefined
+  actionError?: string | null | undefined
   onDelete?: () => void
   onCopyMarkdown?: () => Promise<string>
   onSetStatus?: (status: 'open' | 'closed') => void
@@ -209,6 +222,11 @@ export function PullDetail({
           />
         )}
       </div>
+      {actionError && (
+        <em className="pull-action-error" role="alert">
+          {actionError}
+        </em>
+      )}
     </article>
   )
 }
