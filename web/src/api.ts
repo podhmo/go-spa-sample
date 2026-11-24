@@ -276,6 +276,28 @@ export type IssueListFilter = {
 }
 
 export const api = {
+  register: (name: string, password: string) =>
+    fetchJSON<{ user: User }>('/api/v1/auth/register', {
+      method: 'POST',
+      ...json({ name, password }),
+    }),
+  login: (name: string, password: string) =>
+    fetchJSON<{ user: User }>('/api/v1/auth/login', {
+      method: 'POST',
+      ...json({ name, password }),
+    }),
+  logout: () => fetchJSON<void>('/api/v1/auth/logout', { method: 'POST' }),
+  // 401 = anonymous (no cookie session): report null, not an error.
+  me: async (): Promise<User | null> => {
+    try {
+      const { user } = await fetchJSON<{ user: User }>('/api/v1/auth/me')
+      return user
+    } catch (err) {
+      if (err instanceof RequestError && err.status === 401) return null
+      throw err
+    }
+  },
+
   listIssues: (ws: string, f: IssueListFilter) =>
     fetchJSON<IssueList>(
       `/api/v1/w/${ws}/issues${qs({ status: f.status, q: f.q, label: f.label, sort: f.sort, page: f.page })}`,

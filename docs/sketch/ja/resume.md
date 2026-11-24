@@ -42,8 +42,14 @@ API サーバー部分を移植し、フロントを **SPA として作り直す
   と SPA (`/pulls` 一覧・新規・詳細・編集・Files diff + 行アンカー
   review コメント、merge/squash/rebase、status 遷移、markdown
   エクスポート)。nav の Pulls リンクは availability probe で条件表示
-- **次の一手**: アカウント・セッション (TODO.md 順序の先頭。認証
-  モデルは「本番構成」とセットで考える)
+- **アカウント・セッション完了**: `POST /api/v1/auth/{register,login,logout}`
+  (公開) + `GET /api/v1/auth/me` (認可内)、`session` cookie
+  (HttpOnly/SameSite=Lax、SHA-256、30d sliding TTL)。session cookie
+  は Bearer より優先 (dev proxy の注入 token でログイン中の本人が
+  隠れないよう)。SPA は `/login` `/register` (`?next=` 同一サイト
+  誘導、ログイン済みは bounce) + nav のユーザー名/ログアウト
+- **次の一手**: `zatu` CLI 移植判断 (TODO.md 順序の先頭。投稿への
+  author 付与も未着手 — actor は anonymous のまま)
 
 ## 残りタスク (`TODO.md` が正)
 

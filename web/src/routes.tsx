@@ -6,13 +6,21 @@ import {
   isNotFound,
   notFound,
   redirect,
+  useLocation,
   useNavigate,
   useParams,
   useRouter,
 } from '@tanstack/react-router'
 import { useReducer, useTransition } from 'react'
-import { RequestError, api, type PRCommentInput } from './api'
-import { CommentForm, DiscussionForm, IssueForm, PullForm, WorkspaceForm } from './components/forms'
+import { RequestError, api, type PRCommentInput, type User } from './api'
+import {
+  AuthForm,
+  CommentForm,
+  DiscussionForm,
+  IssueForm,
+  PullForm,
+  WorkspaceForm,
+} from './components/forms'
 import { CommentList, IssueDetail } from './components/IssueDetail'
 import { IssueList } from './components/IssueList'
 import { DiscussionList } from './components/DiscussionList'
@@ -51,7 +59,34 @@ const homeSlug = async (): Promise<string | null> => {
 // header (site title + nav + primary action), main landmark, footer.
 // Inside a workspace the nav points at that workspace's pages; outside
 // one it uses the bare paths, which resolve to the home workspace.
-function SiteNav({ ws, pulls }: { ws: string | undefined; pulls: boolean }) {
+function SiteNav({
+  ws,
+  pulls,
+  user,
+}: {
+  ws: string | undefined
+  pulls: boolean
+  user: User | null
+}) {
+  const loc = useLocation()
+  // Returning to the current page after login — /login & /register
+  // themselves bounce back to '/' instead.
+  const next = loc.pathname === '/login' || loc.pathname === '/register' ? undefined : loc.href
+  const account = user ? (
+    <>
+      <span className="nav-user">{user.name}</span>
+      <LogoutButton />
+    </>
+  ) : (
+    <>
+      <Link to="/login" search={{ next }}>
+        Log in
+      </Link>
+      <Link to="/register" search={{ next }}>
+        Register
+      </Link>
+    </>
+  )
   if (ws !== undefined) {
     return (
       <>
@@ -73,6 +108,7 @@ function SiteNav({ ws, pulls }: { ws: string | undefined; pulls: boolean }) {
           <Link className="btn" to="/w/$ws/issues/new" params={{ ws }}>
             New issue
           </Link>
+          {account}
         </nav>
       </>
     )
@@ -91,21 +127,53 @@ function SiteNav({ ws, pulls }: { ws: string | undefined; pulls: boolean }) {
         <Link className="btn" to="/issues/new">
           New issue
         </Link>
+        {account}
       </nav>
     </>
+  )
+}
+
+// POST /auth/logout, then re-resolve the root loader so nav and page
+// state flip to anonymous.
+function LogoutButton() {
+  const router = useRouter()
+  const [pending, setPending] = useReducer((_: boolean, v: boolean) => v, false)
+  return (
+    <button
+      type="button"
+      className="btn"
+      disabled={pending}
+      onClick={() => {
+        setPending(true)
+        void (async () => {
+          try {
+            await api.logout()
+          } finally {
+            setPending(false)
+            void router.invalidate()
+          }
+        })()
+      }}
+    >
+      Log out
+    </button>
   )
 }
 
 const rootRoute = createRootRoute({
   // Probes whether the server resolved a git repo; pulls routes 404
   // without one, so the nav link only renders when the API answers.
-  // staleTime keeps plain navigations from re-probing; router.invalidate()
-  // still re-runs it so the link appears/disappears after changes.
+  // The session user rides along so the nav can greet them. staleTime
+  // keeps plain navigations from re-probing; router.invalidate() still
+  // re-runs both, so the link and the login state refresh after changes.
   staleTime: 60_000,
-  loader: () => api.pullsAvailable(),
+  loader: async () => {
+    const [pulls, user] = await Promise.all([api.pullsAvailable(), api.me()])
+    return { pulls, user }
+  },
   component: function RootLayout() {
     const { ws } = useParams({ strict: false })
-    const pulls = rootRoute.useLoaderData()
+    const { pulls, user } = rootRoute.useLoaderData()
     return (
       <>
         <a className="skip-link" href="#main-content">
@@ -114,7 +182,7 @@ const rootRoute = createRootRoute({
         <header className="site-header">
           <div className="header-bar">
             <div className="container header-inner">
-              <SiteNav ws={ws} pulls={pulls} />
+              <SiteNav ws={ws} pulls={pulls} user={user} />
             </div>
           </div>
         </header>
@@ -376,6 +444,111 @@ const workspacesRoute = createRoute({
         />
       </div>
     )
+  },
+})
+
+// Same-site redirect target after login/registration: absolute paths
+// only — '//evil' is a protocol-relative URL and some browsers treat
+// '\' as '/', both escapes a naive startsWith('/') check would miss.
+const safeNext = (raw: string | undefined): string =>
+  raw !== undefined && raw.startsWith('/') && !raw.startsWith('//') && !raw.includes('\\')
+    ? raw
+    : '/'
+
+const authSearch = (search: Record<string, unknown>) => ({ next: str(search.next) })
+
+// /login and /register share this page; only the endpoint, autocomplete
+// hints, and cross-link differ. A signed-in visitor is bounced to `next`
+// by beforeLoad.
+function AuthPage({ mode, next }: { mode: 'login' | 'register'; next: string | undefined }) {
+  const router = useRouter()
+  const [pending, setPending] = useReducer((_: boolean, v: boolean) => v, false)
+  const [errors, setErrors] = useReducer(
+    (
+      _: { name?: string; password?: string; form?: string },
+      v: { name?: string; password?: string; form?: string },
+    ) => v,
+    {},
+  )
+  return (
+    <div>
+      <div className="page-head">
+        <h1>{mode === 'login' ? 'Log in' : 'Register'}</h1>
+      </div>
+      <AuthForm
+        mode={mode}
+        errors={errors}
+        submitting={pending}
+        onSubmit={(name, password) => {
+          setPending(true)
+          setErrors({})
+          void (async () => {
+            try {
+              if (mode === 'login') await api.login(name, password)
+              else await api.register(name, password)
+              // The session cookie just landed: drop the stale loader
+              // data before rendering `next` so nav greets the user.
+              await router.invalidate()
+              router.history.push(safeNext(next))
+            } catch (err) {
+              // 422 field errors light up their inputs; the credential
+              // failure deliberately carries none, so its message fills
+              // the form-level slot.
+              if (err instanceof RequestError && err.apiError?.fields) {
+                setErrors(err.apiError.fields)
+              } else {
+                setErrors({ form: err instanceof Error ? err.message : String(err) })
+              }
+            } finally {
+              setPending(false)
+            }
+          })()
+        }}
+      />
+      <p className="muted">
+        {mode === 'login' ? (
+          <>
+            No account?{' '}
+            <Link to="/register" search={{ next }}>
+              Register
+            </Link>
+          </>
+        ) : (
+          <>
+            Already registered?{' '}
+            <Link to="/login" search={{ next }}>
+              Log in
+            </Link>
+          </>
+        )}
+      </p>
+    </div>
+  )
+}
+
+const loginRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/login',
+  validateSearch: authSearch,
+  beforeLoad: async ({ search }) => {
+    if (await api.me()) throw redirect({ href: safeNext(search.next) })
+  },
+  component: function LoginPage() {
+    const { next } = loginRoute.useSearch()
+    return <AuthPage mode="login" next={next} />
+  },
+})
+
+const registerRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/register',
+  validateSearch: authSearch,
+  beforeLoad: async ({ search }) => {
+    if (await api.me()) throw redirect({ href: safeNext(search.next) })
+  },
+  component: function RegisterPage() {
+    const { next } = registerRoute.useSearch()
+    return <AuthPage mode="register" next={next} />
   },
 })
 
@@ -1743,6 +1916,8 @@ export const routeTree = rootRoute.addChildren([
   labelsRedirectRoute,
   workspacesRoute,
   newWorkspaceRoute,
+  loginRoute,
+  registerRoute,
   pullsRoute,
   newPullRoute,
   pullRoute,
