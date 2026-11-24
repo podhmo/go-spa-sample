@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router'
 import { useReducer, type ReactNode } from 'react'
-import type { IssueInput, Label } from '../api'
+import type { IssueInput, Label, WorkspaceInput } from '../api'
 import { submitOnCtrlEnter } from '../enter-submit'
 import { LabelBadge } from './IssueList'
 
@@ -143,6 +143,128 @@ export function IssueForm({
         )}
         <button type="submit" className="btn btn-primary" disabled={submitting}>
           {submitting ? 'Saving…' : submitLabel}
+        </button>
+      </div>
+    </form>
+  )
+}
+
+type WorkspaceFormState = { slug: string; name: string; description: string }
+
+const workspaceFormReducer = (
+  s: WorkspaceFormState,
+  a: { field: keyof WorkspaceFormState; value: string },
+): WorkspaceFormState => ({ ...s, [a.field]: a.value })
+
+// The MPA's /workspaces/new form — slug (immutable identifier, used in
+// /w/<slug>/... URLs), optional display name and description.
+export function WorkspaceForm({
+  onSubmit,
+  submitting,
+  errors,
+  cancelLink,
+}: {
+  onSubmit: (input: WorkspaceInput) => void
+  submitting?: boolean
+  errors?: Record<string, string>
+  cancelLink?: ReactNode
+}) {
+  const [state, dispatch] = useReducer(workspaceFormReducer, {
+    slug: '',
+    name: '',
+    description: '',
+  })
+  return (
+    <form
+      className="card issue-form"
+      aria-label="new workspace"
+      onSubmit={(e) => {
+        e.preventDefault()
+        onSubmit(state)
+      }}
+    >
+      <p className="form-note">
+        Fields marked <span className="req">*</span> are required.
+      </p>
+      <div className="field">
+        <label htmlFor="workspace-slug">
+          Slug{' '}
+          <span className="req" aria-hidden="true">
+            *
+          </span>
+        </label>
+        <input
+          type="text"
+          id="workspace-slug"
+          name="slug"
+          value={state.slug}
+          onChange={(e) => dispatch({ field: 'slug', value: e.target.value })}
+          required
+          pattern="[a-z0-9][a-z0-9_\-]*"
+          maxLength={63}
+          autoComplete="off"
+          data-error="workspace-slug-error"
+          aria-invalid={errors?.slug ? 'true' : 'false'}
+          aria-describedby={
+            errors?.slug ? 'workspace-slug-api-error workspace-slug-hint' : 'workspace-slug-hint'
+          }
+        />
+        <span id="workspace-slug-error" className="error-msg">
+          Lowercase letters, digits, &quot;-&quot; and &quot;_&quot;, starting with a letter or
+          digit.
+        </span>
+        {errors?.slug && (
+          <em id="workspace-slug-api-error" role="alert">
+            {errors.slug}
+          </em>
+        )}
+        <p className="field-hint" id="workspace-slug-hint">
+          Lowercase letters, digits, &quot;-&quot; and &quot;_&quot;. Used in URLs:
+          /w/&lt;slug&gt;/issues.
+        </p>
+      </div>
+      <div className="field">
+        <label htmlFor="workspace-name">Name</label>
+        <input
+          type="text"
+          id="workspace-name"
+          name="name"
+          value={state.name}
+          onChange={(e) => dispatch({ field: 'name', value: e.target.value })}
+          maxLength={200}
+          autoComplete="off"
+          aria-invalid={errors?.name ? 'true' : 'false'}
+          aria-describedby="workspace-name-hint"
+        />
+        {errors?.name && (
+          <em id="workspace-name-api-error" role="alert">
+            {errors.name}
+          </em>
+        )}
+        <p className="field-hint" id="workspace-name-hint">
+          Optional display name; defaults to the slug.
+        </p>
+      </div>
+      <div className="field">
+        <label htmlFor="workspace-description">Description</label>
+        <textarea
+          id="workspace-description"
+          name="description"
+          value={state.description}
+          onChange={(e) => dispatch({ field: 'description', value: e.target.value })}
+          rows={3}
+          aria-invalid={errors?.description ? 'true' : 'false'}
+        />
+        {errors?.description && (
+          <em id="workspace-description-api-error" role="alert">
+            {errors.description}
+          </em>
+        )}
+      </div>
+      <div className="form-actions">
+        {cancelLink}
+        <button type="submit" className="btn btn-primary" disabled={submitting}>
+          {submitting ? 'Saving…' : 'Create workspace'}
         </button>
       </div>
     </form>

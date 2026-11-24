@@ -16,10 +16,13 @@ export function LabelBadge({ label }: { label: Label }) {
 
 export function IssueList({
   issues,
+  ws,
   filtered,
   search,
 }: {
   issues: Issue[]
+  // The workspace this list is scoped to — its links stay under /w/{ws}.
+  ws: string
   // Whether a filter (other than the status tabs) is active — picks the
   // MPA's filtered empty state ("No issues match the current filters.")
   // over the blank-slate one.
@@ -34,7 +37,11 @@ export function IssueList({
         <div className="empty-state">
           <p className="empty-lead">No issues match the current filters.</p>
           <p>
-            Try a different keyword or <Link to="/issues">clear the filters</Link>.
+            Try a different keyword or{' '}
+            <Link to="/w/$ws/issues" params={{ ws }}>
+              clear the filters
+            </Link>
+            .
           </p>
         </div>
       )
@@ -43,7 +50,7 @@ export function IssueList({
       <div className="empty-state">
         <p className="empty-lead">No issues here yet.</p>
         <p>
-          <Link className="btn btn-primary" to="/issues/new">
+          <Link className="btn btn-primary" to="/w/$ws/issues/new" params={{ ws }}>
             Create the first issue
           </Link>
         </p>
@@ -57,8 +64,8 @@ export function IssueList({
           <div className="issue-row-main">
             <Link
               className="issue-title"
-              to="/issues/$issueId"
-              params={{ issueId: String(issue.id) }}
+              to="/w/$ws/issues/$issueId"
+              params={{ ws, issueId: String(issue.id) }}
             >
               {issue.title}
             </Link>
@@ -71,7 +78,8 @@ export function IssueList({
                 className="label-badge"
                 style={labelStyle(l)}
                 key={l.id}
-                to="/issues"
+                to="/w/$ws/issues"
+                params={{ ws }}
                 search={{ ...search, label: l.name, page: undefined }}
               >
                 {l.name}

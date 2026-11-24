@@ -263,12 +263,15 @@ export function CommentList({ comments, ...handlers }: { comments: Comment[] } &
 // in the page component, mirroring the MPA's issue_detail.html.
 export function IssueDetail({
   issue,
+  ws,
   onSetStatus,
   onDelete,
   onCopyMarkdown,
   pending,
 }: {
   issue: Issue
+  // The workspace this issue is scoped to — its links stay under /w/{ws}.
+  ws: string
   onSetStatus?: (status: 'open' | 'closed') => void
   onDelete?: () => void
   onCopyMarkdown?: () => Promise<string>
@@ -291,7 +294,8 @@ export function IssueDetail({
                 className="label-badge"
                 style={labelStyle(l)}
                 key={l.id}
-                to="/issues"
+                to="/w/$ws/issues"
+                params={{ ws }}
                 search={{ status: 'all', label: l.name }}
               >
                 {l.name}
@@ -317,7 +321,11 @@ export function IssueDetail({
       )}
 
       <div className="issue-actions">
-        <Link className="btn" to="/issues/$issueId/edit" params={{ issueId: String(issue.id) }}>
+        <Link
+          className="btn"
+          to="/w/$ws/issues/$issueId/edit"
+          params={{ ws, issueId: String(issue.id) }}
+        >
           Edit
         </Link>
         {onSetStatus && (
