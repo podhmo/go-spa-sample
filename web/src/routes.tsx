@@ -274,6 +274,7 @@ const issueRoute = createRoute({
               await navigate({ to: '/issues' })
             })
           }}
+          onCopyMarkdown={() => api.getIssueMarkdown(WS, issueID)}
           commentHandlers={{
             onEdit: (cid, body) => mutate(() => api.updateComment(WS, issueID, cid, body)),
             onDelete: (cid) => mutate(() => api.deleteComment(WS, issueID, cid)),

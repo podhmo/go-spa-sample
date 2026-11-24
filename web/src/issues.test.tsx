@@ -38,6 +38,7 @@ const label = (over: Partial<Label> = {}): Label => ({
 })
 
 afterEach(() => {
+  vi.restoreAllMocks()
   vi.unstubAllGlobals()
 })
 
@@ -301,5 +302,20 @@ describe('route: /issues/$issueId', () => {
     expect(document.querySelector('article script')).toBeNull()
     expect(document.querySelector('a[href^="javascript:"]')).toBeNull()
     expect(document.querySelector('input[type=checkbox]')).not.toBeNull()
+  })
+
+  it('copies the issue as markdown via the export endpoint', async () => {
+    const calls: string[] = []
+    stubAPI((url) => {
+      calls.push(url)
+      if (url.endsWith('/markdown')) return { body: '# Issue\n\nbody text' }
+      return { body: { issue: issue(), comments: [] } }
+    })
+    const writeText = vi.spyOn(navigator.clipboard, 'writeText').mockResolvedValue(undefined)
+    renderAt('/issues/1')
+    await page.getByRole('button', { name: 'copy as markdown' }).click()
+    await expect.element(page.getByRole('button', { name: 'copied' })).toBeInTheDocument()
+    expect(calls.some((u) => u.endsWith('/issues/1/markdown'))).toBe(true)
+    expect(writeText).toHaveBeenCalled()
   })
 })

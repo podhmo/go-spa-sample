@@ -192,6 +192,7 @@ export function IssueDetail({
   comments,
   onSetStatus,
   onDelete,
+  onCopyMarkdown,
   commentHandlers,
   pending,
 }: {
@@ -199,6 +200,7 @@ export function IssueDetail({
   comments: Comment[]
   onSetStatus?: (status: 'open' | 'closed') => void
   onDelete?: () => void
+  onCopyMarkdown?: () => Promise<string>
   commentHandlers?: CommentHandlers
   pending?: boolean
 }) {
@@ -231,6 +233,9 @@ export function IssueDetail({
             pending={pending}
             onConfirm={onDelete}
           />
+        )}{' '}
+        {onCopyMarkdown && (
+          <CopyButton label="copy as markdown" getText={onCopyMarkdown} pending={pending} />
         )}
       </header>
       <section>
