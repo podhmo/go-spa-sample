@@ -522,7 +522,11 @@ func prEdit(ctx context.Context, o Options, args []string) error {
 		}
 	}
 	// Same validation the API applies — local mode must not write
-	// titles/bodies the server would reject on the same data.
+	// titles/bodies the server would reject on the same data. Trim
+	// first like updatePull does, or surrounding whitespace pushes a
+	// value over the limit remotely but not here.
+	in.Title = strings.TrimSpace(in.Title)
+	in.Body = strings.TrimSpace(in.Body)
 	if fe := store.ValidatePullRequestInput(in); fe.Any() {
 		return usageError{msg: fmt.Sprintf("%v", fe)}
 	}
