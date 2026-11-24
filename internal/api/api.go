@@ -18,8 +18,10 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
+	"github.com/podhmo/go-spa-sample/internal/gitrepo"
 	"github.com/podhmo/go-spa-sample/internal/store"
 )
 
@@ -96,8 +98,8 @@ const (
 // credential (constant-time compared; its requests are anonymous); any
 // other token is resolved through the store's api_tokens table and its
 // requests run as that user.
-func New(st Store, envToken string) http.Handler {
-	h := &handler{store: st}
+func New(st Store, envToken string, repo *gitrepo.Repo) http.Handler {
+	h := &handler{store: st, repo: repo}
 	mux := http.NewServeMux()
 
 	// Routes are registered methodless per path and dispatched on
@@ -150,6 +152,26 @@ func New(st Store, envToken string) http.Handler {
 	}
 	for path, methods := range routes {
 		mux.HandleFunc(path, methodDispatch(methods))
+	}
+
+	// Pull requests mount only when the server has a git repo — on a
+	// repo-less deployment /api/v1/pulls* falls to the JSON 404 below.
+	if repo != nil {
+		for path, methods := range map[string]map[string]http.HandlerFunc{
+			"/api/v1/pulls/refs":                       {"GET": h.listPullRefs},
+			"/api/v1/pulls":                            {"GET": h.listPulls, "POST": h.createPull},
+			"/api/v1/pulls/{id}":                       {"GET": h.getPull, "PATCH": h.updatePull, "DELETE": h.deletePull},
+			"/api/v1/pulls/{id}/comments":              {"GET": h.listPRComments, "POST": h.createPRComment},
+			"/api/v1/pulls/{id}/comments/{cid}":        {"PATCH": h.updatePRComment, "DELETE": h.deletePRComment},
+			"/api/v1/pulls/{id}/comments/{cid}/hide":   {"POST": h.hidePRComment},
+			"/api/v1/pulls/{id}/comments/{cid}/unhide": {"POST": h.unhidePRComment},
+			"/api/v1/pulls/{id}/status":                {"POST": h.setPullStatus},
+			"/api/v1/pulls/{id}/merge":                 {"POST": h.mergePull},
+			"/api/v1/pulls/{id}/diff":                  {"GET": h.pullDiff},
+			"/api/v1/pulls/{id}/markdown":              {"GET": h.pullMarkdown},
+		} {
+			mux.HandleFunc(path, methodDispatch(methods))
+		}
 	}
 
 	// Anything else under /api/v1 is a JSON 404 (HTML 404s would confuse
@@ -235,6 +257,10 @@ func actorID(r *http.Request) int64 {
 
 type handler struct {
 	store Store
+	repo  *gitrepo.Repo // nil → /api/v1/pulls* unmounted
+	// pullsMu serializes PR status transitions against merges: a close
+	// racing an in-flight merge must not let the merge land unrecorded.
+	pullsMu sync.Mutex
 }
 
 type User struct {

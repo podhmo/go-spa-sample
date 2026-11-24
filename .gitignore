@@ -1,2 +1,8 @@
 # Playwright CLI output (may contain credentials)
 .playwright-cli/
+
+# Local SQLite databases — the dev server's own -db file must not make the
+# worktree dirty (in-worktree merges refuse a dirty checkout).
+*.db
+*.db-shm
+*.db-wal
