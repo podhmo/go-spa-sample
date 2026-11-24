@@ -970,12 +970,14 @@ fieldset.field:has(:is(:user-invalid, [aria-invalid='true'])) {
 .workspace-name {
   margin-left: 0.5em;
   color: var(--text-muted);
+  overflow-wrap: anywhere;
 }
 
 .workspace-desc {
   margin: 4px 0 0;
   color: var(--text-muted);
   font-size: 0.85rem;
+  overflow-wrap: anywhere;
 }
 
 .workspace-meta {
