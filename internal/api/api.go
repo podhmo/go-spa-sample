@@ -200,10 +200,10 @@ func New(st Store, envToken string, repo *gitrepo.Repo) http.Handler {
 	for path, methods := range map[string]map[string]http.HandlerFunc{
 		"/api/v1/auth/register": {"POST": requireJSON(h.register)},
 		"/api/v1/auth/login":    {"POST": requireJSON(h.login)},
-		// logout takes no body — a plain POST must work. Cross-site logout
-		// CSRF is moot anyway: SameSite=Lax keeps the cookie off cross-site
-		// POSTs.
-		"/api/v1/auth/logout": {"POST": h.logout},
+		// logout needs it too: it takes no body, but a cross-site form POST
+		// gets a 204 that still expires the browser cookie (the session
+		// survives server-side, the user is signed out anyway).
+		"/api/v1/auth/logout": {"POST": requireJSON(h.logout)},
 	} {
 		top.HandleFunc(path, methodDispatch(methods))
 	}

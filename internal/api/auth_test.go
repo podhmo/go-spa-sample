@@ -232,17 +232,29 @@ func TestAuthRequiresJSONContentType(t *testing.T) {
 		t.Fatal(err)
 	}
 	resp.Body.Close()
-	if resp.StatusCode == 415 {
-		t.Fatal("Application/JSON was rejected")
+	if resp.StatusCode != 422 {
+		t.Fatalf("Application/JSON login status = %d, want 422 (vague credentials)", resp.StatusCode)
 	}
 
-	// logout takes no body — a plain POST must reach it.
+	// logout also requires JSON — its response expires the cookie, which
+	// is exactly what a cross-site forced-logout POST would exploit. A
+	// bodyless JSON POST works; a bodyless form POST does not.
+	req, _ = http.NewRequest(http.MethodPost, srv.URL+"/api/v1/auth/logout", nil)
+	req.Header.Set("Content-Type", "application/json")
+	resp, err = srv.Client().Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp.Body.Close()
+	if resp.StatusCode != 204 {
+		t.Fatalf("bodyless JSON logout status = %d, want 204", resp.StatusCode)
+	}
 	resp, err = srv.Client().Post(srv.URL+"/api/v1/auth/logout", "", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 	resp.Body.Close()
-	if resp.StatusCode == 415 {
-		t.Fatal("bodyless logout was rejected")
+	if resp.StatusCode != 415 {
+		t.Fatalf("bodyless non-JSON logout status = %d, want 415", resp.StatusCode)
 	}
 }
