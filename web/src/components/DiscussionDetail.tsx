@@ -527,7 +527,7 @@ function ThreadItem({
             </span>
           </div>
           <div className="form-actions">
-            <button type="submit" className="btn" disabled={pending || !ui.draft.trim()}>
+            <button type="submit" className="btn" disabled={pending || !ui.replyDraft.trim()}>
               {m.comments.reply}
             </button>
           </div>
