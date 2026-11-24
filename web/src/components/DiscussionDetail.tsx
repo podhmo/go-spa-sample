@@ -29,9 +29,10 @@ const editReducer = (s: EditUI, a: EditAction): EditUI => {
     case 'draft':
       return { ...s, draft: a.value }
     case 'reply':
-      // The reply form shares `draft` with the edit forms — always open
-      // it empty so a previous edit/reply body is never reposted.
-      return { ...s, replying: a.replying, draft: '' }
+      // Pure toggle: collapsing must not throw the draft away, and
+      // reopening restores it. A successful submit clears via 'submitted',
+      // and 'start-edit' overwrites the shared draft with the edit body.
+      return { ...s, replying: a.replying }
   }
 }
 
