@@ -147,8 +147,11 @@ function parseDiff(text: string): DiffFile[] {
   return files
 }
 
-type FormUI = { openAt: string | null }
-type FormAction = { type: 'toggle'; key: string | null }
+// The open draft anchors to a coordinate AND that row's text when the
+// form opened: a rewritten diff can put different code at the same
+// path:side:line, and a retry must not attach the draft to it.
+type FormUI = { openAt: { key: string; text: string } | null }
+type FormAction = { type: 'toggle'; open: { key: string; text: string } | null }
 
 // The files tab: unified diff with a comment button on every real line,
 // expanding an inline form that posts {body, path, line, side}.
@@ -165,20 +168,22 @@ export function PullFiles({
   onComment?: (input: PRCommentInput) => Promise<void> | void
 }) {
   const [ui, dispatch] = useReducer(
-    (s: FormUI, a: FormAction): FormUI => ({ openAt: s.openAt === a.key ? null : a.key }),
+    (s: FormUI, a: FormAction): FormUI => ({
+      openAt: s.openAt?.key === a.open?.key ? null : a.open,
+    }),
     { openAt: null },
   )
   const files = parseDiff(diff)
   // A different diff (force-push, new commits) can shift every row. An
-  // open draft whose anchor row disappeared no longer points at real
-  // code — close it rather than let a retry attach the old text to
-  // whatever now sits there. The same anchor row keeps the draft.
+  // open draft whose anchor row disappeared — or whose row now holds
+  // different text — no longer points at the code it was written for:
+  // close it rather than let a retry attach it to replacement code.
   useEffect(() => {
     if (ui.openAt === null) return
-    const alive = files.some((f) =>
-      f.lines.some((l, i) => `${f.path}:${l.side}:${l.line ?? i}` === ui.openAt),
-    )
-    if (!alive) dispatch({ type: 'toggle', key: null })
+    const row = files
+      .flatMap((f) => f.lines.map((l, i) => ({ key: `${f.path}:${l.side}:${l.line ?? i}`, l })))
+      .find((r) => r.key === ui.openAt?.key)
+    if (!row || row.l.text !== ui.openAt.text) dispatch({ type: 'toggle', open: null })
     // `files` reparses every render; diff + openAt are the triggers.
     // oxlint-disable-next-line react/exhaustive-deps
   }, [diff, ui.openAt])
@@ -196,7 +201,7 @@ export function PullFiles({
             <tbody>
               {f.lines.map((l, i) => {
                 const key = `${f.path}:${l.side}:${l.line ?? i}`
-                const formOpen = ui.openAt === key
+                const formOpen = ui.openAt?.key === key
                 return (
                   <DiffRow
                     key={key}
@@ -204,7 +209,7 @@ export function PullFiles({
                     formOpen={formOpen}
                     pending={pending}
                     canComment={onComment !== undefined && l.path !== undefined}
-                    onToggle={() => dispatch({ type: 'toggle', key })}
+                    onToggle={() => dispatch({ type: 'toggle', open: { key, text: l.text } })}
                     onSubmit={async (body) => {
                       if (l.path && l.line && l.side) {
                         await onComment?.({ body, path: l.path, line: l.line, side: l.side })

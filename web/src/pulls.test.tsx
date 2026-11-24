@@ -279,6 +279,35 @@ describe('route: /pulls/{id}/files', () => {
     expect(page.getByLabelText('comment')).toHaveValue('draft survives')
   })
 
+  it('drops the draft when a refreshed diff puts different code at its anchor', async () => {
+    // Force-push rewrites the line at the same path:side:line — a retry
+    // must not attach the old draft to the replacement code.
+    let diff = DIFF
+    stubAPI((url, init) => {
+      if (url.endsWith('/diff')) return { body: diff }
+      if (url.endsWith('/comments') && init?.method === 'POST') {
+        return {
+          status: 422,
+          body: {
+            error: {
+              message: 'Validation failed.',
+              fields: { anchor: 'Anchor must be a commit on the head branch.' },
+            },
+          },
+        }
+      }
+      return { body: { pull_request: pull(), comments: [], commits: [] } }
+    })
+    const { router } = renderAt('/pulls/1/files')
+    await page.getByRole('button', { name: 'Comment on a.txt line 2 (right side)' }).click()
+    await page.getByLabelText('comment').fill('stale draft')
+    await page.getByRole('button', { name: 'Comment', exact: true }).click()
+    await expect.element(page.getByRole('alert')).toBeInTheDocument()
+    diff = DIFF.replace('+added line', '+rewritten line')
+    await router.invalidate()
+    await expect.poll(() => page.getByLabelText('comment').elements().length).toBe(0)
+  })
+
   it('ignores a second Ctrl+Enter while the first comment is in flight', async () => {
     let posts = 0
     let release: (() => void) | undefined
