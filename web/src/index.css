@@ -1965,3 +1965,52 @@ fieldset.field:has(:is(:user-invalid, [aria-invalid='true'])) {
   padding: 0.75rem;
   white-space: normal;
 }
+
+/* Navigation progress (spinner guide: indeterminate <progress>) — the
+   SPA counterpart of the browser's own loading chrome during a
+   full-page load. Delayed fade-in keeps fast navigations flash-free. */
+.route-progress {
+  position: fixed;
+  inset-inline: 0;
+  top: 0;
+  z-index: 100;
+  width: 100%;
+  height: 3px;
+  border: 0;
+  opacity: 0;
+  animation: route-progress-in 0.15s 0.15s forwards;
+}
+
+.route-progress::-webkit-progress-bar {
+  background: transparent;
+}
+
+.route-progress::-webkit-progress-value {
+  background: var(--accent);
+}
+
+.route-progress::-moz-progress-bar {
+  background: var(--accent);
+}
+
+@keyframes route-progress-in {
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .route-progress {
+    animation: none;
+    opacity: 1;
+  }
+}
+
+/* Off-screen list items / comments skip layout+paint until needed
+   (faster-spa-view-transitions guide); `auto` keeps intrinsic size
+   once measured so the scrollbar stays stable. */
+.issue-row,
+.comment {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 4rem;
+}

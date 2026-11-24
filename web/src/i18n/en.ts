@@ -25,6 +25,7 @@ export const en = {
     breadcrumb: 'Breadcrumb',
     backToTop: '↑ Top',
     backToTopAria: 'Back to top',
+    loading: 'Loading',
   },
   error: {
     notFoundTitle: '404 — not found',

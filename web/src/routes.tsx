@@ -10,6 +10,7 @@ import {
   useNavigate,
   useParams,
   useRouter,
+  useRouterState,
   type ErrorComponentProps,
 } from '@tanstack/react-router'
 import { useReducer, useTransition } from 'react'
@@ -32,6 +33,7 @@ import { PRCommentList, PullCommitList, PullDetail } from './components/PullDeta
 import { PullFiles } from './components/PullFiles'
 import { WorkspaceList } from './components/Workspaces'
 import { fmt, getLocale, setLocale, useMessages, type Locale } from './i18n'
+import { usePageTitle } from './page-title'
 
 // A scoped API call: a plain 404 becomes the router's notFound, while a
 // cross-scope 404 names the owning workspace in error.workspace — the
@@ -211,8 +213,12 @@ const rootRoute = createRootRoute({
     const { ws } = useParams({ strict: false })
     const { pulls, user } = rootRoute.useLoaderData()
     const m = useMessages()
+    const loc = useLocation()
+    usePageTitle(loc.pathname, m)
+    const isPending = useRouterState({ select: (s) => s.status === 'pending' })
     return (
       <>
+        {isPending && <progress className="route-progress" aria-label={m.chrome.loading} />}
         <a className="skip-link" href="#main-content">
           {m.nav.skip}
         </a>

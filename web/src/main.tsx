@@ -7,7 +7,25 @@ import { routeTree } from './routes.tsx'
 
 setupFieldErrorSync()
 
-const router = createRouter({ routeTree })
+const router = createRouter({
+  routeTree,
+  // MPA freebies the SPA has to opt into: browser-grade scroll
+  // restoration, and hover/focus-intent preloading of the target
+  // route's loader so navigations land warm.
+  scrollRestoration: true,
+  defaultPreload: 'intent',
+})
+
+// Full-page loads move focus to the top of the new document; a
+// client-side nav does not, so move it to the main landmark when the
+// path (not just search or hash) changes.
+router.subscribe('onResolved', ({ fromLocation, toLocation }) => {
+  if (fromLocation && fromLocation.pathname !== toLocation.pathname) {
+    requestAnimationFrame(() => {
+      document.getElementById('main-content')?.focus({ preventScroll: true })
+    })
+  }
+})
 
 declare module '@tanstack/react-router' {
   interface Register {
