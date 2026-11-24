@@ -360,9 +360,12 @@ func prDiff(ctx context.Context, o Options, args []string) error {
 	}
 	defer closeQuietly(closer)
 	if rc != nil {
-		diff, err := rc.PullDiff(ctx, id)
+		diff, truncated, err := rc.PullDiffTruncated(ctx, id)
 		if err != nil {
 			return err
+		}
+		if truncated {
+			fmt.Fprintln(o.Stderr, "warning: diff truncated by the server's output cap")
 		}
 		fmt.Fprint(o.Stdout, diff)
 		return nil
@@ -385,9 +388,12 @@ func prDiff(ctx context.Context, o Options, args []string) error {
 			to = gitrepo.PinRef(pr.ID)
 		}
 	}
-	diff, _, err := repo.Diff(ctx, from, to)
+	diff, truncated, err := repo.Diff(ctx, from, to)
 	if err != nil {
 		return err
+	}
+	if truncated {
+		fmt.Fprintln(o.Stderr, "warning: diff truncated by the output cap")
 	}
 	fmt.Fprint(o.Stdout, diff)
 	return nil
@@ -441,6 +447,12 @@ func prCreate(ctx context.Context, o Options, args []string) error {
 		var normErr error
 		if in.BaseRef, normErr = repo.NormalizeRef(ctx, *base); normErr != nil {
 			return fmt.Errorf("base: %w", normErr)
+		}
+		// Merge must be able to update the base ref, so it must be a
+		// local branch — a tag, sha, or remote-tracking ref is accepted
+		// by NormalizeRef but can never merge.
+		if !strings.HasPrefix(in.BaseRef, "refs/heads/") {
+			return usageError{msg: fmt.Sprintf("--base must be a local branch, got %q", *base)}
 		}
 		if in.HeadRef, normErr = repo.NormalizeRef(ctx, headRef); normErr != nil {
 			return fmt.Errorf("head: %w", normErr)
@@ -509,6 +521,11 @@ func prEdit(ctx context.Context, o Options, args []string) error {
 			return err
 		}
 	}
+	// Same validation the API applies — local mode must not write
+	// titles/bodies the server would reject on the same data.
+	if fe := store.ValidatePullRequestInput(in); fe.Any() {
+		return usageError{msg: fmt.Sprintf("%v", fe)}
+	}
 	if err := b.UpdatePullRequest(ctx, id, in); err != nil {
 		return err
 	}
@@ -549,12 +566,21 @@ func prStateChange(ctx context.Context, o Options, action string, args []string)
 				return errors.New("cli: only an open pull request can be closed")
 			}
 			headSHA, _ := repo.RevParse(ctx, pr.HeadRef) // deleted head closes anyway
+			if headSHA == "" {
+				// The head branch is already gone — keep the recorded
+				// shas instead of overwriting them with empty values,
+				// or view/diff lose the PR's history.
+				headSHA = pr.HeadSHA
+			}
 			if headSHA != "" {
 				if err := repo.UpdatePin(ctx, id, headSHA); err != nil {
 					return err
 				}
 			}
 			mergeBase, _ := repo.MergeBase(ctx, pr.BaseRef, pr.HeadRef)
+			if mergeBase == "" {
+				mergeBase = pr.MergeBaseSHA
+			}
 			err = b.ClosePullRequest(ctx, id, headSHA, mergeBase)
 		}
 	case "reopen":
@@ -588,9 +614,9 @@ func prMerge(ctx context.Context, o Options, args []string) error {
 	if !gitrepo.MergeMethod(*method).Valid() {
 		return usageError{msg: fmt.Sprintf("--method must be merge|squash|rebase, got %q", *method)}
 	}
-	id, err := strconv.ParseInt(rest[0], 10, 64)
-	if err != nil || id < 1 {
-		return usageError{msg: fmt.Sprintf("invalid pull request id %q", rest[0])}
+	id, err := argNumber(rest, 0, "pull request")
+	if err != nil {
+		return err
 	}
 	b, closer, repo, rc, err := o.prEnv(ctx, bf, *repoF)
 	if err != nil {

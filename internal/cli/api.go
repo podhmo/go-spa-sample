@@ -49,7 +49,8 @@ func apiCmd(ctx context.Context, o Options, args []string) error {
 	warnPlaintext(o.Stderr, bf.server, bf.token)
 
 	// Paths resolve under /api/v1 like gh api resolves under its API host,
-	// so both `api issues` and `api /issues` hit the JSON endpoint.
+	// so both `api w/default/issues` and `api /w/default/issues` hit the
+	// JSON endpoint.
 	path := strings.TrimPrefix(rest[0], "/api/v1/")
 	path = "/api/v1/" + strings.TrimPrefix(path, "/")
 
