@@ -1,17 +1,19 @@
 import { page } from 'vitest/browser'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { setLocale } from './i18n'
 import { renderAt, stubAPI } from './test-utils'
 
-// Pin the starting locale so tests don't depend on the browser's
-// navigator.language; the 'lang' key is what i18n.tsx resolves first.
+// setLocale pins the store regardless of navigator.language; localStorage
+// alone wouldn't — i18n.tsx caches the detected locale at module load.
 afterEach(() => {
+  setLocale('en')
   localStorage.removeItem('lang')
   vi.unstubAllGlobals()
 })
 
 describe('locale switching', () => {
   it('switches nav text to Japanese via the lang switch', async () => {
-    localStorage.setItem('lang', 'en')
+    setLocale('en')
     stubAPI((url) => {
       if (url.includes('/labels')) return { body: { labels: [] } }
       if (url.includes('/pulls')) return { status: 404, body: {} } // availability probe
