@@ -34,14 +34,15 @@ useReducer / Vitest / playwright-cli) を使った試行錯誤が完全に行え
   - [x] **playwright-cli での動作確認**: `/` で `/api/ping` の表示、
     `/counter` で POST→invalidate の反映をブラウザで確認
     (`docs/sketch/ja/spike-counter.png`)
-- [x] **Vitest 導入**: `web/` に vitest + jsdom + testing-library、
-  `npm test` で smoke test 通過
-- [ ] **ライブラリ用法の整理**: modern-web-guidance の使い方、
-  Async React (Suspense/`use`/transitions)、React 本体、TanStack
-  Router/Query/Form あたりのドキュメントを context7 で収集し
-  `docs/sketch/ja/` にまとめる
+- [x] **Vitest 導入**: `web/` に vitest を入れ `npm test` が通る。
+  **browser mode 採用** (jsdomではなく実Chrome、playwright provider +
+  `channel: 'chrome'` でDL不要) — componentの見た目確認はこれを主軸にし
+  Storybookは見送り (詳細: `docs/sketch/ja/libraries.md`)
+- [x] **ライブラリ用法の整理**: context7 で TanStack Router/Query/Form、
+  React (Suspense/`use`/`useTransition`) のdocsを収集し
+  `docs/sketch/ja/libraries.md` に整理。使い方は `dev-workflow.md` にも
 - [ ] **context7 OAuth login**: `devin mcp login context7` をブラウザで実行
-  (環境セットアップの残件・ユーザー操作)
+  (匿名利用は可能だがレート制限あり・ユーザー操作)
 
 ### 開発 (far goal)
 
