@@ -28,6 +28,10 @@ TODO.md「本番構成の決定」の検討メモ。現状のdev構成と2案の
 - 運用: バイナリ1個 + DB ファイル + (pulls 用) git repo
 - MPA版 (go-classic-mpa-sample) と同じ単一バイナリ構成になり、
   移植元との思想が一致する
+- 未ログインの着地に注意: dev token なしだと index route の
+  `homeSlug` が保護された workspace 一覧を叩いて 401 → エラーページ
+  に落ち、login へ誘導しない (A/B 共通の既存課題。ログイン誘導は
+  別途必要)
 
 ## 案B: 別配備 + Bearer token (SPA は別オリジン)
 
@@ -35,10 +39,16 @@ SPA を静的ホスト/CDN に置き、API は別オリジン。
 
 - 必要な実装 (Aより大きい):
   - API 側に CORS 対応 (origin allowlist)
-  - cookie セッションは SameSite=None + Secure 必須 →
-    CSRF 対策 (token or Origin 検証) が要る
-  - または Bearer のみ運用 → api_tokens を JS に保持
-    (XSS 露出が増える。localStorage かメモリか)
+  - cookie セッション運用なら: fetchJSON/fetchText に
+    `credentials: 'include'` が必須 (現在はデフォルト same-origin)。
+    SameSite=None + Secure が要るのは**別サイト** (eTLD+1 が違う)
+    場合のみ — 別オリジンでも同一サイトなら不要
+  - SameSite=None 運用には CSRF 対策 (token or Origin 検証) が要る
+  - Bearer のみ運用なら: ブラウザ向けの token 発行経路がない。
+    login/register は cookie を返すだけで、api_tokens の発行は
+    ローカル CLI 経路のみ → 発行エンドポイントか管理UIが要る。
+    加えて token を JS に保持する設計は XSS 露出が増える
+    (localStorage かメモリか)
   - SPA 側に API base URL 設定 (環境ごとのビルド or runtime config)
 - 運用: デプロイが2系統 (静的配信 + API)。CDN に乗せられるのは利点
 - 単一ユーザー/小規模用途では複雑さが見合わない
