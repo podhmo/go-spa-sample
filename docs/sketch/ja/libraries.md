@@ -96,8 +96,8 @@ issue tracker のSPA実装で使うライブラリ・スキルの使いどころ
 | --- | --- | --- |
 | UI確認 (component単位) | Vitest browser mode | Storybook (将来) |
 | UI確認 (アプリ全体) | playwright-cli | — |
-| サーバーデータの読み込み | Router loader | TanStack Query |
-| 更新後の再取得 | `router.invalidate()` | `queryClient.invalidateQueries()` |
+| サーバーデータの読み込み | Router loader | TanStack Query (評価済み・見送り: `docs/sketch/ja/tanstack-query.md`) |
+| 更新後の再取得 | `router.invalidate()` | `invalidateQueries()` (Query採用時) |
 | ローカルUI状態 | `useReducer` | (useStateは禁止) |
 | pending表示 | `useTransition` / loader保留中のUI | `useMutation.isPending` |
 | フォーム | 素のform+useReducer → 複雑化したら TanStack Form | — |

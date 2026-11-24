@@ -55,6 +55,6 @@ useReducer / Vitest / playwright-cli) を使った試行錯誤が完全に行え
 - [ ] **discussions/pulls の移植判断**: store には残存。機能 spec は
   `docs/ja/features.md` 参照
 - [ ] **`cmd/fakeapi` の撤去**: スパイク用コードの整理
-- [ ] **サーバー状態管理の再検討**: loader + `router.invalidate()` 継続か
-  TanStack Query 導入か
+- [x] **サーバー状態管理の再検討**: `sketch/tanstack-query` で評価実装済み。
+  判定は「現状は loader 継続」(再検討条件は `docs/sketch/ja/tanstack-query.md`)
 - [ ] **i18n**: UI 文言の日本語化方針
