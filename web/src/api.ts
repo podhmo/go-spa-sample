@@ -50,6 +50,72 @@ export type IssueInput = { title: string; body: string; label_ids?: number[] }
 
 export type LabelInput = { name: string; color: string; kind: string; shared: boolean }
 
+export type DiscussionCategory = {
+  id: number
+  name: string
+  slug: string
+  description: string
+  format: 'open' | 'qa'
+}
+
+export type Discussion = {
+  id: number
+  title: string
+  body: string
+  category: DiscussionCategory
+  labels: Label[]
+  author: User | null
+  answered: boolean
+  created_at: string
+  updated_at: string
+}
+
+// A reply sits one level under a thread (the MPA's "comments on a
+// comment"); threads and replies share the moderation verbs.
+export type DiscussionReply = {
+  id: number
+  thread_id: number
+  body: string
+  author: User | null
+  created_at: string
+} & Moderation
+
+export type DiscussionThread = {
+  id: number
+  is_answer: boolean
+  body: string
+  author: User | null
+  created_at: string
+  comments: DiscussionReply[]
+} & Moderation
+
+export type DiscussionList = {
+  discussions: Discussion[]
+  total: number
+  page: number
+  per_page: number
+}
+
+export type DiscussionDetail = { discussion: Discussion; threads: DiscussionThread[] }
+
+// category_id wins when both are given; category names the slug for
+// convenience (the API resolves it to the id).
+export type DiscussionInput = {
+  title: string
+  body: string
+  category_id?: number | undefined
+  category?: string | undefined
+  label_ids?: number[] | undefined
+}
+
+export type DiscussionListFilter = {
+  category?: string | undefined
+  answered?: string | undefined
+  q?: string | undefined
+  sort?: string | undefined
+  page?: number | undefined
+}
+
 export type Workspace = {
   id: number
   slug: string
@@ -196,6 +262,79 @@ export const api = {
   // name/kind/scope (the store revives the archived row, updating color).
   archiveLabel: (ws: string, id: number) =>
     fetchJSON<void>(`/api/v1/w/${ws}/labels/${id}`, { method: 'DELETE' }),
+  listDiscussionCategories: () =>
+    fetchJSON<{ categories: DiscussionCategory[] }>('/api/v1/discussion-categories'),
+  listDiscussions: (ws: string, f: DiscussionListFilter) =>
+    fetchJSON<DiscussionList>(
+      `/api/v1/w/${ws}/discussions${qs({ category: f.category, answered: f.answered, q: f.q, sort: f.sort, page: f.page })}`,
+    ),
+  getDiscussion: (ws: string, id: number) =>
+    fetchJSON<DiscussionDetail>(`/api/v1/w/${ws}/discussions/${id}`),
+  createDiscussion: (ws: string, input: DiscussionInput) =>
+    fetchJSON<{ discussion: Discussion }>(`/api/v1/w/${ws}/discussions`, {
+      method: 'POST',
+      ...json(input),
+    }),
+  updateDiscussion: (ws: string, id: number, input: Partial<DiscussionInput>) =>
+    fetchJSON<{ discussion: Discussion }>(`/api/v1/w/${ws}/discussions/${id}`, {
+      method: 'PATCH',
+      ...json(input),
+    }),
+  deleteDiscussion: (ws: string, id: number) =>
+    fetchJSON<void>(`/api/v1/w/${ws}/discussions/${id}`, { method: 'DELETE' }),
+  getDiscussionMarkdown: (ws: string, id: number) =>
+    fetchText(`/api/v1/w/${ws}/discussions/${id}/markdown`),
+  createThread: (ws: string, id: number, body: string) =>
+    fetchJSON<{ thread: DiscussionThread }>(`/api/v1/w/${ws}/discussions/${id}/threads`, {
+      method: 'POST',
+      ...json({ body }),
+    }),
+  updateThread: (ws: string, id: number, tid: number, body: string) =>
+    fetchJSON<{ thread: DiscussionThread }>(`/api/v1/w/${ws}/discussions/${id}/threads/${tid}`, {
+      method: 'PATCH',
+      ...json({ body }),
+    }),
+  deleteThread: (ws: string, id: number, tid: number) =>
+    fetchJSON<void>(`/api/v1/w/${ws}/discussions/${id}/threads/${tid}`, { method: 'DELETE' }),
+  setThreadAnswer: (ws: string, id: number, tid: number, answer: boolean) =>
+    fetchJSON<{ thread: DiscussionThread }>(
+      `/api/v1/w/${ws}/discussions/${id}/threads/${tid}/answer`,
+      { method: 'POST', ...json({ answer }) },
+    ),
+  hideThread: (ws: string, id: number, tid: number, reason: string) =>
+    fetchJSON<{ thread: DiscussionThread }>(
+      `/api/v1/w/${ws}/discussions/${id}/threads/${tid}/hide`,
+      { method: 'POST', ...json({ reason }) },
+    ),
+  unhideThread: (ws: string, id: number, tid: number) =>
+    fetchJSON<{ thread: DiscussionThread }>(
+      `/api/v1/w/${ws}/discussions/${id}/threads/${tid}/unhide`,
+      { method: 'POST', ...json({}) },
+    ),
+  createReply: (ws: string, id: number, tid: number, body: string) =>
+    fetchJSON<{ reply: DiscussionReply }>(
+      `/api/v1/w/${ws}/discussions/${id}/threads/${tid}/comments`,
+      { method: 'POST', ...json({ body }) },
+    ),
+  updateReply: (ws: string, id: number, tid: number, cid: number, body: string) =>
+    fetchJSON<{ reply: DiscussionReply }>(
+      `/api/v1/w/${ws}/discussions/${id}/threads/${tid}/comments/${cid}`,
+      { method: 'PATCH', ...json({ body }) },
+    ),
+  deleteReply: (ws: string, id: number, tid: number, cid: number) =>
+    fetchJSON<void>(`/api/v1/w/${ws}/discussions/${id}/threads/${tid}/comments/${cid}`, {
+      method: 'DELETE',
+    }),
+  hideReply: (ws: string, id: number, tid: number, cid: number, reason: string) =>
+    fetchJSON<{ reply: DiscussionReply }>(
+      `/api/v1/w/${ws}/discussions/${id}/threads/${tid}/comments/${cid}/hide`,
+      { method: 'POST', ...json({ reason }) },
+    ),
+  unhideReply: (ws: string, id: number, tid: number, cid: number) =>
+    fetchJSON<{ reply: DiscussionReply }>(
+      `/api/v1/w/${ws}/discussions/${id}/threads/${tid}/comments/${cid}/unhide`,
+      { method: 'POST', ...json({}) },
+    ),
   listWorkspaces: () => fetchJSON<{ workspaces: Workspace[] }>('/api/v1/workspaces'),
   createWorkspace: (input: WorkspaceInput) =>
     fetchJSON<{ workspace: Workspace }>('/api/v1/workspaces', {
