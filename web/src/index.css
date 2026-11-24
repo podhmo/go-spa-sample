@@ -1758,3 +1758,172 @@ fieldset.field:has(:is(:user-invalid, [aria-invalid='true'])) {
     padding: 9px 16px;
   }
 }
+
+/* --- Pull requests -------------------------------------------------------
+   GitHub's palette: open = green, merged = purple (the --closed pair),
+   closed-without-merge = neutral gray. */
+
+.badge-pr-open {
+  color: var(--open);
+  background: var(--open-bg);
+  border-color: var(--open-border);
+}
+
+.badge-pr-open::before {
+  border: 2px solid var(--open);
+  background: transparent;
+}
+
+.badge-pr-merged {
+  color: var(--closed);
+  background: var(--closed-bg);
+  border-color: var(--closed-border);
+}
+
+.badge-pr-merged::before {
+  background: var(--closed);
+}
+
+.badge-pr-closed {
+  color: var(--text-muted);
+  background: transparent;
+  border-color: var(--text-muted);
+}
+
+.badge-pr-closed::before {
+  border: 2px solid var(--text-muted);
+  background: transparent;
+}
+
+.badge-pr-conflict {
+  color: var(--danger);
+  background: var(--danger-bg);
+  border-color: var(--danger);
+}
+
+.badge-pr-conflict::before {
+  background: var(--danger);
+}
+
+.pr-ref,
+.pr-sha {
+  font-size: 0.85em;
+  padding: 0.1em 0.4em;
+  border-radius: 6px;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.pull-refs-row {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.pull-refs-row .field {
+  flex: 1 1 12rem;
+}
+
+.merge-method {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 400;
+  padding: 0.25rem 0;
+}
+
+.pull-commits h2,
+.comments h2 {
+  margin-block-end: 0.75rem;
+}
+
+.diff-snippet {
+  font-size: 0.8rem;
+  line-height: 1.4;
+  padding: 0.5rem 0.75rem;
+  margin: 0.25rem 0 0.5rem;
+  border-radius: 6px;
+  overflow-x: auto;
+  background: var(--accent-soft);
+  white-space: pre;
+}
+
+/* Files changed tab: a table so the comment "+" button can sit in its
+   own column beside each anchorable line. */
+.diff-files {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.diff-file-name {
+  font-size: 0.95rem;
+  margin-block-end: 0.5rem;
+}
+
+.diff-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.diff-table td {
+  padding: 0 0.5rem;
+  vertical-align: top;
+  white-space: pre;
+}
+
+.diff-comment-cell {
+  width: 2rem;
+  text-align: end;
+  padding-inline-end: 0 !important;
+}
+
+.diff-add-comment {
+  visibility: hidden;
+  width: 1.5rem;
+  height: 1.5rem;
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.diff-line:hover .diff-add-comment,
+.diff-add-comment:focus-visible,
+.diff-add-comment[aria-expanded='true'] {
+  visibility: visible;
+}
+
+.diff-lineno {
+  width: 4rem;
+  text-align: end;
+  color: var(--text-muted);
+  user-select: none;
+}
+
+.diff-add {
+  background: color-mix(in srgb, var(--open) 12%, transparent);
+}
+
+.diff-del {
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
+}
+
+.diff-meta {
+  color: var(--text-muted);
+  background: var(--accent-soft);
+}
+
+.diff-comment-form td {
+  padding: 0.75rem;
+  white-space: normal;
+}

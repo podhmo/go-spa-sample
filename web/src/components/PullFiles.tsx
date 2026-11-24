@@ -1,0 +1,241 @@
+import { useReducer } from 'react'
+import type { PRCommentInput } from '../api'
+import { submitOnCtrlEnter } from '../enter-submit'
+
+// Parsed unified diff, one row per source line.
+type DiffLine = {
+  kind: 'ctx' | 'add' | 'del' | 'meta'
+  text: string
+  // Path + line number this row anchors a review comment to (right = new
+  // side, left = old side). Undefined on hunk/file headers.
+  path?: string
+  line?: number
+  side?: 'left' | 'right'
+}
+
+type DiffFile = { path: string; oldPath?: string; lines: DiffLine[] }
+
+// parseDiff splits `git diff`-style output into per-file hunks and maps
+// every context/add/del row to its anchorable (path, line, side). The
+// server wants the post-image path and the line number on that side.
+function parseDiff(text: string): DiffFile[] {
+  const files: DiffFile[] = []
+  let cur: DiffFile | undefined
+  let path = ''
+  let oldNo = 0
+  let newNo = 0
+  let inHunk = false
+  // One trailing newline is an artifact of the diff text itself; blank
+  // context lines inside a hunk are emitted as bare empty lines and
+  // must still consume both counters.
+  for (const raw of text.replace(/\n$/, '').split('\n')) {
+    if (raw.startsWith('diff --git ')) {
+      const m = /^diff --git a\/(.+) b\/(.+)$/.exec(raw)
+      path = m?.[2] ?? ''
+      cur = { path, lines: [] }
+      files.push(cur)
+      inHunk = false
+      continue
+    }
+    if (!cur) continue
+    if (raw.startsWith('@@ ')) {
+      const m = /^@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@/.exec(raw)
+      if (m) {
+        oldNo = Number(m[1])
+        newNo = Number(m[2])
+      }
+      inHunk = true
+      cur.lines.push({ kind: 'meta', text: raw })
+      continue
+    }
+    // Between "diff --git" and the first "@@" sit file headers (index,
+    // modes, ---/+++ paths) — render them, but they anchor nothing.
+    if (!inHunk) {
+      if (raw.startsWith('--- ')) {
+        const m = /^--- a\/(.+)$/.exec(raw)
+        if (m?.[1]) cur.oldPath = m[1]
+      }
+      if (raw !== '') cur.lines.push({ kind: 'meta', text: raw })
+      continue
+    }
+    if (raw.startsWith('+')) {
+      cur.lines.push({ kind: 'add', text: raw, path, line: newNo, side: 'right' })
+      newNo++
+      continue
+    }
+    if (raw.startsWith('-')) {
+      cur.lines.push({
+        kind: 'del',
+        text: raw,
+        path: cur.oldPath ?? path,
+        line: oldNo,
+        side: 'left',
+      })
+      oldNo++
+      continue
+    }
+    // "\\ No newline" markers are hunk metadata, not content rows.
+    if (raw.startsWith('\\') || (raw !== '' && !raw.startsWith(' '))) {
+      cur.lines.push({ kind: 'meta', text: raw })
+      continue
+    }
+    cur.lines.push({ kind: 'ctx', text: raw, path, line: newNo, side: 'right' })
+    oldNo++
+    newNo++
+  }
+  return files
+}
+
+type FormUI = { openAt: string | null }
+type FormAction = { type: 'toggle'; key: string | null }
+
+// The files tab: unified diff with a comment button on every real line,
+// expanding an inline form that posts {body, path, line, side}.
+export function PullFiles({
+  diff,
+  pending,
+  onComment,
+}: {
+  diff: string
+  pending?: boolean | undefined
+  onComment?: (input: PRCommentInput) => void
+}) {
+  const [ui, dispatch] = useReducer(
+    (s: FormUI, a: FormAction): FormUI => ({ openAt: s.openAt === a.key ? null : a.key }),
+    { openAt: null },
+  )
+  const files = parseDiff(diff)
+  if (files.length === 0) {
+    return <p className="muted">No changes.</p>
+  }
+  return (
+    <div className="diff-files">
+      {files.map((f) => (
+        <section className="diff-file" key={f.path}>
+          <h2 className="diff-file-name">
+            <code>{f.path}</code>
+          </h2>
+          <table className="diff-table">
+            <tbody>
+              {f.lines.map((l, i) => {
+                const key = `${f.path}:${l.side}:${l.line ?? i}`
+                const formOpen = ui.openAt === key
+                return (
+                  <DiffRow
+                    key={key}
+                    line={l}
+                    formOpen={formOpen}
+                    pending={pending}
+                    canComment={onComment !== undefined && l.path !== undefined}
+                    onToggle={() => dispatch({ type: 'toggle', key })}
+                    onSubmit={(body) => {
+                      if (l.path && l.line && l.side) {
+                        onComment?.({ body, path: l.path, line: l.line, side: l.side })
+                      }
+                      dispatch({ type: 'toggle', key: null })
+                    }}
+                  />
+                )
+              })}
+            </tbody>
+          </table>
+        </section>
+      ))}
+    </div>
+  )
+}
+
+function DiffRow({
+  line,
+  formOpen,
+  pending,
+  canComment,
+  onToggle,
+  onSubmit,
+}: {
+  line: DiffLine
+  formOpen: boolean
+  pending?: boolean | undefined
+  canComment: boolean
+  onToggle: () => void
+  onSubmit: (body: string) => void
+}) {
+  if (line.kind === 'meta') {
+    return (
+      <tr className="diff-line diff-meta">
+        <td className="diff-comment-cell" />
+        <td colSpan={2}>
+          <code>{line.text}</code>
+        </td>
+      </tr>
+    )
+  }
+  return (
+    <>
+      <tr className={`diff-line diff-${line.kind}`}>
+        <td className="diff-comment-cell">
+          {canComment && (
+            <button
+              type="button"
+              className="diff-add-comment"
+              onClick={onToggle}
+              aria-expanded={formOpen}
+              aria-label={`Comment on ${line.path} line ${line.line} (${line.side} side)`}
+            >
+              +
+            </button>
+          )}
+        </td>
+        <td className="diff-lineno">
+          <code>{line.line}</code>
+        </td>
+        <td className="diff-text">
+          <code>{line.text}</code>
+        </td>
+      </tr>
+      {formOpen && (
+        <tr className="diff-line diff-comment-form">
+          <td />
+          <td colSpan={2}>
+            <form
+              aria-label={`comment on ${line.path} line ${line.line}`}
+              onSubmit={(e) => {
+                e.preventDefault()
+                onSubmit(String(new FormData(e.currentTarget).get('body') ?? ''))
+              }}
+            >
+              <div className="field">
+                <label
+                  htmlFor={`dc-${line.path}-${line.side}-${line.line}`}
+                  className="visually-hidden"
+                >
+                  comment
+                </label>
+                <textarea
+                  id={`dc-${line.path}-${line.side}-${line.line}`}
+                  name="body"
+                  rows={3}
+                  required
+                  onKeyDown={submitOnCtrlEnter}
+                  data-error={`dc-${line.path}-${line.line}-error`}
+                  placeholder="Leave a review comment…"
+                />
+                <span id={`dc-${line.path}-${line.line}-error`} className="error-msg">
+                  Body is required.
+                </span>
+              </div>
+              <div className="form-actions">
+                <button type="button" className="btn btn-quiet" onClick={onToggle}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn btn-primary" disabled={pending}>
+                  Comment
+                </button>
+              </div>
+            </form>
+          </td>
+        </tr>
+      )}
+    </>
+  )
+}
