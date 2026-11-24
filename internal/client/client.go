@@ -11,6 +11,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"strings"
 )
 
@@ -113,7 +114,9 @@ func (c *Client) wsPath(p string) string {
 	if c.ws == "" {
 		return "/" + p
 	}
-	return "/w/" + c.ws + "/" + p
+	// PathEscape: a pasted slug containing ? or # would otherwise
+	// truncate the path and silently address a different resource.
+	return "/w/" + url.PathEscape(c.ws) + "/" + p
 }
 
 // Error is a non-2xx API response with the server's error message. It is
