@@ -24,7 +24,15 @@ export function watchLeaveGuardReset(router: {
 // releases once the form is submitted or the edits are reverted.
 export function useLeaveGuard(dirty: boolean, message: string) {
   useBlocker({
-    shouldBlockFn: () => {
+    shouldBlockFn: ({ current, next }) => {
+      // Hash-only moves (permalink jumps after posting) leave the page's
+      // data behind untouched — they are not "leaving".
+      if (
+        next.pathname === current.pathname &&
+        JSON.stringify(next.search) === JSON.stringify(current.search)
+      ) {
+        return false
+      }
       if (latch.approved) return false
       const allow = window.confirm(message)
       if (allow) latch.approved = true
