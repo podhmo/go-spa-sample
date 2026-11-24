@@ -71,6 +71,7 @@ type Store interface {
 
 	// Accounts & cookie sessions (internal/api/auth.go).
 	CreateUser(ctx context.Context, name, passwordHash string) (int64, error)
+	UserByName(ctx context.Context, name string) (*store.User, error)
 	AuthenticateUser(ctx context.Context, name, password string) (*store.User, error)
 	UserByID(ctx context.Context, id int64) (*store.User, error)
 	CreateSession(ctx context.Context, userID int64, ttl time.Duration) (string, error)
@@ -197,14 +198,33 @@ func New(st Store, envToken string, repo *gitrepo.Repo) http.Handler {
 	// login must be reachable before the caller holds any credential.
 	top := http.NewServeMux()
 	for path, methods := range map[string]map[string]http.HandlerFunc{
-		"/api/v1/auth/register": {"POST": h.register},
-		"/api/v1/auth/login":    {"POST": h.login},
-		"/api/v1/auth/logout":   {"POST": h.logout},
+		"/api/v1/auth/register": {"POST": requireJSON(h.register)},
+		"/api/v1/auth/login":    {"POST": requireJSON(h.login)},
+		"/api/v1/auth/logout":   {"POST": requireJSON(h.logout)},
 	} {
 		top.HandleFunc(path, methodDispatch(methods))
 	}
 	top.Handle("/api/v1/", authenticate(envToken, st, mux))
 	return top
+}
+
+// requireJSON rejects bodies that did not opt in to application/json.
+// A cross-origin browser fetch can only send a "simple" content type
+// (form or text/plain) without a CORS preflight — and this API emits no
+// CORS headers — so an application/json requirement is what stops a
+// hostile site from driving login/register as the visitor (a form post
+// or a text/plain fetch with a JSON body would otherwise reach
+// decodeBody and work).
+func requireJSON(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ct := r.Header.Get("Content-Type")
+		if ct != "application/json" && !strings.HasPrefix(ct, "application/json;") {
+			writeError(w, http.StatusUnsupportedMediaType,
+				"Content-Type must be application/json.", nil)
+			return
+		}
+		next(w, r)
+	}
 }
 
 // methodDispatch runs the handler registered for r.Method, or answers 405
