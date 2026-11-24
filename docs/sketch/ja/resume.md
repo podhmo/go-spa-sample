@@ -48,8 +48,14 @@ API サーバー部分を移植し、フロントを **SPA として作り直す
   は Bearer より優先 (dev proxy の注入 token でログイン中の本人が
   隠れないよう)。SPA は `/login` `/register` (`?next=` 同一サイト
   誘導、ログイン済みは bounce) + nav のユーザー名/ログアウト
-- **次の一手**: `zatu` CLI 移植判断 (TODO.md 順序の先頭。author の
-  保存は actorID → created_by で済み — 残りは UI での表示のみ)
+- **`zatu` CLI 移植完了**: `internal/cli` + `internal/client` +
+  `cmd/zatu` を MPA から移植 (store メソッド面が完全一致でほぼ機械
+  移植)。ローカル (`ZATUDAN_DB`→SQLite直叩き) / リモート
+  (`ZATUDAN_SERVER`+`ZATUDAN_TOKEN`→`/api/v1`) 両バックエンド。SPA 側の
+  wire 差異のみ調整: 返信作成の応答キーは `comment` ではなく `reply`、
+  返信 DTO は `api.DiscussionReply` (thread_id 付き)
+- **次の一手**: i18n 方針 (TODO.md 順序の先頭。URL/localStorage/
+  Accept-Language のどれで持つかから。author 表示は残課題)
 
 ## 残りタスク (`TODO.md` が正)
 
