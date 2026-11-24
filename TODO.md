@@ -92,9 +92,12 @@ workspace → discussions → pulls → accounts へ展開する。
   - [x] **SPA**: 一覧 (status/q/sort/page)・詳細 (commits/merge可否)・
     作成 (base/head)・Files (diff + 行アンカー review コメント)・
     status 遷移・merge (merge/squash/rebase)
-- [ ] **アカウント・セッション** (features.md 3.7, §6-アカウント):
-  register/login/logout + cookie セッション + 投稿への author 付与。
-  API 認証モデルとの整合は「本番構成」とセットで考える
+- [x] **アカウント・セッション** (features.md 3.7, §6-アカウント):
+  register/login/logout + cookie セッション (SHA-256, 30d sliding
+  TTL、HttpOnly/SameSite=Lax)。session cookie は Bearer より優先。
+  SPA は /login /register + nav のユーザー名/ログアウト + `?next=`
+  誘導。投稿の author 付与は保存済み (actorID → created_by)；残りは
+  表示側 (UI での author 名表示・共有 token 投稿との区別)
 - [ ] **`zatu` CLI 移植判断** (features.md 3.11): gh 風 CLI。ローカル
   (SQLite直叩き)/リモート (API+token) 両バックエンド
 - [ ] **i18n** (features.md 3.10): 元は en/ja 2ロケール (cookie +

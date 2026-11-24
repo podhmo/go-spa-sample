@@ -276,6 +276,34 @@ export type IssueListFilter = {
 }
 
 export const api = {
+  register: (name: string, password: string) =>
+    fetchJSON<{ user: User }>('/api/v1/auth/register', {
+      method: 'POST',
+      ...json({ name, password }),
+    }),
+  login: (name: string, password: string) =>
+    fetchJSON<{ user: User }>('/api/v1/auth/login', {
+      method: 'POST',
+      ...json({ name, password }),
+    }),
+  // application/json is required by the API's CSRF gate even though
+  // logout takes no body.
+  logout: () =>
+    fetchJSON<void>('/api/v1/auth/logout', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+    }),
+  // 401 = anonymous (no cookie session): report null, not an error.
+  me: async (): Promise<User | null> => {
+    try {
+      const { user } = await fetchJSON<{ user: User }>('/api/v1/auth/me')
+      return user
+    } catch (err) {
+      if (err instanceof RequestError && err.status === 401) return null
+      throw err
+    }
+  },
+
   listIssues: (ws: string, f: IssueListFilter) =>
     fetchJSON<IssueList>(
       `/api/v1/w/${ws}/issues${qs({ status: f.status, q: f.q, label: f.label, sort: f.sort, page: f.page })}`,

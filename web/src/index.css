@@ -346,6 +346,12 @@ a {
   text-underline-offset: 4px;
 }
 
+/* Signed-in user name in the nav: muted, not a link. */
+.site-nav > .nav-user {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
 .main-content {
   container: main / inline-size;
   padding-top: 24px;
