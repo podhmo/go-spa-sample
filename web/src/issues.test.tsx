@@ -1,10 +1,9 @@
 import { page } from 'vitest/browser'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { render } from 'vitest-browser-react'
 import type { Comment, Issue, Label, LabelInput } from './api'
 import { IssueForm } from './components/forms'
 import { IssueList } from './components/IssueList'
-import { renderAt, stubAPI } from './test-utils'
+import { renderAt, renderWithRouter, stubAPI } from './test-utils'
 
 const issue = (over: Partial<Issue> = {}): Issue => ({
   id: 1,
@@ -44,17 +43,17 @@ afterEach(() => {
 
 describe('component: IssueList', () => {
   it('renders issues and an empty state', async () => {
-    render(<IssueList issues={[]} />)
-    await expect.element(page.getByText('No issues.')).toBeInTheDocument()
+    renderWithRouter(<IssueList issues={[]} />)
+    await expect.element(page.getByText('No issues here yet.')).toBeInTheDocument()
   })
 })
 
 describe('component: IssueForm', () => {
   it('submits entered values', async () => {
     const onSubmit = vi.fn()
-    render(<IssueForm onSubmit={onSubmit} />)
+    renderWithRouter(<IssueForm onSubmit={onSubmit} />)
     await page.getByLabelText(/Title/).fill('hello from test')
-    await page.getByRole('button', { name: 'create issue' }).click()
+    await page.getByRole('button', { name: 'Create issue' }).click()
     expect(onSubmit).toHaveBeenCalledWith({ title: 'hello from test', body: '', label_ids: [] })
   })
 })
@@ -77,7 +76,7 @@ describe('route: /issues', () => {
     renderAt('/issues')
     await expect.element(page.getByText(/from api/)).toBeInTheDocument()
     await expect.element(page.getByText(/second/)).toBeInTheDocument()
-    await expect.element(page.getByText('2 issues (page 1 / 1)')).toBeInTheDocument()
+    await expect.element(page.getByText('Showing 1–2 of 2 issues')).toBeInTheDocument()
   })
 
   it('passes search params to the API', async () => {
@@ -88,7 +87,7 @@ describe('route: /issues', () => {
       return { body: { issues: [], total: 0, page: 1, per_page: 20 } }
     })
     renderAt('/issues?status=closed&q=bug')
-    await expect.element(page.getByText('No issues.')).toBeInTheDocument()
+    await expect.element(page.getByText('No issues match the current filters.')).toBeInTheDocument()
     expect(calls[0]).toContain('status=closed')
     expect(calls[0]).toContain('q=bug')
   })
@@ -115,8 +114,8 @@ describe('route: /issues', () => {
     expect(calls[0]).toContain('page=2')
     // label select is populated from the labels endpoint
     await expect.element(page.getByRole('option', { name: 'Feature' })).toBeInTheDocument()
-    // page 2 of 2 shows a prev link back to page 1
-    await expect.element(page.getByRole('link', { name: 'prev' })).toBeInTheDocument()
+    // page 2 of 2 shows a Previous link back to page 1
+    await expect.element(page.getByRole('link', { name: 'Previous' })).toBeInTheDocument()
   })
 
   it('navigates to the next page via the pagination link', async () => {
@@ -129,10 +128,10 @@ describe('route: /issues', () => {
       }
     })
     renderAt('/issues')
-    await page.getByRole('link', { name: 'next' }).click()
+    await page.getByRole('link', { name: 'Next' }).click()
     // the page=2 request proves the link drove a URL-driven loader refetch
     await expect.poll(() => calls.some((u) => u.includes('page=2'))).toBe(true)
-    await expect.element(page.getByText(/25 issues \(page 1 \/ 2\)/)).toBeInTheDocument()
+    await expect.element(page.getByText('Page 1 of 2')).toBeInTheDocument()
   })
 })
 
@@ -151,7 +150,7 @@ describe('route: /issues/$issueId/edit', () => {
     await expect.element(title).toHaveValue('first issue')
     await title.fill('renamed')
     await page.getByRole('checkbox', { name: 'Feature' }).click()
-    await page.getByRole('button', { name: 'save' }).click()
+    await page.getByRole('button', { name: 'Save changes' }).click()
 
     // navigated back to the detail page — proves the PATCH ran first
     await expect.element(page.getByRole('heading', { name: /#1/ })).toBeInTheDocument()
@@ -183,11 +182,13 @@ describe('route: /issues/$issueId', () => {
       }
     })
     renderAt('/issues/1')
-    await expect.element(page.getByText(/detail page/)).toBeInTheDocument()
+    // the delete dialog's description also contains the title — match the
+    // heading only
+    await expect.element(page.getByRole('heading', { name: /detail page/ })).toBeInTheDocument()
     await expect.element(page.getByText('nice work')).toBeInTheDocument()
 
-    await page.getByRole('button', { name: 'mark closed' }).click()
-    await expect.element(page.getByRole('button', { name: 'mark open' })).toBeInTheDocument()
+    await page.getByRole('button', { name: 'Close issue' }).click()
+    await expect.element(page.getByRole('button', { name: 'Reopen issue' })).toBeInTheDocument()
     const statusCall = requests.find((r) => r.url.endsWith('/status'))
     expect(statusCall?.init?.method).toBe('POST')
     expect(JSON.parse(String(statusCall?.init?.body))).toEqual({ status: 'closed' })
@@ -198,7 +199,7 @@ describe('route: /issues/$issueId', () => {
     renderAt('/issues/1')
     await expect.element(page.getByText('a comment')).toBeInTheDocument()
     expect(document.getElementById('comment-1')).not.toBeNull()
-    await expect.element(page.getByRole('button', { name: 'permalink' })).toBeInTheDocument()
+    await expect.element(page.getByRole('button', { name: 'copy link' })).toBeInTheDocument()
   })
 
   it('edits a comment inline and shows the edited badge', async () => {
@@ -223,9 +224,9 @@ describe('route: /issues/$issueId', () => {
     })
     renderAt('/issues/1')
     await expect.element(page.getByText('a comment')).toBeInTheDocument()
-    await page.getByRole('button', { name: 'edit' }).click()
+    await page.getByRole('button', { name: 'Edit comment 1' }).click()
     await page.getByLabelText('comment body').fill('edited body')
-    await page.getByRole('button', { name: 'save' }).click()
+    await page.getByRole('button', { name: 'Save changes' }).click()
 
     await expect.element(page.getByText('edited', { exact: true })).toBeInTheDocument()
     const patch = requests.find((r) => r.init?.method === 'PATCH')
@@ -243,8 +244,8 @@ describe('route: /issues/$issueId', () => {
     await expect.element(page.getByText('a comment')).toBeInTheDocument()
     // the comment's delete trigger lives inside its <li> (the issue's
     // own delete button is in the header)
-    await page.getByRole('listitem').getByRole('button', { name: 'delete' }).click()
-    await page.getByRole('dialog').getByRole('button', { name: 'delete' }).click()
+    await page.getByRole('listitem').getByRole('button', { name: 'Delete' }).click()
+    await page.getByRole('dialog').getByRole('button', { name: 'Delete comment' }).click()
     await expect.poll(() => requests.find((r) => r.init?.method === 'DELETE')).toBeTruthy()
     expect(requests.find((r) => r.init?.method === 'DELETE')?.url).toContain('/comments/1')
   })
@@ -273,15 +274,15 @@ describe('route: /issues/$issueId', () => {
     await expect.element(page.getByText('a comment')).toBeInTheDocument()
 
     // hide via the reason dialog
-    await page.getByRole('button', { name: 'hide' }).click()
+    await page.getByRole('button', { name: 'Hide comment 1' }).click()
     await page.getByLabelText(/Reason/).selectOptions('spam')
-    await page.getByRole('button', { name: 'hide comment' }).click()
-    await expect.element(page.getByText(/This comment was hidden \(spam\)/)).toBeInTheDocument()
+    await page.getByRole('dialog').getByRole('button', { name: 'Hide comment' }).click()
+    await expect.element(page.getByText('This comment was marked as spam.')).toBeInTheDocument()
     const hide = requests.find((r) => r.url.endsWith('/hide'))
     expect(JSON.parse(String(hide?.init?.body))).toEqual({ reason: 'spam' })
 
     // unhide restores the body
-    await page.getByRole('button', { name: 'unhide' }).click()
+    await page.getByRole('button', { name: 'Unhide comment 1' }).click()
     await expect.element(page.getByText('a comment')).toBeInTheDocument()
     expect(requests.some((r) => r.url.endsWith('/unhide'))).toBe(true)
   })
@@ -315,7 +316,7 @@ describe('route: /issues/$issueId', () => {
     })
     const writeText = vi.spyOn(navigator.clipboard, 'writeText').mockResolvedValue(undefined)
     renderAt('/issues/1')
-    await page.getByRole('button', { name: 'copy as markdown' }).click()
+    await page.getByRole('button', { name: 'Copy as markdown' }).click()
     await expect.element(page.getByText('copied')).toBeInTheDocument()
     expect(calls.some((u) => u.endsWith('/issues/1/markdown'))).toBe(true)
     expect(writeText).toHaveBeenCalled()
@@ -360,7 +361,7 @@ describe('route: /labels', () => {
 
     // create sends name/color/kind/scope
     await page.getByLabelText('Name').fill('triage')
-    await page.getByRole('button', { name: 'create label' }).click()
+    await page.getByRole('button', { name: 'Create label' }).click()
     await expect.element(page.getByText('triage')).toBeInTheDocument()
     const post = requests.find((r) => r.init?.method === 'POST')
     expect(JSON.parse(String(post?.init?.body))).toMatchObject({
@@ -370,18 +371,19 @@ describe('route: /labels', () => {
     })
 
     // archive via the confirm dialog moves it to the Archived section
+    // (the row button says "Delete" like the MPA; it archives, not destroys)
     await page
       .getByRole('listitem')
       .filter({ hasText: 'Bug' })
-      .getByRole('button', { name: 'archive' })
+      .getByRole('button', { name: 'Delete' })
       .click()
-    await page.getByRole('dialog').getByRole('button', { name: 'archive' }).click()
-    await expect.element(page.getByRole('button', { name: 'restore' })).toBeInTheDocument()
+    await page.getByRole('dialog').getByRole('button', { name: 'Delete' }).click()
+    await expect.element(page.getByRole('button', { name: 'Restore' })).toBeInTheDocument()
     expect(requests.find((r) => r.init?.method === 'DELETE')?.url).toContain('/labels/1')
 
     // restore re-POSTs the same name/scope and it returns to active
-    await page.getByRole('button', { name: 'restore' }).click()
-    await expect.element(page.getByRole('button', { name: 'restore' })).not.toBeInTheDocument()
+    await page.getByRole('button', { name: 'Restore' }).click()
+    await expect.element(page.getByRole('button', { name: 'Restore' })).not.toBeInTheDocument()
     await expect.element(page.getByText('Bug')).toBeInTheDocument()
     expect(requests.filter((r) => r.init?.method === 'POST')).toHaveLength(2)
   })

@@ -1,4 +1,10 @@
-import { RouterProvider, createMemoryHistory, createRouter } from '@tanstack/react-router'
+import {
+  RouterProvider,
+  createMemoryHistory,
+  createRootRoute,
+  createRouter,
+} from '@tanstack/react-router'
+import type { ReactNode } from 'react'
 import { render } from 'vitest-browser-react'
 import { vi } from 'vitest'
 import { routeTree } from './routes'
@@ -9,6 +15,17 @@ export function renderAt(initialPath: string) {
   const router = createRouter({
     routeTree,
     history: createMemoryHistory({ initialEntries: [initialPath] }),
+  })
+  return render(<RouterProvider router={router} />)
+}
+
+// renderWithRouter wraps a lone component in a minimal router so
+// <Link>-bearing components (issue rows, forms) render outside the app.
+export function renderWithRouter(ui: ReactNode) {
+  const rootRoute = createRootRoute({ component: () => ui })
+  const router = createRouter({
+    routeTree: rootRoute,
+    history: createMemoryHistory({ initialEntries: ['/'] }),
   })
   return render(<RouterProvider router={router} />)
 }
