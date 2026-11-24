@@ -284,6 +284,7 @@ export function PRCommentItem({
 }) {
   const [editing, setEditing] = useReducer((s: boolean) => !s, false)
   const [dirty, setDirty] = useReducer((_: boolean, v: boolean) => v, false)
+  const [blank, setBlank] = useReducer((_: boolean, v: boolean) => v, false)
   const m = useMessages()
   useLeaveGuard(editing && dirty, m.form.unsavedChanges)
   const fmtTime = useFmtTime()
@@ -351,7 +352,10 @@ export function PRCommentItem({
               id={`edit-${c.id}`}
               name="body"
               defaultValue={c.body}
-              onChange={(e) => setDirty(e.target.value !== c.body)}
+              onChange={(e) => {
+                setDirty(e.target.value !== c.body)
+                setBlank(e.target.value.trim() === '')
+              }}
               onKeyDown={submitOnCtrlEnter}
               rows={4}
               required
@@ -365,7 +369,7 @@ export function PRCommentItem({
             <button type="button" className="btn btn-quiet" onClick={() => setEditing()}>
               {m.copy.cancel}
             </button>
-            <button type="submit" className="btn btn-primary" disabled={pending}>
+            <button type="submit" className="btn btn-primary" disabled={pending || blank}>
               {m.form.saveChanges}
             </button>
           </div>

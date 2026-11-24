@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { RouterProvider, createRouter } from '@tanstack/react-router'
 import './index.css'
 import { setupFieldErrorSync } from './a11y'
+import { resetLeaveGuardLatch } from './leave-guard'
 import { routeTree } from './routes.tsx'
 
 setupFieldErrorSync()
@@ -20,6 +21,8 @@ const router = createRouter({
 // client-side nav does not, so move it to the main landmark when the
 // path (not just search or hash) changes.
 router.subscribe('onResolved', ({ fromLocation, toLocation }) => {
+  // A completed navigation re-arms the leave-guard latch (leave-guard.ts).
+  resetLeaveGuardLatch()
   if (fromLocation && fromLocation.pathname !== toLocation.pathname) {
     requestAnimationFrame(() => {
       document.getElementById('main-content')?.focus({ preventScroll: true })

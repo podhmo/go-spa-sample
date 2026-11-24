@@ -1008,7 +1008,9 @@ const issueRoute = createRoute({
             void (async () => {
               try {
                 await api.deleteIssue(ws, issueID)
-                await navigate({ to: '/w/$ws/issues', params: { ws } })
+                // The page is gone — a dirty comment draft must not
+                // trap the post-delete redirect in the leave-guard.
+                await navigate({ to: '/w/$ws/issues', params: { ws }, ignoreBlocker: true })
               } finally {
                 setPending(false)
               }
@@ -1435,7 +1437,11 @@ const discussionRoute = createRoute({
             void (async () => {
               try {
                 await api.deleteDiscussion(ws, did)
-                await navigate({ to: '/w/$ws/discussions', params: { ws } })
+                await navigate({
+                  to: '/w/$ws/discussions',
+                  params: { ws },
+                  ignoreBlocker: true,
+                })
               } finally {
                 setPending(false)
               }
@@ -1897,7 +1903,7 @@ const pullRoute = createRoute({
             void (async () => {
               try {
                 await api.deletePull(pid)
-                await navigate({ to: '/pulls' })
+                await navigate({ to: '/pulls', ignoreBlocker: true })
               } finally {
                 setPending(false)
               }

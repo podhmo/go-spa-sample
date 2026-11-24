@@ -78,7 +78,10 @@ loader + mutation + `router.invalidate()` + `navigate()` に置き換わる。
   で止める）+ `beforeunload`（ブラウザ離脱）の両対応とした。dirty 判定は
   各フォームが行い、submit した時点で reducer の `submitted` flag を立てて
   ガードを解除する（§13a の送信後遷移をブロックしないため。失敗時は次の
-  編集で再武装する）。
+  編集で再武装する）。複数ガードが同時に dirty のときは confirm は一度だけ
+  （ページ共通の latch が最初の accept を共有し、遷移完了で再武装）。
+  ページ自身を削除した後の遷移は `navigate({ ignoreBlocker: true })` で
+  ガードを迂回する（画面が消えるのでドラフトを問い直す意味がない）。
 
 ## 4. 一覧（リスト画面）
 

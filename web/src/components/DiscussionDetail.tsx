@@ -365,7 +365,10 @@ function ThreadItem({
     replyDraft: '',
   })
   const m = useMessages()
-  useLeaveGuard(ui.replying && ui.draft.trim() !== '', m.form.unsavedChanges)
+  // Collapsing the reply keeps the draft (editReducer 'cancel'), so the
+  // guard keys on the draft, not on replying — a hidden draft is still
+  // lost by navigating away.
+  useLeaveGuard(ui.draft.trim() !== '', m.form.unsavedChanges)
   const fmtTime = useFmtTime()
   const noun = m.comments.nounThread
   const permalink = () => `${location.origin}${location.pathname}#thread-${t.id}`

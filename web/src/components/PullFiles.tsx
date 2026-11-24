@@ -254,6 +254,7 @@ function DiffRow({
 }) {
   const [postError, setPostError] = useReducer((_: string | null, v: string | null) => v, null)
   const [dirty, setDirty] = useReducer((_: boolean, v: boolean) => v, false)
+  const [blank, setBlank] = useReducer((_: boolean, v: boolean) => v, true)
   const m = useMessages()
   useLeaveGuard(formOpen && dirty, m.form.unsavedChanges)
   // The disabled button only blocks clicks: Ctrl+Enter (requestSubmit)
@@ -311,12 +312,18 @@ function DiffRow({
                 sending.current = true
                 const body = String(new FormData(e.currentTarget).get('body') ?? '')
                 setPostError(null)
+                // Clear the guard before awaiting: the route navigates
+                // to the new comment inside onSubmit, and a still-dirty
+                // flag would intercept that redirect.
+                setDirty(false)
                 void (async () => {
                   try {
                     await onSubmit(body)
-                    setDirty(false)
+                    setBlank(true)
                     onToggle()
                   } catch (err) {
+                    // The draft is still in the textarea — re-arm.
+                    setDirty(true)
                     // Field errors name the actual rejection reason
                     // (e.g. a stale anchor); a bare message just says
                     // "Validation failed.".
@@ -346,7 +353,10 @@ function DiffRow({
                   name="body"
                   rows={3}
                   required
-                  onChange={(e) => setDirty(e.target.value.trim() !== '')}
+                  onChange={(e) => {
+                    setDirty(e.target.value.trim() !== '')
+                    setBlank(e.target.value.trim() === '')
+                  }}
                   onKeyDown={submitOnCtrlEnter}
                   data-error={`dc-${line.path}-${line.line}-error`}
                   placeholder={m.pulls.reviewCommentPh}
@@ -360,7 +370,7 @@ function DiffRow({
                 <button type="button" className="btn btn-quiet" onClick={onToggle}>
                   {m.copy.cancel}
                 </button>
-                <button type="submit" className="btn btn-primary" disabled={pending}>
+                <button type="submit" className="btn btn-primary" disabled={pending || blank}>
                   {m.pulls.commentSubmit}
                 </button>
               </div>

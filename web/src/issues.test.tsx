@@ -264,6 +264,40 @@ describe('route: /issues/$issueId', () => {
     expect(requests.find((r) => r.init?.method === 'DELETE')?.url).toContain('/comments/1')
   })
 
+  it('disables the comment submit while the body is blank', async () => {
+    stubAPI(() => ({ body: { issue: issue(), comments: [] } }))
+    renderAt('/w/default/issues/1')
+    const submit = page.getByRole('button', { name: 'Comment', exact: true })
+    await expect.element(submit).toBeDisabled()
+    await page.getByLabelText(/Add a comment/).fill('a draft')
+    await expect.element(submit).toBeEnabled()
+    await page.getByLabelText(/Add a comment/).fill('   ')
+    await expect.element(submit).toBeDisabled()
+  })
+
+  it('confirms before leaving with a comment draft, and navigates on accept', async () => {
+    stubAPI((url) => {
+      if (url.includes('/labels')) return { body: { labels: [] } }
+      if (url.includes('/pulls')) return { status: 404, body: {} }
+      if (url.endsWith('/issues') || url.includes('/issues?')) {
+        return { body: { issues: [], total: 0, page: 1, per_page: 20 } }
+      }
+      return { body: { issue: issue(), comments: [] } }
+    })
+    renderAt('/w/default/issues/1')
+    await page.getByLabelText(/Add a comment/).fill('draft to lose')
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false)
+    const breadcrumb = page.getByRole('navigation', { name: /breadcrumb/i })
+    await breadcrumb.getByRole('link', { name: 'Issues' }).click()
+    await expect.poll(() => confirm.mock.calls.length > 0).toBeTruthy()
+    // declined: still on the detail page, draft intact
+    await expect.element(page.getByLabelText(/Add a comment/)).toHaveValue('draft to lose')
+    confirm.mockReturnValue(true)
+    await breadcrumb.getByRole('link', { name: 'Issues' }).click()
+    await expect.element(page.getByText('No issues here yet.')).toBeInTheDocument()
+    confirm.mockRestore()
+  })
+
   it('hides a comment with a reason and unhides it', async () => {
     const requests: { url: string; init?: RequestInit | undefined }[] = []
     let hidden = false
