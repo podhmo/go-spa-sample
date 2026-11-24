@@ -290,7 +290,7 @@ describe('route: /issues/$issueId', () => {
     stubAPI(() => ({
       body: {
         issue: issue({
-          body: '**bold**\n\n<script>alert(1)</script>\n\n[bad](javascript:alert(1))',
+          body: '**bold**\n\n<script>alert(1)</script>\n\n[bad](javascript:alert(1))\n\n> [!NOTE]\n> look out',
         }),
         comments: [comment({ body: '- [x] done' })],
       },
@@ -302,6 +302,8 @@ describe('route: /issues/$issueId', () => {
     expect(document.querySelector('article script')).toBeNull()
     expect(document.querySelector('a[href^="javascript:"]')).toBeNull()
     expect(document.querySelector('input[type=checkbox]')).not.toBeNull()
+    // GitHub-style alert renders via the remark plugin
+    expect(document.querySelector('article .markdown-alert-note')).not.toBeNull()
   })
 
   it('copies the issue as markdown via the export endpoint', async () => {
