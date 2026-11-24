@@ -324,7 +324,8 @@ func (h *handler) createDiscussion(w http.ResponseWriter, r *http.Request, ws *s
 }
 
 // PATCH /api/v1/w/{ws}/discussions/{id} — only fields present in the body
-// are updated; absent fields keep their current values.
+// are updated; absent fields keep their current values. An explicitly
+// empty "labels"/"label_ids" clears the label set (nil means absent).
 func (h *handler) updateDiscussion(w http.ResponseWriter, r *http.Request, ws *store.Workspace) {
 	var in discussionBody
 	if !decodeBody(w, r, &in) {
@@ -356,7 +357,7 @@ func (h *handler) updateDiscussion(w http.ResponseWriter, r *http.Request, ws *s
 		}
 		input.CategoryID = catID
 	}
-	if in.LabelIDs != nil || len(in.Labels) > 0 {
+	if in.LabelIDs != nil || in.Labels != nil {
 		labelIDs, ferr, err := h.resolveLabelIDs(r, ws, store.KindLabelDiscussion, in.LabelIDs, in.Labels)
 		if err != nil {
 			h.storeError(w, err)

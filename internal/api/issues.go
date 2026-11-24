@@ -178,7 +178,7 @@ func (h *handler) updateIssue(w http.ResponseWriter, r *http.Request, ws *store.
 	if in.Body != nil {
 		input.Body = strings.TrimSpace(*in.Body)
 	}
-	if in.LabelIDs != nil || len(in.Labels) > 0 {
+	if in.LabelIDs != nil || in.Labels != nil {
 		labelIDs, ferr, err := h.resolveLabelIDs(r, ws, store.KindLabelIssue, in.LabelIDs, in.Labels)
 		if err != nil {
 			h.storeError(w, err)

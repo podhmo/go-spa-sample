@@ -201,8 +201,8 @@ func TestDiscussionAnswerMark(t *testing.T) {
 		tids[i] = int64(out["thread"].(map[string]any)["id"].(float64))
 	}
 
-	// mark thread 2 as the answer → discussion reports answered, mark moves
-	code, out = do(t, srv, "POST", fmt.Sprintf("/api/v1/w/default/discussions/%d/threads/%d/answer", did, tids[1]), `{"answer":true}`)
+	// mark thread 1 as the answer → discussion reports answered
+	code, out = do(t, srv, "POST", fmt.Sprintf("/api/v1/w/default/discussions/%d/threads/%d/answer", did, tids[0]), `{"answer":true}`)
 	if code != http.StatusOK || out["thread"].(map[string]any)["is_answer"] != true {
 		t.Fatalf("mark answer = %d: %v", code, out)
 	}
@@ -210,11 +210,56 @@ func TestDiscussionAnswerMark(t *testing.T) {
 	if code != http.StatusOK || out["discussion"].(map[string]any)["answered"] != true {
 		t.Fatalf("answered = %v, want true", out["discussion"])
 	}
+
+	// marking thread 2 moves the mark — thread 1 must come out unmarked
+	code, out = do(t, srv, "POST", fmt.Sprintf("/api/v1/w/default/discussions/%d/threads/%d/answer", did, tids[1]), `{"answer":true}`)
+	if code != http.StatusOK {
+		t.Fatalf("move answer = %d: %v", code, out)
+	}
+	code, out = do(t, srv, "GET", fmt.Sprintf("/api/v1/w/default/discussions/%d", did), "")
+	if code != http.StatusOK || out["discussion"].(map[string]any)["answered"] != true {
+		t.Fatalf("answered = %v, want true after move", out["discussion"])
+	}
 	for _, t0 := range out["threads"].([]any) {
 		m := t0.(map[string]any)
-		if int64(m["id"].(float64)) == tids[0] && m["is_answer"] == true {
-			t.Fatalf("thread 1 still marked after move")
+		id := int64(m["id"].(float64))
+		want := id == tids[1]
+		if m["is_answer"] != want {
+			t.Fatalf("thread %d is_answer = %v, want %v", id, m["is_answer"], want)
 		}
+	}
+}
+
+func TestDiscussionPatchClearLabels(t *testing.T) {
+	srv, st := newServer(t)
+	catID := seedCategories(t, st)
+	ctx := t.Context()
+	ws, err := st.WorkspaceBySlug(ctx, "default")
+	if err != nil {
+		t.Fatalf("WorkspaceBySlug: %v", err)
+	}
+	lid, err := st.CreateLabel(ctx, ws.ID, store.KindLabelDiscussion, store.LabelInput{Name: "meta", Color: "#aaaaaa"})
+	if err != nil {
+		t.Fatalf("CreateLabel: %v", err)
+	}
+
+	code, out := do(t, srv, "POST", "/api/v1/w/default/discussions",
+		fmt.Sprintf(`{"title":"d","body":"b","category_id":%d,"label_ids":[%d]}`, catID, lid))
+	if code != http.StatusCreated {
+		t.Fatalf("POST = %d: %v", code, out)
+	}
+	did := int64(out["discussion"].(map[string]any)["id"].(float64))
+	if len(out["discussion"].(map[string]any)["labels"].([]any)) != 1 {
+		t.Fatalf("labels = %v, want 1", out["discussion"])
+	}
+
+	// an explicitly empty "labels" array clears — nil would mean "leave as is"
+	code, out = do(t, srv, "PATCH", fmt.Sprintf("/api/v1/w/default/discussions/%d", did), `{"labels":[]}`)
+	if code != http.StatusOK {
+		t.Fatalf("PATCH labels:[] = %d: %v", code, out)
+	}
+	if got := out["discussion"].(map[string]any)["labels"].([]any); len(got) != 0 {
+		t.Fatalf("labels after clear = %v, want empty", got)
 	}
 }
 
