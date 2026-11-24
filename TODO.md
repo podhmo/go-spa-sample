@@ -52,6 +52,12 @@ useReducer / Vitest / playwright-cli) を使った試行錯誤が完全に行え
 - [x] **SPA 実装 (issues)**: 一覧/詳細/作成/コメント/状態変更/削除を実装・
   playwright-cli で実サーバー疎通確認済み。modern-web-guidance を適用
   (ネイティブ `<dialog>` の削除確認、`:user-invalid` + aria 同期、`<search>`)
+- [x] **issues scope の機能パリティ**: `docs/ja/features.md` §6 の
+  Issues/コメント・モデレーション/Labels の全項目 + 横断の大半をカバー
+  （一覧フィルタ+pagination、issue 編集、コメント編集/削除/hide/unhide/
+  edited/permalink、GFM+alert Markdown 描画、markdown エクスポート、
+  404、labels 管理画面）。Go 側に `GET /labels?archived=1` を追加。
+  残りは workspace スコープ (`/w/{slug}`) と login 相当の横断項目のみ
 - [ ] **discussions/pulls の移植判断**: store には残存。機能 spec は
   `docs/ja/features.md` 参照
 - [ ] **`cmd/fakeapi` の撤去**: スパイク用コードの整理

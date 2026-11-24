@@ -246,34 +246,34 @@ store 層の代表的 sentinel エラー: `ErrNotFound`、`ErrDuplicateSlug`、`
 
 ### 全体・横断
 
-- [ ] issue/discussion/PR の一覧・詳細・作成・編集・削除・status 切替ができる
-- [ ] 状態は URL（パス + クエリ）に反映され、フィルタ済みビューがリンク共有可能
-- [ ] バリデーション失敗時にフィールド単位のエラーと入力保持が出る（MPA の 422 再描画相当）
-- [ ] 削除に確認ステップがある（MPA の確認ページ/`<dialog>` 相当）
-- [ ] 存在しないリソース・未知 workspace は 404 相当の表示
-- [ ] issue/discussion 本文と各種コメントが Markdown（GFM + アラート）で描画され、生 HTML / 不安全リンクが無力化される
+- [-] issue/discussion/PR の一覧・詳細・作成・編集・削除・status 切替ができる（issues のみ済）
+- [x] 状態は URL（パス + クエリ）に反映され、フィルタ済みビューがリンク共有可能
+- [x] バリデーション失敗時にフィールド単位のエラーと入力保持が出る（MPA の 422 再描画相当）
+- [x] 削除に確認ステップがある（MPA の確認ページ/`<dialog>` 相当）
+- [x] 存在しないリソース・未知 workspace は 404 相当の表示
+- [x] issue/discussion 本文と各種コメントが Markdown（GFM + アラート）で描画され、生 HTML / 不安全リンクが無力化される
 - [ ] workspace スコープ: `/w/{slug}` 相当のコンテキストがあり、workspace なしアクセスは default/先頭へ誘導、別 workspace のリソースは正しいスコープへ誘導（mutation は拒否）
 - [ ] ログイン中は投稿に投稿者名が付き、未ログインでも全操作可能（anonymous 表記）
 
 ### Issues
 
-- [ ] 一覧で status（open/closed/all）・`q`（title/body 部分一致）・label・sort（newest/oldest）・page でフィルタできる（デフォルト open・newest・20 件/ページ）
-- [ ] ラベルの付け替えができ、archived ラベルはピッカーに出ないが既存付与は残る
-- [ ] open/closed トグルができる（無変更トグルで updated_at を汚さない）
-- [ ] issue + コメントを 1 markdown 文書としてエクスポート/コピーできる
+- [x] 一覧で status（open/closed/all）・`q`（title/body 部分一致）・label・sort（newest/oldest）・page でフィルタできる（デフォルト open・newest・20 件/ページ）
+- [x] ラベルの付け替えができ、archived ラベルはピッカーに出ないが既存付与は残る
+- [x] open/closed トグルができる（無変更トグルで updated_at を汚さない）
+- [x] issue + コメントを 1 markdown 文書としてエクスポート/コピーできる
 
 ### コメント・モデレーション
 
-- [ ] コメント投稿・編集（実変更で edited マーカー）・削除ができる
-- [ ] hide で理由（7 種固定）を必須選択し最小化できる。unhide で復帰
-- [ ] コメントのパーマリンクが取れる（`#comment-N` 相当）
+- [x] コメント投稿・編集（実変更で edited マーカー）・削除ができる
+- [x] hide で理由（7 種固定）を必須選択し最小化できる。unhide で復帰
+- [x] コメントのパーマリンクが取れる（`#comment-N` 相当）
 
 ### Labels
 
-- [ ] kind（issue/discussion）とスコープ（共有/workspace）の概念があり、一覧は共有 + 自 workspace の和集合
-- [ ] 作成（name + hex color + kind + scope）・編集（name/color のみ）・アーカイブ/復元ができる
-- [ ] 同名重複はエラー、archived 同名は復元になる
-- [ ] 付与可能ラベルは「共有 or 自 workspace・対応 kind・非 archived」に限定される
+- [x] kind（issue/discussion）とスコープ（共有/workspace）の概念があり、一覧は共有 + 自 workspace の和集合
+- [x] 作成（name + hex color + kind + scope）・編集（name/color のみ）・アーカイブ/復元ができる
+- [x] 同名重複はエラー、archived 同名は復元になる
+- [x] 付与可能ラベルは「共有 or 自 workspace・対応 kind・非 archived」に限定される
 
 ### Discussions
 
