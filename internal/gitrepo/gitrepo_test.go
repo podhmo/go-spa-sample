@@ -207,6 +207,7 @@ func TestMergePlumbing(t *testing.T) {
 	git(t, dir, "checkout", "-qb", "feat")
 	write(t, dir, "b.txt", "two\n")
 	git(t, dir, "checkout", "-q", "main")
+	mainBefore := git(t, dir, "rev-parse", "main")
 
 	res, err := r.Merge(ctx, "release", "feat", MethodMerge, "test merge")
 	if err != nil {
@@ -224,8 +225,8 @@ func TestMergePlumbing(t *testing.T) {
 	if got := git(t, dir, "status", "--porcelain"); got != "" {
 		t.Fatalf("worktree dirty after plumbing merge: %q", got)
 	}
-	if got := git(t, dir, "rev-parse", "main"); strings.Contains(git(t, dir, "branch", "--contains", "release"), "main") && got == parents[0] {
-		// main must NOT have moved.
+	if got := git(t, dir, "rev-parse", "main"); got != mainBefore {
+		t.Fatalf("main moved: %s -> %s", mainBefore, got)
 	}
 	// b.txt now exists on release.
 	if got := git(t, dir, "show", "release:b.txt"); got != "two\n" {

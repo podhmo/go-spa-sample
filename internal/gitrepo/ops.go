@@ -106,7 +106,10 @@ func (r *Repo) NormalizeRef(ctx context.Context, ref string) (string, error) {
 		return "", ErrBadRef
 	}
 	name := strings.TrimSpace(res.stdout)
-	if name == "" {
+	if name == "" || name == "HEAD" {
+		// "" is a raw sha; "HEAD" means a detached checkout — both are
+		// stored as the sha itself so the recorded ref does not drift with
+		// later checkouts.
 		return r.RevParse(ctx, ref)
 	}
 	return name, nil
