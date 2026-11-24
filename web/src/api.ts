@@ -286,7 +286,13 @@ export const api = {
       method: 'POST',
       ...json({ name, password }),
     }),
-  logout: () => fetchJSON<void>('/api/v1/auth/logout', { method: 'POST' }),
+  // application/json is required by the API's CSRF gate even though
+  // logout takes no body.
+  logout: () =>
+    fetchJSON<void>('/api/v1/auth/logout', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+    }),
   // 401 = anonymous (no cookie session): report null, not an error.
   me: async (): Promise<User | null> => {
     try {
