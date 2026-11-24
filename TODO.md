@@ -58,9 +58,36 @@ useReducer / Vitest / playwright-cli) を使った試行錯誤が完全に行え
   edited/permalink、GFM+alert Markdown 描画、markdown エクスポート、
   404、labels 管理画面）。Go 側に `GET /labels?archived=1` を追加。
   残りは workspace スコープ (`/w/{slug}`) と login 相当の横断項目のみ
-- [ ] **discussions/pulls の移植判断**: store には残存。機能 spec は
-  `docs/ja/features.md` 参照
-- [ ] **`cmd/fakeapi` の撤去**: スパイク用コードの整理
 - [x] **サーバー状態管理の再検討**: `sketch/tanstack-query` で評価実装済み。
   判定は「現状は loader 継続」(再検討条件は `docs/sketch/ja/tanstack-query.md`)
-- [ ] **i18n**: UI 文言の日本語化方針
+- [ ] **workspace スコープ `/w/{slug}` 対応** (features.md 3.1, §6-全体):
+  SPA は現状 `WS='default'` 固定。URL を `/w/{slug}/issues…` 構造にし、
+  workspace なしアクセスは default/先頭へ誘導、別 workspace のリソースは
+  正しいスコープへ誘導 (mutation は拒否)。workspace 一覧/作成/削除 UI も
+  (`GET/POST/DELETE /api/v1/workspaces` あり、最後の1個は削除不可)
+- [ ] **Discussions 移植** (features.md 3.5, §6-Discussions)
+  - [ ] **Go API 復元**: 移植時に外した discussions ハンドラを
+    `internal/api` に再移植 (threads/replies/answer/categories ルート)
+  - [ ] **SPA**: 一覧 (category/answered/q/sort/page)・詳細
+    (threads+replies 1段ネスト)・作成 (category 必須)・編集/削除・
+    thread/reply モデレーション・qa カテゴリの answer マーク
+- [ ] **Pull Requests 移植** (features.md 3.6, §6-Pull Requests):
+  git バック + repo ゲーティングが最大の残り塊
+  - [ ] **Go**: `internal/gitrepo` + pulls API 移植、`-repo` フラグと
+    `.git` 自動検出 (repo 無しは `/pulls*` 404)
+  - [ ] **SPA**: 一覧 (status/q/sort/page)・詳細 (commits/merge可否)・
+    作成 (base/head)・Files (diff + 行アンカー review コメント)・
+    status 遷移・merge (merge/squash/rebase)
+- [ ] **アカウント・セッション** (features.md 3.7, §6-アカウント):
+  register/login/logout + cookie セッション + 投稿への author 付与。
+  API 認証モデルとの整合は「本番構成」とセットで考える
+- [ ] **`zatu` CLI 移植判断** (features.md 3.11): gh 風 CLI。ローカル
+  (SQLite直叩き)/リモート (API+token) 両バックエンド
+- [ ] **i18n** (features.md 3.10): 元は en/ja 2ロケール (cookie +
+  Accept-Language 解決)。SPA では URL/localStorage/Accept-Language の
+  どれで持つか方針から
+- [ ] **markdown エクスポート拡張** (features.md 3.12): issue は済。
+  discussions/PR 移植時に対応分を追加
+- [ ] **`cmd/fakeapi` の撤去**: スパイク用コードの整理
+- [ ] **本番構成の決定**: dev proxy の `Bearer dev-token` 注入は開発専用。
+  embed 配信+セッション or 別配備+token のどちらにするか
