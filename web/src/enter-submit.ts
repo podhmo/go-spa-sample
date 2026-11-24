@@ -6,6 +6,10 @@ import type { KeyboardEvent } from 'react'
 // isComposing checks are needed.
 export const submitOnCtrlEnter = (e: KeyboardEvent<HTMLTextAreaElement>) => {
   if (e.key !== 'Enter' || !(e.ctrlKey || e.metaKey)) return
+  const form = e.currentTarget.form
+  // requestSubmit ignores the button's disabled state — a held Ctrl+Enter
+  // would resubmit while the form is pending, so honor it here instead.
+  if (!form || form.querySelector<HTMLButtonElement>('[type="submit"]')?.disabled) return
   e.preventDefault()
-  e.currentTarget.form?.requestSubmit()
+  form.requestSubmit()
 }

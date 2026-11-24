@@ -1356,14 +1356,17 @@ const discussionRoute = createRoute({
     // later invalidation supersedes, which would pin isPending forever.
     const [isPending, setPending] = useReducer((_: boolean, v: boolean) => v, false)
     const did = Number(discussionId)
+    const m = useMessages()
+    const [error, setError] = useReducer((_: string | null, v: string | null) => v, null)
     const mutate = (fn: () => Promise<unknown>) => {
       setPending(true)
       return (async () => {
         try {
           await fn()
+          setError(null)
           return true
-        } catch {
-          // mutation failures surface via the refetched state
+        } catch (err) {
+          setError(err instanceof RequestError ? err.message : m.error.requestFailed)
           return false
         } finally {
           setPending(false)
@@ -1394,7 +1397,6 @@ const discussionRoute = createRoute({
       })()
     }
     const answerable = discussion.category.format === 'qa'
-    const m = useMessages()
     return (
       <div>
         <nav className="breadcrumb" aria-label={m.chrome.breadcrumb}>
@@ -1462,6 +1464,7 @@ const discussionRoute = createRoute({
               onUnhide: (tid, cid) => mutate(() => api.unhideReply(ws, did, tid, cid)),
             }}
           />
+          {error && <em role="alert">{error}</em>}
           <CommentForm
             submitting={isPending}
             onSubmit={(body) =>
@@ -1794,6 +1797,9 @@ const pullFilesRoute = createRoute({
                   ...input,
                   anchor: headSha,
                 })
+                // Invalidate before navigating so the destination never
+                // serves the pre-mutation loader snapshot (ui-rules §13).
+                void router.invalidate()
                 await navigate({
                   to: '/pulls/$pullId',
                   params: { pullId },
@@ -1801,7 +1807,6 @@ const pullFilesRoute = createRoute({
                 })
               } finally {
                 setPending(false)
-                void router.invalidate()
               }
             })()
           }}
