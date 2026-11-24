@@ -206,8 +206,10 @@ describe('route: /w/{ws}/discussions/{id}', () => {
   })
 
   it('keeps the reply form open with its draft when the post is rejected', async () => {
+    let posts = 0
     stubAPI((url, init) => {
       if (init?.method === 'POST' && url.includes('/comments')) {
+        posts += 1
         return { status: 500, body: { error: { message: 'boom' } } }
       }
       return { body: { discussion: discussion(), threads: [thread()] } }
@@ -217,8 +219,10 @@ describe('route: /w/{ws}/discussions/{id}', () => {
     await page.getByRole('button', { name: 'Reply' }).first().click()
     await page.getByPlaceholder('Reply…').fill('do not lose me')
     await page.getByRole('button', { name: 'Reply', exact: true }).last().click()
-    await new Promise((r) => setTimeout(r, 300))
-    // The form must stay open with the text intact — no silent close.
+    // The rejection must actually have happened — otherwise the next
+    // assertion passes vacuously.
+    await expect.poll(() => posts).toBe(1)
+    // The form stays open with the text intact — no silent close.
     await expect.element(page.getByPlaceholder('Reply…')).toHaveValue('do not lose me')
   })
 })
