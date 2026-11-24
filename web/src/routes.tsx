@@ -168,7 +168,16 @@ type IssueSearch = {
   page?: number | undefined
 }
 
-const str = (v: unknown) => (typeof v === 'string' && v !== '' ? v : undefined)
+// TanStack Router decodes `?q=404`-style values to numbers and
+// `?q=true` to booleans — coerce those back so numeric keywords survive.
+const str = (v: unknown) =>
+  typeof v === 'string' && v !== ''
+    ? v
+    : typeof v === 'number' && Number.isFinite(v)
+      ? String(v)
+      : typeof v === 'boolean'
+        ? String(v)
+        : undefined
 const num = (v: unknown) => {
   const n = typeof v === 'number' ? v : typeof v === 'string' ? Number(v) : NaN
   return Number.isInteger(n) && n >= 1 ? n : undefined
@@ -1115,6 +1124,22 @@ const discussionRoute = createRoute({
         }
       })()
     }
+    // Posting a thread or reply lands on the new entry's permalink like
+    // the MPA's redirect-to-anchor flow.
+    const postAndGo = <T,>(fn: () => Promise<T>, anchor: (r: T) => string) => {
+      setPending(true)
+      void (async () => {
+        try {
+          const created = await fn()
+          await router.invalidate()
+          void navigate({ to: '.', hash: anchor(created), replace: true })
+        } catch {
+          // mutation failures surface via the refetched state
+        } finally {
+          setPending(false)
+        }
+      })()
+    }
     const answerable = discussion.category.format === 'qa'
     return (
       <div>
@@ -1169,7 +1194,12 @@ const discussionRoute = createRoute({
                 ? (tid, answer) => mutate(() => api.setThreadAnswer(ws, did, tid, answer))
                 : undefined
             }
-            onReply={(tid, body) => mutate(() => api.createReply(ws, did, tid, body))}
+            onReply={(tid, body) =>
+              postAndGo(
+                () => api.createReply(ws, did, tid, body),
+                (r) => `comment-${r.reply.id}`,
+              )
+            }
             replyHandlers={{
               pending: isPending,
               onEdit: (tid, cid, body) => mutate(() => api.updateReply(ws, did, tid, cid, body)),
@@ -1180,7 +1210,12 @@ const discussionRoute = createRoute({
           />
           <CommentForm
             submitting={isPending}
-            onSubmit={(body) => mutate(() => api.createThread(ws, did, body))}
+            onSubmit={(body) =>
+              postAndGo(
+                () => api.createThread(ws, did, body),
+                (r) => `thread-${r.thread.id}`,
+              )
+            }
           />
         </section>
 
