@@ -13,7 +13,7 @@ export function ConfirmDialog({
   label: string
   title: string
   confirmLabel?: string
-  pending?: boolean
+  pending?: boolean | undefined
   onConfirm: () => void
 }) {
   const id = useId().replace(/[^a-zA-Z0-9_-]/g, '')

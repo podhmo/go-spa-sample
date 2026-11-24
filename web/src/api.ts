@@ -107,12 +107,14 @@ const json = (body: unknown): RequestInit => ({
   body: JSON.stringify(body),
 })
 
+// exactOptionalPropertyTypes: every field may be present-but-undefined
+// (validateSearch fills all keys; qs() drops the undefined ones).
 export type IssueListFilter = {
-  status?: string
-  q?: string
-  label?: string
-  sort?: string
-  page?: number
+  status?: string | undefined
+  q?: string | undefined
+  label?: string | undefined
+  sort?: string | undefined
+  page?: number | undefined
 }
 
 export const api = {

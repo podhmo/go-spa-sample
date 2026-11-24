@@ -17,9 +17,9 @@ function LabelRow({
   onArchive,
 }: {
   label: Label
-  pending?: boolean
+  pending?: boolean | undefined
   onUpdate: (id: number, patch: { name?: string; color?: string }) => void
-  onArchive?: (id: number) => void
+  onArchive?: ((id: number) => void) | undefined
 }) {
   const [ui, dispatch] = useReducer(
     (
@@ -103,9 +103,9 @@ function LabelGroup({
 }: {
   title: string
   labels: Label[]
-  pending?: boolean
+  pending?: boolean | undefined
   onUpdate: (id: number, patch: { name?: string; color?: string }) => void
-  onArchive?: (id: number) => void
+  onArchive?: ((id: number) => void) | undefined
 }) {
   return (
     <section>

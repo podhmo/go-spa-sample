@@ -71,7 +71,15 @@ const indexRoute = createRoute({
   },
 })
 
-type IssueSearch = { status?: string; q?: string; label?: string; sort?: string; page?: number }
+// Keys are always present in the validated/search-prop objects but may
+// hold undefined (exactOptionalPropertyTypes), so each is `T | undefined`.
+type IssueSearch = {
+  status?: string | undefined
+  q?: string | undefined
+  label?: string | undefined
+  sort?: string | undefined
+  page?: number | undefined
+}
 
 const str = (v: unknown) => (typeof v === 'string' && v !== '' ? v : undefined)
 const num = (v: unknown) => {

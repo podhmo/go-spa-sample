@@ -138,7 +138,7 @@ describe('route: /issues', () => {
 
 describe('route: /issues/$issueId/edit', () => {
   it('loads current values and PATCHes title/body/label_ids', async () => {
-    const requests: { url: string; init?: RequestInit }[] = []
+    const requests: { url: string; init?: RequestInit | undefined }[] = []
     stubAPI((url, init) => {
       requests.push({ url, init })
       if (url.includes('/labels'))
@@ -167,7 +167,7 @@ describe('route: /issues/$issueId/edit', () => {
 
 describe('route: /issues/$issueId', () => {
   it('shows issue and comments, then posts a status change', async () => {
-    const requests: { url: string; init?: RequestInit }[] = []
+    const requests: { url: string; init?: RequestInit | undefined }[] = []
     let closed = false
     stubAPI((url, init) => {
       requests.push({ url, init })
@@ -202,7 +202,7 @@ describe('route: /issues/$issueId', () => {
   })
 
   it('edits a comment inline and shows the edited badge', async () => {
-    const requests: { url: string; init?: RequestInit }[] = []
+    const requests: { url: string; init?: RequestInit | undefined }[] = []
     let edited = false
     stubAPI((url, init) => {
       requests.push({ url, init })
@@ -234,7 +234,7 @@ describe('route: /issues/$issueId', () => {
   })
 
   it('deletes a comment through the confirm dialog', async () => {
-    const requests: { url: string; init?: RequestInit }[] = []
+    const requests: { url: string; init?: RequestInit | undefined }[] = []
     stubAPI((url, init) => {
       requests.push({ url, init })
       return { body: { issue: issue(), comments: [comment()] } }
@@ -250,7 +250,7 @@ describe('route: /issues/$issueId', () => {
   })
 
   it('hides a comment with a reason and unhides it', async () => {
-    const requests: { url: string; init?: RequestInit }[] = []
+    const requests: { url: string; init?: RequestInit | undefined }[] = []
     let hidden = false
     stubAPI((url, init) => {
       requests.push({ url, init })
@@ -324,7 +324,7 @@ describe('route: /issues/$issueId', () => {
 
 describe('route: /labels', () => {
   it('lists labels by kind plus archived, and creates/archives/restores', async () => {
-    const requests: { url: string; init?: RequestInit }[] = []
+    const requests: { url: string; init?: RequestInit | undefined }[] = []
     const active: Label[] = [
       label({ name: 'Bug' }),
       label({ id: 2, name: 'q', kind: 'discussion' }),
@@ -345,7 +345,8 @@ describe('route: /labels', () => {
       }
       if (init?.method === 'DELETE') {
         const i = active.findIndex((l) => l.id === 1)
-        archived.push({ ...active.splice(i, 1)[0], archived: true })
+        const [removed] = active.splice(i, 1)
+        if (removed) archived.push({ ...removed, archived: true })
         return { status: 204 }
       }
       return { body: { labels: active } }

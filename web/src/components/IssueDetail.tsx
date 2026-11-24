@@ -23,12 +23,14 @@ const commentUIReducer = (s: CommentUIState, a: CommentUIAction): CommentUIState
   }
 }
 
+// Optional members are spread into CommentItem's props, so callers may
+// legitimately pass explicit undefined (exactOptionalPropertyTypes).
 export type CommentHandlers = {
-  pending?: boolean
-  onEdit?: (cid: number, body: string) => void
-  onDelete?: (cid: number) => void
-  onHide?: (cid: number, reason: string) => void
-  onUnhide?: (cid: number) => void
+  pending?: boolean | undefined
+  onEdit?: ((cid: number, body: string) => void) | undefined
+  onDelete?: ((cid: number) => void) | undefined
+  onHide?: ((cid: number, reason: string) => void) | undefined
+  onUnhide?: ((cid: number) => void) | undefined
 }
 
 // Hide reason picker: a native <dialog> holding a <form method="dialog"> —
@@ -40,7 +42,7 @@ function HideCommentDialog({
   onHide,
 }: {
   commentId: number
-  pending?: boolean
+  pending?: boolean | undefined
   onHide: (reason: string) => void
 }) {
   const id = useId().replace(/[^a-zA-Z0-9_-]/g, '')

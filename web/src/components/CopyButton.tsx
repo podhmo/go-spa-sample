@@ -1,6 +1,9 @@
 import { useReducer } from 'react'
 
 type CopyState = 'idle' | 'copied' | 'failed'
+// `timer` is present-but-undefined after a dispatch without one
+// (exactOptionalPropertyTypes).
+type CopyUIState = { state: CopyState; timer?: ReturnType<typeof setTimeout> | undefined }
 
 // Clipboard copy button with transient feedback. getText may fetch the
 // payload lazily (e.g. the markdown export endpoint) so it is only
@@ -14,17 +17,14 @@ export function CopyButton({
 }: {
   label: string
   getText: () => string | Promise<string>
-  pending?: boolean
+  pending?: boolean | undefined
 }) {
   const [s, dispatch] = useReducer(
-    (
-      s: { state: CopyState; timer?: ReturnType<typeof setTimeout> },
-      a: { state: CopyState; timer?: ReturnType<typeof setTimeout> },
-    ) => {
+    (s: CopyUIState, a: CopyUIState) => {
       if (s.timer) clearTimeout(s.timer)
       return { state: a.state, timer: a.timer }
     },
-    { state: 'idle' } as { state: CopyState; timer?: ReturnType<typeof setTimeout> },
+    { state: 'idle' } as CopyUIState,
   )
   return (
     <span className="copy">
