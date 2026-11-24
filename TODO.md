@@ -118,5 +118,14 @@ workspace → discussions → pulls → accounts へ展開する。
 - [x] **コメント空入力の送信 Disabled** ([`docs/ja/ui-rules.md` §6](docs/ja/ui-rules.md)):
   トップレベル・返信・編集インラインとも本文が空/空白のみなら disabled
   (MPA の comment-submit-disabled.js 相当)
+- [ ] **live 更新（SSE イベント購読）**: 複数エージェントがローカル CLI
+  (DB直叩き) でコメント/スレッドを書いたとき、開いている issues /
+  discussions 画面が追加・編集・削除に追随するようにする。MPA 版は
+  changes テーブル + WatchChanges + SSE hub で実現済み
+  (`go-classic-mpa-sample/docs/sketch/ja/live-updates.md` 案(a))。
+  store の changes 機構は移植済みなので、API 側に SSE エンドポイント +
+  main.go の hub 配線、SPA 側に EventSource → `router.invalidate()` を
+  足す。AGENTS.md の「SSE は port しない」方針も更新する。
+  description/title 変更の細かい追随は MPA/SPA 双方 future work
 - [ ] **本番構成の決定**: dev proxy の `Bearer dev-token` 注入は開発専用。
   embed 配信+セッション or 別配備+token のどちらにするか
