@@ -24,7 +24,9 @@ as-is; the frontend is a fresh SPA. See `README.md` for layout.
 - `.agents/skills/playwright-cli/` — drive a real browser against the
   running app for E2E verification.
 - `.agents/skills/todo-md/` — TODO.md upkeep rules.
-- `devin mcp` configured: context7 (library docs lookup).
+- `devin mcp` configured: context7 — **use proactively** whenever unsure
+  about a library/framework API (`resolve-library-id` → `query-docs`,
+  one topic per query; see `docs/sketch/ja/libraries.md` for query tips).
 
 ## Commands
 

@@ -6,7 +6,16 @@ issue tracker のSPA実装で使うライブラリ・スキルの使いどころ
 ## ドキュメントの引き方
 
 - **context7 MCP** (`.devin/mcp_config.json`): `resolve-library-id` → `query-docs` の2段階。
-  ライブラリ名の曖昧さを解決してから、1トピック1クエリで引く
+  ライブラリ名の曖昧さを解決してから、1トピック1クエリで引く。
+  うまいクエリのコツ (2026-11-25 実測):
+  - `libraryName` は公式名を正確に (`TanStack Router` ○)。`query` には
+    「やりたいこと1文 + 具体API名」(`router.invalidate after mutation`)
+  - `query-docs` も同様に1トピック1クエリ。曖昧語だけ (`auth`) や
+    複数トピックの結合 (`routing and auth and caching`) はハズしやすい
+  - `language: "TypeScript"` でコード例が TS 優先になる
+  - 候補は公式 (`/tanstack/router`) が DeepWiki ミラー (`/websites/…`) より
+    スニペット豊富。バージョン指定も可 (`/tanstack/router/v1.139.3`)
+  - 各ツール 1質問あたり3回まで。npm 公式docs専用の web_search と捉えるとよい
 - **modern-web-guidance** (`.agents/skills/`): Web標準 (HTML/CSS/JS) の実装前に
   `npx -y modern-web-guidance@latest search "<2-5語のクエリ>"` → `retrieve "<id>"`。
   フレームワーク名はクエリに入れない
