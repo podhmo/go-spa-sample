@@ -147,9 +147,11 @@ function parseDiff(text: string): DiffFile[] {
   return files
 }
 
-// The open draft anchors to a coordinate AND that row's text when the
-// form opened: a rewritten diff can put different code at the same
-// path:side:line, and a retry must not attach the draft to it.
+// The open draft anchors to a coordinate AND that row's code when the
+// form opened (without the +/-/space diff marker — a rebase can turn an
+// added line into context without changing its source text). A
+// rewritten diff can put different code at the same path:side:line, and
+// a retry must not attach the draft to it.
 type FormUI = { openAt: { key: string; text: string } | null }
 type FormAction = { type: 'toggle'; open: { key: string; text: string } | null }
 
@@ -176,14 +178,16 @@ export function PullFiles({
   const files = parseDiff(diff)
   // A different diff (force-push, new commits) can shift every row. An
   // open draft whose anchor row disappeared — or whose row now holds
-  // different text — no longer points at the code it was written for:
+  // different code — no longer points at the code it was written for:
   // close it rather than let a retry attach it to replacement code.
   useEffect(() => {
     if (ui.openAt === null) return
     const row = files
       .flatMap((f) => f.lines.map((l, i) => ({ key: `${f.path}:${l.side}:${l.line ?? i}`, l })))
       .find((r) => r.key === ui.openAt?.key)
-    if (!row || row.l.text !== ui.openAt.text) dispatch({ type: 'toggle', open: null })
+    if (!row || row.l.text.slice(1) !== ui.openAt.text) {
+      dispatch({ type: 'toggle', open: null })
+    }
     // `files` reparses every render; diff + openAt are the triggers.
     // oxlint-disable-next-line react/exhaustive-deps
   }, [diff, ui.openAt])
@@ -209,7 +213,9 @@ export function PullFiles({
                     formOpen={formOpen}
                     pending={pending}
                     canComment={onComment !== undefined && l.path !== undefined}
-                    onToggle={() => dispatch({ type: 'toggle', open: { key, text: l.text } })}
+                    onToggle={() =>
+                      dispatch({ type: 'toggle', open: { key, text: l.text.slice(1) } })
+                    }
                     onSubmit={async (body) => {
                       if (l.path && l.line && l.side) {
                         await onComment?.({ body, path: l.path, line: l.line, side: l.side })

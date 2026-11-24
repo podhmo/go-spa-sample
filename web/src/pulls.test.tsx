@@ -308,6 +308,35 @@ describe('route: /pulls/{id}/files', () => {
     await expect.poll(() => page.getByLabelText('comment').elements().length).toBe(0)
   })
 
+  it('keeps the draft when a rebase flips the anchor row from add to context', async () => {
+    // The diff marker changed but the source text did not — closing the
+    // draft here would lose it over identical code.
+    let diff = DIFF
+    stubAPI((url, init) => {
+      if (url.endsWith('/diff')) return { body: diff }
+      if (url.endsWith('/comments') && init?.method === 'POST') {
+        return {
+          status: 422,
+          body: {
+            error: {
+              message: 'Validation failed.',
+              fields: { anchor: 'Anchor must be a commit on the head branch.' },
+            },
+          },
+        }
+      }
+      return { body: { pull_request: pull(), comments: [], commits: [] } }
+    })
+    const { router } = renderAt('/pulls/1/files')
+    await page.getByRole('button', { name: 'Comment on a.txt line 2 (right side)' }).click()
+    await page.getByLabelText('comment').fill('keep me')
+    await page.getByRole('button', { name: 'Comment', exact: true }).click()
+    await expect.element(page.getByRole('alert')).toBeInTheDocument()
+    diff = DIFF.replace('+added line', ' added line')
+    await router.invalidate()
+    expect(page.getByLabelText('comment')).toHaveValue('keep me')
+  })
+
   it('ignores a second Ctrl+Enter while the first comment is in flight', async () => {
     let posts = 0
     let release: (() => void) | undefined
