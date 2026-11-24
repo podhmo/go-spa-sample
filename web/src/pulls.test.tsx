@@ -265,7 +265,10 @@ describe('route: /pulls/{id}/files', () => {
         // diff gains a line so the test can wait for the new loader
         // data to reach the page — counting requests alone races the
         // anchor update.
-        const diff = diffCalls === 1 ? DIFF : `${DIFF}\n+fresh line`
+        const diff =
+          diffCalls === 1
+            ? DIFF
+            : DIFF.replace('@@ -1,2 +1,3 @@', '@@ -1,2 +1,4 @@') + '\n+fresh line'
         return {
           body: diff,
           headers: { 'x-anchor-sha': diffCalls === 1 ? 'abc123' : 'def456' },
