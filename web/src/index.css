@@ -504,6 +504,34 @@ summary:focus-visible {
   background: var(--closed);
 }
 
+/* Discussion category — neutral accent, no ::before dot. */
+.badge-category {
+  color: var(--accent);
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+
+.badge-category::before {
+  content: none;
+}
+
+/* Answered discussions/threads — the "done" green of the open status. */
+.badge-answered {
+  color: var(--open);
+  background: var(--open-bg);
+  border-color: var(--open-border);
+}
+
+.badge-answered::before {
+  /* check mark */
+  content: '✓';
+  display: inline;
+  width: auto;
+  height: auto;
+  border-radius: 0;
+  font-weight: 700;
+}
+
 /* Long label names end in an ellipsis instead of widening the row; the
    full name stays in the DOM (accessible name, find-in-page) and the
    badge grows to it on hover or keyboard focus. */
@@ -1169,6 +1197,25 @@ fieldset.field:has(:is(:user-invalid, [aria-invalid='true'])) {
 
 .comment {
   padding: 14px 16px;
+}
+
+/* Discussion threads mark the accepted answer. */
+.comment-answer {
+  border-left: 3px solid var(--open);
+}
+
+/* Replies nest one level under their thread (discussions only). */
+.comment-list-nested {
+  margin: 12px 0 0;
+}
+
+.comment-nested {
+  background: var(--surface-hover);
+}
+
+/* The inline reply form inside a thread card. */
+.comment-reply-form {
+  margin-top: 12px;
 }
 
 /* Long threads only: skip layout and paint of off-screen comment

@@ -12,9 +12,11 @@ import {
 } from '@tanstack/react-router'
 import { useReducer, useTransition } from 'react'
 import { RequestError, api } from './api'
-import { CommentForm, IssueForm, WorkspaceForm } from './components/forms'
+import { CommentForm, DiscussionForm, IssueForm, WorkspaceForm } from './components/forms'
 import { CommentList, IssueDetail } from './components/IssueDetail'
 import { IssueList } from './components/IssueList'
+import { DiscussionList } from './components/DiscussionList'
+import { DiscussionDetail, ThreadList } from './components/DiscussionDetail'
 import { LabelsAdmin } from './components/LabelsAdmin'
 import { WorkspaceList } from './components/Workspaces'
 
@@ -57,6 +59,9 @@ function SiteNav({ ws }: { ws: string | undefined }) {
           <Link to="/w/$ws/issues" params={{ ws }}>
             Issues
           </Link>
+          <Link to="/w/$ws/discussions" params={{ ws }}>
+            Discussions
+          </Link>
           <Link to="/w/$ws/labels" params={{ ws }}>
             Labels
           </Link>
@@ -75,6 +80,7 @@ function SiteNav({ ws }: { ws: string | undefined }) {
       </Link>
       <nav className="site-nav" aria-label="Main">
         <Link to="/issues">Issues</Link>
+        <Link to="/discussions">Discussions</Link>
         <Link to="/labels">Labels</Link>
         <Link to="/workspaces">Workspaces</Link>
         <Link className="btn" to="/issues/new">
@@ -162,7 +168,16 @@ type IssueSearch = {
   page?: number | undefined
 }
 
-const str = (v: unknown) => (typeof v === 'string' && v !== '' ? v : undefined)
+// TanStack Router decodes `?q=404`-style values to numbers and
+// `?q=true` to booleans — coerce those back so numeric keywords survive.
+const str = (v: unknown) =>
+  typeof v === 'string' && v !== ''
+    ? v
+    : typeof v === 'number' && Number.isFinite(v)
+      ? String(v)
+      : typeof v === 'boolean'
+        ? String(v)
+        : undefined
 const num = (v: unknown) => {
   const n = typeof v === 'number' ? v : typeof v === 'string' ? Number(v) : NaN
   return Number.isInteger(n) && n >= 1 ? n : undefined
@@ -221,6 +236,77 @@ const editIssueRedirectRoute = createRoute({
     throw redirect(
       ws
         ? { to: '/w/$ws/issues/$issueId/edit', params: { ws, issueId: params.issueId } }
+        : { to: '/workspaces' },
+    )
+  },
+})
+
+type DiscussionSearch = {
+  category?: string | undefined
+  answered?: string | undefined
+  q?: string | undefined
+  sort?: string | undefined
+  page?: number | undefined
+}
+
+const discussionSearch = (search: Record<string, unknown>): DiscussionSearch => ({
+  category: str(search.category),
+  answered: str(search.answered),
+  q: str(search.q),
+  sort: str(search.sort),
+  page: num(search.page),
+})
+
+const discussionsRedirectRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/discussions',
+  validateSearch: discussionSearch,
+  beforeLoad: async ({ search }) => {
+    const ws = await homeSlug()
+    throw redirect(
+      ws ? { to: '/w/$ws/discussions', params: { ws }, search } : { to: '/workspaces' },
+    )
+  },
+})
+
+const newDiscussionRedirectRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/discussions/new',
+  beforeLoad: async () => {
+    const ws = await homeSlug()
+    throw redirect(ws ? { to: '/w/$ws/discussions/new', params: { ws } } : { to: '/workspaces' })
+  },
+})
+
+const discussionRedirectRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/discussions/$discussionId',
+  beforeLoad: async ({ params, location }) => {
+    const ws = await homeSlug()
+    // #thread-N / #comment-N permalinks survive the redirect.
+    throw redirect(
+      ws
+        ? {
+            to: '/w/$ws/discussions/$discussionId',
+            params: { ws, discussionId: params.discussionId },
+            hash: location.hash,
+          }
+        : { to: '/workspaces' },
+    )
+  },
+})
+
+const editDiscussionRedirectRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/discussions/$discussionId/edit',
+  beforeLoad: async ({ params }) => {
+    const ws = await homeSlug()
+    throw redirect(
+      ws
+        ? {
+            to: '/w/$ws/discussions/$discussionId/edit',
+            params: { ws, discussionId: params.discussionId },
+          }
         : { to: '/workspaces' },
     )
   },
@@ -720,6 +806,433 @@ const issueRoute = createRoute({
   },
 })
 
+const discussionsRoute = createRoute({
+  getParentRoute: () => wsRoute,
+  path: '/discussions',
+  validateSearch: discussionSearch,
+  loaderDeps: ({ search }) => search,
+  loader: async ({ params, deps }) => {
+    const [list, categories] = await scoped(
+      Promise.all([api.listDiscussions(params.ws, deps), api.listDiscussionCategories()]),
+      (real) => {
+        throw redirect({ to: '/w/$ws/discussions', params: { ws: real }, search: deps })
+      },
+    )
+    return { list, categories: categories.categories }
+  },
+  component: function DiscussionsPage() {
+    const { list: data, categories } = discussionsRoute.useLoaderData()
+    const { ws } = discussionsRoute.useParams()
+    const search = discussionsRoute.useSearch()
+    const navigate = useNavigate()
+    const totalPages = Math.max(1, Math.ceil(data.total / data.per_page))
+    const hasActiveFilter =
+      search.category !== undefined ||
+      search.answered !== undefined ||
+      search.q !== undefined ||
+      (search.sort !== undefined && search.sort !== 'newest')
+    const rangeStart = data.total === 0 ? 0 : (data.page - 1) * data.per_page + 1
+    const rangeEnd = rangeStart + data.discussions.length - 1
+    return (
+      <div>
+        <div className="page-head">
+          <h1>Discussions</h1>
+          <Link className="btn" to="/w/$ws/discussions/new" params={{ ws }}>
+            New discussion
+          </Link>
+        </div>
+
+        <search>
+          {/* key remounts the uncontrolled inputs when the URL filters change */}
+          <form
+            key={JSON.stringify(search)}
+            className="filter-bar"
+            aria-label="Filter discussions"
+            onSubmit={(e) => {
+              e.preventDefault()
+              const fd = new FormData(e.currentTarget)
+              void navigate({
+                to: '/w/$ws/discussions',
+                params: { ws },
+                search: {
+                  category: str(fd.get('category')),
+                  answered: str(fd.get('answered')),
+                  q: str(fd.get('q')),
+                  sort: str(fd.get('sort')),
+                },
+              })
+            }}
+          >
+            <div className="filter-field">
+              <label htmlFor="filter-category">Category</label>
+              <select id="filter-category" name="category" defaultValue={search.category ?? ''}>
+                <option value="">All categories</option>
+                {categories.map((c) => (
+                  <option key={c.id} value={c.slug}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="filter-field">
+              <label htmlFor="filter-answered">Answered</label>
+              <select id="filter-answered" name="answered" defaultValue={search.answered ?? ''}>
+                <option value="">All</option>
+                <option value="yes">Answered</option>
+                <option value="no">Unanswered</option>
+              </select>
+            </div>
+            <div className="filter-field">
+              <label htmlFor="filter-dq">Search</label>
+              <input
+                type="search"
+                id="filter-dq"
+                name="q"
+                placeholder="Title or body"
+                defaultValue={search.q}
+              />
+            </div>
+            <div className="filter-field">
+              <label htmlFor="filter-dsort">Sort</label>
+              <select id="filter-dsort" name="sort" defaultValue={search.sort ?? 'newest'}>
+                <option value="newest">Newest first</option>
+                <option value="oldest">Oldest first</option>
+              </select>
+            </div>
+            <div className="filter-actions">
+              <button type="submit" className="btn">
+                Apply
+              </button>
+              {hasActiveFilter && (
+                <Link className="btn btn-quiet" to="/w/$ws/discussions" params={{ ws }}>
+                  Clear
+                </Link>
+              )}
+            </div>
+          </form>
+        </search>
+
+        {data.discussions.length > 0 && (
+          <p className="result-count">
+            Showing {rangeStart}–{rangeEnd} of {data.total} discussions
+          </p>
+        )}
+        <DiscussionList discussions={data.discussions} ws={ws} filtered={hasActiveFilter} />
+
+        {totalPages > 1 && (
+          <nav className="pagination" aria-label="Pagination">
+            {data.page > 1 ? (
+              <Link
+                className="btn"
+                to="/w/$ws/discussions"
+                params={{ ws }}
+                search={{ ...search, page: data.page - 1 }}
+              >
+                Previous
+              </Link>
+            ) : (
+              <span className="btn btn-disabled" aria-disabled="true">
+                Previous
+              </span>
+            )}
+            <span className="page-info">
+              Page {data.page} of {totalPages}
+            </span>
+            {data.page < totalPages ? (
+              <Link
+                className="btn"
+                to="/w/$ws/discussions"
+                params={{ ws }}
+                search={{ ...search, page: data.page + 1 }}
+              >
+                Next
+              </Link>
+            ) : (
+              <span className="btn btn-disabled" aria-disabled="true">
+                Next
+              </span>
+            )}
+          </nav>
+        )}
+      </div>
+    )
+  },
+})
+
+const newDiscussionRoute = createRoute({
+  getParentRoute: () => wsRoute,
+  path: '/discussions/new',
+  loader: async ({ params }) => {
+    const [categories, labels] = await scoped(
+      Promise.all([
+        api.listDiscussionCategories(),
+        api.listLabels(params.ws, { kind: 'discussion' }),
+      ]),
+      (real) => {
+        throw redirect({ to: '/w/$ws/discussions/new', params: { ws: real } })
+      },
+    )
+    return { categories: categories.categories, labels: labels.labels }
+  },
+  component: function NewDiscussionPage() {
+    const { categories, labels } = newDiscussionRoute.useLoaderData()
+    const { ws } = newDiscussionRoute.useParams()
+    const navigate = useNavigate()
+    const [isPending, startTransition] = useTransition()
+    const [errors, setErrors] = useReducer(
+      (_: Record<string, string>, e: Record<string, string>) => e,
+      {},
+    )
+    return (
+      <div>
+        <div className="page-head">
+          <h1>New discussion</h1>
+        </div>
+        <DiscussionForm
+          submitting={isPending}
+          errors={errors}
+          categories={categories}
+          labels={labels}
+          cancelLink={
+            <Link className="btn btn-quiet" to="/w/$ws/discussions" params={{ ws }}>
+              Cancel
+            </Link>
+          }
+          onSubmit={(input) => {
+            startTransition(async () => {
+              try {
+                const { discussion } = await api.createDiscussion(ws, input)
+                await navigate({
+                  to: '/w/$ws/discussions/$discussionId',
+                  params: { ws, discussionId: String(discussion.id) },
+                })
+              } catch (err) {
+                setErrors(apiFieldErrors(err, 'category'))
+              }
+            })
+          }}
+        />
+      </div>
+    )
+  },
+})
+
+const editDiscussionRoute = createRoute({
+  getParentRoute: () => wsRoute,
+  path: '/discussions/$discussionId/edit',
+  loader: async ({ params }) => {
+    const [detail, labels, categories] = await scoped(
+      Promise.all([
+        api.getDiscussion(params.ws, Number(params.discussionId)),
+        api.listLabels(params.ws, { kind: 'discussion' }),
+        api.listDiscussionCategories(),
+      ]),
+      (real) => {
+        throw redirect({
+          to: '/w/$ws/discussions/$discussionId/edit',
+          params: { ws: real, discussionId: params.discussionId },
+        })
+      },
+    )
+    return { ...detail, labels: labels.labels, categories: categories.categories }
+  },
+  component: function EditDiscussionPage() {
+    const { discussion, labels, categories } = editDiscussionRoute.useLoaderData()
+    const { ws, discussionId } = editDiscussionRoute.useParams()
+    const navigate = useNavigate()
+    const [isPending, startTransition] = useTransition()
+    const [errors, setErrors] = useReducer(
+      (_: Record<string, string>, e: Record<string, string>) => e,
+      {},
+    )
+    return (
+      <div>
+        <div className="page-head">
+          <h1>Edit discussion #{discussion.id}</h1>
+        </div>
+        <DiscussionForm
+          submitting={isPending}
+          errors={errors}
+          categories={categories}
+          labels={labels}
+          initial={{
+            title: discussion.title,
+            body: discussion.body,
+            category_id: discussion.category.id,
+            label_ids: discussion.labels.map((l) => l.id),
+          }}
+          submitLabel="Save changes"
+          cancelLink={
+            <Link
+              className="btn btn-quiet"
+              to="/w/$ws/discussions/$discussionId"
+              params={{ ws, discussionId }}
+            >
+              Cancel
+            </Link>
+          }
+          onSubmit={(input) => {
+            startTransition(async () => {
+              try {
+                await api.updateDiscussion(ws, Number(discussionId), input)
+                await navigate({
+                  to: '/w/$ws/discussions/$discussionId',
+                  params: { ws, discussionId },
+                })
+              } catch (err) {
+                setErrors(apiFieldErrors(err, 'category'))
+              }
+            })
+          }}
+        />
+      </div>
+    )
+  },
+})
+
+const discussionRoute = createRoute({
+  getParentRoute: () => wsRoute,
+  path: '/discussions/$discussionId',
+  loader: ({ params, location }) =>
+    scoped(api.getDiscussion(params.ws, Number(params.discussionId)), (real) => {
+      throw redirect({
+        to: '/w/$ws/discussions/$discussionId',
+        params: { ws: real, discussionId: params.discussionId },
+        hash: location.hash,
+      })
+    }),
+  component: function DiscussionPage() {
+    const { discussion, threads } = discussionRoute.useLoaderData()
+    const { ws, discussionId } = discussionRoute.useParams()
+    const router = useRouter()
+    const navigate = useNavigate()
+    // A reducer-driven busy flag, not an async transition: renders kicked
+    // off by router.invalidate() can suspend on a loader thenable that a
+    // later invalidation supersedes, which would pin isPending forever.
+    const [isPending, setPending] = useReducer((_: boolean, v: boolean) => v, false)
+    const did = Number(discussionId)
+    const mutate = (fn: () => Promise<unknown>) => {
+      setPending(true)
+      void (async () => {
+        try {
+          await fn()
+        } catch {
+          // mutation failures surface via the refetched state
+        } finally {
+          setPending(false)
+          void router.invalidate()
+        }
+      })()
+    }
+    // Posting a thread or reply lands on the new entry's permalink like
+    // the MPA's redirect-to-anchor flow.
+    const postAndGo = <T,>(fn: () => Promise<T>, anchor: (r: T) => string) => {
+      setPending(true)
+      void (async () => {
+        try {
+          const created = await fn()
+          await router.invalidate()
+          void navigate({ to: '.', hash: anchor(created), replace: true })
+          // The reloaded list renders after invalidate resolves, so the
+          // router's hash scroll may run before the entry exists — retry
+          // on the next frame.
+          requestAnimationFrame(() => {
+            document.getElementById(anchor(created))?.scrollIntoView()
+          })
+        } catch {
+          // mutation failures surface via the refetched state
+        } finally {
+          setPending(false)
+        }
+      })()
+    }
+    const answerable = discussion.category.format === 'qa'
+    return (
+      <div>
+        <nav className="breadcrumb" aria-label="Breadcrumb">
+          <ol>
+            <li>
+              <Link to="/w/$ws/discussions" params={{ ws }} activeOptions={{ exact: true }}>
+                Discussions
+              </Link>
+            </li>
+            <li>
+              <a href="#" aria-current="page">
+                #{discussion.id}
+              </a>
+            </li>
+          </ol>
+        </nav>
+
+        <DiscussionDetail
+          discussion={discussion}
+          ws={ws}
+          pending={isPending}
+          onDelete={() => {
+            setPending(true)
+            void (async () => {
+              try {
+                await api.deleteDiscussion(ws, did)
+                await navigate({ to: '/w/$ws/discussions', params: { ws } })
+              } finally {
+                setPending(false)
+              }
+            })()
+          }}
+          onCopyMarkdown={() => api.getDiscussionMarkdown(ws, did)}
+        />
+
+        <section id="comments" className="comments">
+          <h2>
+            Comments
+            {threads.length > 0 && <span className="comment-count"> ({threads.length})</span>}
+          </h2>
+          <ThreadList
+            threads={threads}
+            pending={isPending}
+            answerable={answerable}
+            onEdit={(tid, body) => mutate(() => api.updateThread(ws, did, tid, body))}
+            onDelete={(tid) => mutate(() => api.deleteThread(ws, did, tid))}
+            onHide={(tid, reason) => mutate(() => api.hideThread(ws, did, tid, reason))}
+            onUnhide={(tid) => mutate(() => api.unhideThread(ws, did, tid))}
+            onSetAnswer={
+              answerable
+                ? (tid, answer) => mutate(() => api.setThreadAnswer(ws, did, tid, answer))
+                : undefined
+            }
+            onReply={(tid, body) =>
+              postAndGo(
+                () => api.createReply(ws, did, tid, body),
+                (r) => `comment-${r.reply.id}`,
+              )
+            }
+            replyHandlers={{
+              pending: isPending,
+              onEdit: (tid, cid, body) => mutate(() => api.updateReply(ws, did, tid, cid, body)),
+              onDelete: (tid, cid) => mutate(() => api.deleteReply(ws, did, tid, cid)),
+              onHide: (tid, cid, reason) => mutate(() => api.hideReply(ws, did, tid, cid, reason)),
+              onUnhide: (tid, cid) => mutate(() => api.unhideReply(ws, did, tid, cid)),
+            }}
+          />
+          <CommentForm
+            submitting={isPending}
+            onSubmit={(body) =>
+              postAndGo(
+                () => api.createThread(ws, did, body),
+                (r) => `thread-${r.thread.id}`,
+              )
+            }
+          />
+        </section>
+
+        <a className="back-to-top" href="#main-content" aria-label="Back to top">
+          ↑ Top
+        </a>
+      </div>
+    )
+  },
+})
+
 const labelsRoute = createRoute({
   getParentRoute: () => wsRoute,
   path: '/labels',
@@ -785,6 +1298,10 @@ export const routeTree = rootRoute.addChildren([
   newIssueRedirectRoute,
   issueRedirectRoute,
   editIssueRedirectRoute,
+  discussionsRedirectRoute,
+  newDiscussionRedirectRoute,
+  discussionRedirectRoute,
+  editDiscussionRedirectRoute,
   labelsRedirectRoute,
   workspacesRoute,
   newWorkspaceRoute,
@@ -794,6 +1311,10 @@ export const routeTree = rootRoute.addChildren([
     newIssueRoute,
     issueRoute,
     editIssueRoute,
+    discussionsRoute,
+    newDiscussionRoute,
+    discussionRoute,
+    editDiscussionRoute,
     labelsRoute,
   ]),
 ])

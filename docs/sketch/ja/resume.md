@@ -32,7 +32,13 @@ API サーバー部分を移植し、フロントを **SPA として作り直す
   (sketch/tanstack-query、sketch/react-markdown) と、master 上でそのまま
   作業させたもの (issues parity、UI parity) がある。並行稼働時は
   「触って良いファイル範囲」を指示で分離するのが重要
-- **次の一手**: Discussions 移植 (TODO.md 順序の先頭)
+- **Discussions 移植完了**: API (`/api/v1/w/{ws}/discussions…` +
+  `/discussion-categories`) と SPA (`/w/{slug}/discussions` 一覧の
+  category/answered/q/sort/page フィルタ、詳細の threads+replies 1段
+  ネスト、作成/編集/削除、hide・unhide、qa の answer マーク、markdown
+  エクスポート、`#thread-N`/`#comment-N` permalink) を MPA 準拠で復元
+- **次の一手**: Pull Requests 移植 (TODO.md 順序の先頭。gitrepo +
+  `-repo` フラグ/`.git` 自動検出のゲーティングが最大の塊)
 
 ## 残りタスク (`TODO.md` が正)
 
