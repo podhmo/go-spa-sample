@@ -32,6 +32,7 @@ import (
 	"time"
 
 	"github.com/podhmo/go-spa-sample/internal/api"
+	"github.com/podhmo/go-spa-sample/internal/gitrepo"
 	"github.com/podhmo/go-spa-sample/internal/store"
 )
 
@@ -49,6 +50,9 @@ func main() {
 	seed := flag.Bool("seed", envBool("ZATUDAN_SEED"),
 		"insert demo issues, discussions and the demo user (env ZATUDAN_SEED); "+
 			"master data (workspace, labels, categories) is ensured either way")
+	repoPath := flag.String("repo", "",
+		"git repository for pull requests (env ZATUDAN_REPO); "+
+			"'off' disables the feature, empty auto-detects near -db")
 	flag.Parse()
 
 	// An explicitly empty -db would open an unnamed ephemeral SQLite
@@ -101,9 +105,24 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
+	// Pull requests exist only with a git repo: explicit -repo failures
+	// are startup errors, auto-detect failures silently leave the feature
+	// unmounted (docs/sketch/ja/pull-requests.md §1).
+	repo, err := gitrepo.Resolve(context.Background(), gitrepo.Options{
+		RepoPath: *repoPath,
+		EnvRepo:  os.Getenv("ZATUDAN_REPO"),
+		DBPath:   *dbPath,
+	})
+	if err != nil {
+		log.Fatalf("resolve repository: %v", err)
+	}
+	if repo != nil {
+		log.Printf("git repository: %s (git %s)", repo.Dir, repo.Version)
+	}
+
 	mux := http.NewServeMux()
 	if *apiToken != "" || hasAPITokens {
-		mux.Handle("/api/v1/", api.New(st, *apiToken))
+		mux.Handle("/api/v1/", api.New(st, *apiToken, repo))
 	} else {
 		log.Printf("no API credentials (ZATUDAN_API_TOKEN unset and no api_tokens rows): /api/v1 is not mounted")
 	}

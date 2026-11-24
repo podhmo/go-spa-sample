@@ -29,7 +29,7 @@ func newServer(t *testing.T) (*httptest.Server, *store.Store) {
 		t.Fatalf("store.Open: %v", err)
 	}
 	t.Cleanup(func() { st.Close() })
-	srv := httptest.NewServer(New(st, testToken))
+	srv := httptest.NewServer(New(st, testToken, nil))
 	t.Cleanup(srv.Close)
 	return srv, st
 }
