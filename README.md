@@ -9,14 +9,19 @@ HTML, plain HTML forms, and POST → Redirect → GET everywhere, backed by
 SQLite — plus a `/api/v1` JSON surface that mirrors the web app.
 
 This repo ports the API-server side (SQLite store + `/api/v1` JSON
-handlers) and re-implements the frontend as an SPA on top of it. The
-MPA-era client features (SSE live updates, `X-Partial` fragments) are
-dropped — the SPA talks JSON only.
+handlers) and re-implements the frontend as an SPA on top of it.
+Feature parity covers workspaces, issues, discussions, git-backed pull
+requests, cookie-session auth (`/login` + `/register`), the `zatu` CLI
+(local SQLite and remote backends), and en/ja i18n. MPA-era SSE live
+updates ARE ported as a hint-only stream (`/api/v1/events` fed by the
+changes table — including writes made by the CLI against the DB
+directly); the SPA subscribes and re-fetches through `router.invalidate()`.
+Only the `X-Partial` fragment swap is dropped — data flows as JSON.
 
 ## Layout
 
 ```
-cmd/zatudan/    API-only server (issues scope; -seed, -db, -api-token flags)
+cmd/zatudan/    API server (-seed, -db, -api-token, -repo flags)
 cmd/zatu/       gh-style CLI — local (SQLite) and remote (/api/v1) backends
 internal/       store / api / auth / events / export (ported from the MPA)
 web/            the SPA — Vite + React 19 + TS 7 (@next) + TanStack Router

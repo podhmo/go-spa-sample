@@ -20,7 +20,7 @@ func newFixture(t *testing.T, token string) (*Client, *store.Store) {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { st.Close() })
-	srv := httptest.NewServer(api.New(st, token, nil))
+	srv := httptest.NewServer(api.New(st, token, nil, nil))
 	t.Cleanup(srv.Close)
 	return New(srv.URL, token).In("default"), st
 }

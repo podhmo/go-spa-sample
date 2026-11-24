@@ -59,7 +59,7 @@ func newPullServer(t *testing.T) (*httptest.Server, *store.Store, *gitrepo.Repo)
 		t.Fatalf("store.Open: %v", err)
 	}
 	t.Cleanup(func() { st.Close() })
-	srv := httptest.NewServer(New(st, testToken, repo))
+	srv := httptest.NewServer(New(st, testToken, repo, nil))
 	t.Cleanup(srv.Close)
 	return srv, st, repo
 }

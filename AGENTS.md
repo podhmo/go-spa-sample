@@ -63,6 +63,9 @@ CI (`.github/workflows/ci.yml`) runs both stacks on push/PR.
   filter forms, `.visually-hidden` labels, `data-error` field errors.
 - Styling: plain CSS in `src/index.css` (+ CSS Modules as needed);
   Panda CSS is a future option (`docs/sketch/ja/css.md`).
-- MPA-era client features (SSE, `X-Partial` fragments) are NOT ported —
-  the SPA is JSON-API only.
+- MPA-era `X-Partial` fragments are NOT ported — data flows as JSON.
+  Live updates ARE: the server streams hint-only SSE on `/api/v1/events`
+  (fed by the changes table, so local-CLI writes in other processes are
+  covered) and the client just runs `router.invalidate()` per hint
+  (`web/src/live-updates.ts`).
 - Commits: English, granular (commit after each coherent change).

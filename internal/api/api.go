@@ -22,6 +22,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/podhmo/go-spa-sample/internal/events"
 	"github.com/podhmo/go-spa-sample/internal/gitrepo"
 	"github.com/podhmo/go-spa-sample/internal/store"
 )
@@ -109,8 +110,8 @@ const (
 // optional shared credential (constant-time compared; its requests are
 // anonymous); any other token is resolved through the store's api_tokens
 // table and its requests run as that user.
-func New(st Store, envToken string, repo *gitrepo.Repo) http.Handler {
-	h := &handler{store: st, repo: repo}
+func New(st Store, envToken string, repo *gitrepo.Repo, hub *events.Hub) http.Handler {
+	h := &handler{store: st, repo: repo, hub: hub, envToken: envToken}
 	mux := http.NewServeMux()
 
 	// Routes are registered methodless per path and dispatched on
@@ -150,6 +151,10 @@ func New(st Store, envToken string, repo *gitrepo.Repo) http.Handler {
 
 		// Inside the gate: reports the credential's user (401 anonymous).
 		"/api/v1/auth/me": {"GET": h.me},
+
+		// Live updates: one SSE stream of every recorded change (hint-only,
+		// client re-fetches). Unmounted (404) when the hub is nil.
+		"/api/v1/events": {"GET": h.streamEvents},
 
 		"/api/v1/w/{ws}/discussions":                                          {"GET": h.scoped(h.listDiscussions), "POST": h.scoped(h.createDiscussion)},
 		"/api/v1/w/{ws}/discussions/{id}":                                     {"GET": h.scoped(h.getDiscussion), "PATCH": h.scoped(h.updateDiscussion), "DELETE": h.scoped(h.deleteDiscussion)},
@@ -270,42 +275,50 @@ func methodDispatch(methods map[string]http.HandlerFunc) http.HandlerFunc {
 // field-name and auth-scheme rules. A valid session cookie wins over the
 // header: in dev the proxy injects the shared token on every request,
 // and the logged-in browser still wants its own identity.
+// resolveActor maps the request's credential to an actor id (0 = the
+// anonymous shared token): a valid session cookie wins over the bearer
+// header, then the env token, then the api_tokens table. ok is false when
+// no credential resolves; err is for store failures only.
+func resolveActor(ctx context.Context, envToken string, st Store, r *http.Request) (actorID int64, ok bool, err error) {
+	if c, cerr := r.Cookie(sessionCookieName); cerr == nil && c.Value != "" {
+		u, serr := st.SessionUser(ctx, c.Value, sessionTTL)
+		switch {
+		case serr == nil:
+			return u.ID, true, nil
+		case errors.Is(serr, store.ErrNotFound):
+			// Unknown/expired session — fall through to the bearer check.
+		default:
+			return 0, false, serr
+		}
+	}
+	got, hasBearer := strings.CutPrefix(r.Header.Get("Authorization"), "Bearer ")
+	if !hasBearer || got == "" {
+		return 0, false, nil
+	}
+	if envToken != "" && subtle.ConstantTimeCompare([]byte(got), []byte(envToken)) == 1 {
+		return 0, true, nil // shared token: no user identity, writes stay anonymous
+	}
+	u, err := st.APITokenUser(ctx, got)
+	if err != nil {
+		if errors.Is(err, store.ErrNotFound) {
+			return 0, false, nil
+		}
+		return 0, false, err
+	}
+	return u.ID, true, nil
+}
+
 func authenticate(envToken string, st Store, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if c, err := r.Cookie(sessionCookieName); err == nil && c.Value != "" {
-			u, err := st.SessionUser(r.Context(), c.Value, sessionTTL)
-			switch {
-			case err == nil:
-				next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), actorKey{}, u.ID)))
-				return
-			case errors.Is(err, store.ErrNotFound):
-				// Unknown/expired session — fall through to the bearer check.
-			default:
-				writeError(w, http.StatusInternalServerError, "Internal server error.", nil)
-				return
-			}
-		}
-		got, ok := strings.CutPrefix(r.Header.Get("Authorization"), "Bearer ")
-		if !ok || got == "" {
+		actorID, ok, err := resolveActor(r.Context(), envToken, st, r)
+		switch {
+		case err != nil:
+			writeError(w, http.StatusInternalServerError, "Internal server error.", nil)
+		case !ok:
 			writeError(w, http.StatusUnauthorized, "Unauthorized.", nil)
-			return
+		default:
+			next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), actorKey{}, actorID)))
 		}
-		var actorID int64
-		if envToken != "" && subtle.ConstantTimeCompare([]byte(got), []byte(envToken)) == 1 {
-			actorID = 0 // shared token: no user identity, writes stay anonymous
-		} else {
-			u, err := st.APITokenUser(r.Context(), got)
-			if err != nil {
-				if errors.Is(err, store.ErrNotFound) {
-					writeError(w, http.StatusUnauthorized, "Unauthorized.", nil)
-				} else {
-					writeError(w, http.StatusInternalServerError, "Internal server error.", nil)
-				}
-				return
-			}
-			actorID = u.ID
-		}
-		next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), actorKey{}, actorID)))
 	})
 }
 
@@ -321,8 +334,10 @@ func actorID(r *http.Request) int64 {
 }
 
 type handler struct {
-	store Store
-	repo  *gitrepo.Repo // nil → /api/v1/pulls* unmounted
+	store    Store
+	repo     *gitrepo.Repo // nil → /api/v1/pulls* unmounted
+	hub      *events.Hub   // nil → /api/v1/events unmounted
+	envToken string        // shared token, for SSE revalidation
 	// pullsMu serializes PR status transitions against merges: a close
 	// racing an in-flight merge must not let the merge land unrecorded.
 	pullsMu sync.Mutex
