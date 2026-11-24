@@ -5,25 +5,76 @@
 // from any writer (including the local CLI writing the database in its
 // own process) show up on open issue/discussion screens.
 //
-// Reconnects are EventSource's job (the server sends retry: 3000); a
-// burst of hints collapses into one invalidation per quiet window
-// because loaders dedupe concurrent fetches anyway.
+// Two constraints shape the wiring:
+//
+// - HTTP/1.1 browsers cap simultaneous connections per origin (6 in
+//   Chrome). Each open tab holding an SSE stream spends one, so a
+//   handful of background tabs could starve actual API requests. Only
+//   the visible tab holds a stream; a tab that becomes visible catches
+//   up with one invalidate.
+// - EventSource does not retry fatal openings (a 401 before login
+//   closes it for good), so reconnects are driven manually: onerror
+//   with readyState CLOSED re-creates the source after a delay, which
+//   is also what picks the stream up after a server restart or a sign-in
+//   that needed no page reload.
 
 import type { AnyRouter } from '@tanstack/react-router'
 
+const reconnectMs = 3000
+const debounceMs = 150
+
 export function watchLiveUpdates(router: AnyRouter, url = '/api/v1/events'): () => void {
-  const es = new EventSource(url)
-  let timer: ReturnType<typeof setTimeout> | undefined
-  es.onmessage = () => {
-    // Trailing-edge debounce: a CLI writing several rows in one go
-    // (thread + replies) invalidates once, not per row.
-    clearTimeout(timer)
-    timer = setTimeout(() => {
+  let es: EventSource | undefined
+  let retryTimer: ReturnType<typeof setTimeout> | undefined
+  let debounceTimer: ReturnType<typeof setTimeout> | undefined
+  let stopped = false
+
+  const invalidate = () => {
+    clearTimeout(debounceTimer)
+    debounceTimer = setTimeout(() => {
       void router.invalidate()
-    }, 150)
+    }, debounceMs)
   }
+
+  const close = () => {
+    es?.close()
+    es = undefined
+  }
+
+  const connect = () => {
+    if (stopped || es) return
+    es = new EventSource(url)
+    es.onmessage = invalidate
+    es.onerror = () => {
+      if (es?.readyState === EventSource.CLOSED) {
+        close()
+        clearTimeout(retryTimer)
+        retryTimer = setTimeout(connect, reconnectMs)
+      }
+      // readyState CONNECTING means the browser is already retrying on
+      // its own — leave it alone.
+    }
+  }
+
+  const onVisibility = () => {
+    if (document.visibilityState === 'visible') {
+      connect()
+      // Hints that fired while the tab was hidden are gone; one
+      // invalidation resyncs whatever the loaders hold.
+      invalidate()
+    } else {
+      close()
+    }
+  }
+
+  document.addEventListener('visibilitychange', onVisibility)
+  onVisibility()
+
   return () => {
-    clearTimeout(timer)
-    es.close()
+    stopped = true
+    document.removeEventListener('visibilitychange', onVisibility)
+    clearTimeout(retryTimer)
+    clearTimeout(debounceTimer)
+    close()
   }
 }

@@ -109,3 +109,72 @@ func newServerWithHub(t *testing.T, hub *events.Hub) *httptest.Server {
 	t.Cleanup(srv.Close)
 	return srv
 }
+
+// The delivery path the browser relies on end to end: a write through
+// the store (the shape the local CLI uses from its own process) lands in
+// the changes table, WatchChanges re-publishes it, and the SSE stream
+// emits the frame.
+func TestEventsStreamFromStoreWrite(t *testing.T) {
+	hub := events.NewHub()
+	srv, st := newServerWithHubStore(t, hub)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	watermark, err := st.LatestChangeSeq(ctx)
+	if err != nil {
+		t.Fatal(err)
+	}
+	go st.WatchChanges(ctx, watermark, func(c events.Change) {
+		hub.Publish(c)
+		all := c
+		all.Topic = events.AllTopic
+		hub.Publish(all)
+	})
+
+	req, _ := http.NewRequestWithContext(ctx, "GET", srv.URL+"/api/v1/events", nil)
+	req.Header.Set("Authorization", "Bearer "+testToken)
+	resp, err := srv.Client().Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer resp.Body.Close()
+
+	ws, err := st.WorkspaceBySlug(ctx, "default")
+	if err != nil {
+		t.Fatal(err)
+	}
+	issueID, err := st.CreateIssue(ctx, ws.ID, store.IssueInput{Title: "t", Body: "b"}, 0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := st.CreateComment(ctx, issueID, "written as the CLI would", 0); err != nil {
+		t.Fatal(err)
+	}
+
+	lines := bufio.NewScanner(resp.Body)
+	deadline := time.Now().Add(3 * time.Second)
+	var data string
+	for time.Now().Before(deadline) && lines.Scan() {
+		if line := lines.Text(); strings.HasPrefix(line, "data: ") && strings.Contains(line, `"kind":"comment"`) {
+			data = line
+			break
+		}
+	}
+	if data == "" {
+		t.Fatal("no comment frame streamed after the store write")
+	}
+}
+
+// newServerWithHubStore is newServerWithHub but also returns the store,
+// for tests that write through it directly.
+func newServerWithHubStore(t *testing.T, hub *events.Hub) (*httptest.Server, *store.Store) {
+	t.Helper()
+	st, err := store.Open(filepath.Join(t.TempDir(), "test.db"))
+	if err != nil {
+		t.Fatalf("store.Open: %v", err)
+	}
+	t.Cleanup(func() { st.Close() })
+	srv := httptest.NewServer(New(st, testToken, nil, hub))
+	t.Cleanup(srv.Close)
+	return srv, st
+}

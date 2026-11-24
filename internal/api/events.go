@@ -31,6 +31,13 @@ func (h *handler) streamEvents(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusNotFound, "Not found.", nil)
 		return
 	}
+	if r.Method == http.MethodHead {
+		// methodDispatch routes HEAD here, and a HEAD client leaves as
+		// soon as the headers arrive — answer them without subscribing.
+		w.Header().Set("Content-Type", "text/event-stream")
+		w.WriteHeader(http.StatusOK)
+		return
+	}
 	hd := w.Header()
 	hd.Set("Content-Type", "text/event-stream")
 	hd.Set("Cache-Control", "no-cache")
@@ -72,6 +79,11 @@ func (h *handler) streamEvents(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 		case <-ping.C:
+			if _, ok, err := resolveActor(r.Context(), h.envToken, h.store, r); err != nil || !ok {
+				// Revoked/expired credential — end the stream; the
+				// client's reconnect re-authenticates from scratch.
+				return
+			}
 			if _, err := fmt.Fprint(w, ": ping\n\n"); err != nil {
 				return
 			}
