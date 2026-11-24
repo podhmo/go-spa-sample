@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react'
 import { en, type Messages } from './i18n/en'
+export type { Messages }
 import { ja } from './i18n/ja'
 
 export type Locale = 'en' | 'ja'
@@ -51,10 +52,7 @@ const useLocale = (): Locale => useSyncExternalStore(subscribe, () => current)
 export const useMessages = (): Messages => (useLocale() === 'ja' ? ja : en)
 
 // "{name}" placeholder expansion — the only templating the UI needs.
-export const fmt = (
-  template: string,
-  args: Record<string, string | number>,
-): string =>
+export const fmt = (template: string, args: Record<string, string | number>): string =>
   template.replace(/\{(\w+)\}/g, (m, key) => (key in args ? String(args[key]) : m))
 
 // fmtTime, locale-aware: en "Jan 2, 2006 15:04", ja "2006年1月2日 15:04"

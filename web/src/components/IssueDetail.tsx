@@ -153,7 +153,12 @@ function CommentItem({
             · <span className="comment-edited">{m.comments.edited}</span>
           </>
         )}
-        <CopyButton className="copy-btn" label={m.comments.copyLink} getText={permalink} pending={pending} />
+        <CopyButton
+          className="copy-btn"
+          label={m.comments.copyLink}
+          getText={permalink}
+          pending={pending}
+        />
       </header>
       {c.hidden ? (
         <>
@@ -230,7 +235,10 @@ function CommentItem({
                   className="comment-action"
                   disabled={pending}
                   onClick={() => onUnhide(c.id)}
-                  aria-label={fmt(m.comments.ariaUnhide, { noun: m.comments.nounComment, id: c.id })}
+                  aria-label={fmt(m.comments.ariaUnhide, {
+                    noun: m.comments.nounComment,
+                    id: c.id,
+                  })}
                 >
                   {m.comments.unhide}
                 </button>

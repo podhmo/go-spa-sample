@@ -96,13 +96,11 @@ export function HideDialog({
           d.returnValue = ''
         }}
       >
-        <h2 id={`${dialogId}-title`}>
-          {fmt(m.comments.hideTitle, { noun, id: itemId })}
-        </h2>
+        <h2 id={`${dialogId}-title`}>{fmt(m.comments.hideTitle, { noun, id: itemId })}</h2>
         <form method="dialog">
           <div className="field">
             <label htmlFor={`${dialogId}-reason`}>
-              {m.comments.reason}{' '
+              {m.comments.reason}{' '}
               <span className="req" aria-hidden="true">
                 *
               </span>
@@ -369,7 +367,12 @@ function ThreadItem({
             · <span className="comment-edited">{m.comments.edited}</span>
           </>
         )}
-        <CopyButton className="copy-btn" label={m.comments.copyLink} getText={permalink} pending={pending} />
+        <CopyButton
+          className="copy-btn"
+          label={m.comments.copyLink}
+          getText={permalink}
+          pending={pending}
+        />
       </header>
       {t.hidden ? (
         <ModeratedBody body={t.body} hidden noun={noun} hiddenReason={t.hidden_reason} />
@@ -569,9 +572,8 @@ export function DiscussionDetail({
           </div>
         )}
         <p className="issue-meta">
-          {fmt(m.discussions.openedBy, { name: d.author?.name ?? m.comments.anonymous })}{' '}
-          <time dateTime={d.created_at}>{fmtTime(d.created_at)}</time> ·{' '}
-          {m.discussions.lastUpdated}{' '}
+          {fmt(m.issues.openedBy, { name: d.author?.name ?? m.comments.anonymous })}{' '}
+          <time dateTime={d.created_at}>{fmtTime(d.created_at)}</time> · {m.issues.lastUpdated}{' '}
           <time dateTime={d.updated_at}>{fmtTime(d.updated_at)}</time>
         </p>
       </header>
@@ -582,7 +584,7 @@ export function DiscussionDetail({
         </div>
       ) : (
         <div className="issue-body issue-body-empty">
-          <em>{m.discussions.noDescription}</em>
+          <em>{m.issues.noDescription}</em>
         </div>
       )}
 

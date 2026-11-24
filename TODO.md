@@ -102,9 +102,11 @@ workspace → discussions → pulls → accounts へ展開する。
   メソッド面は MPA と完全一致なのでローカル (SQLite直叩き) /
   リモート (`--server`/`--token` → `/api/v1`) 両バックエンドを
   `internal/cli` + `internal/client` + `cmd/zatu` として移植
-- [ ] **i18n** (features.md 3.10): 元は en/ja 2ロケール (cookie +
+- [x] **i18n** (features.md 3.10): 元は en/ja 2ロケール (cookie +
   Accept-Language 解決)。SPA では URL/localStorage/Accept-Language の
-  どれで持つか方針から
+  どれで持つか方針から → `web/src/i18n.tsx` (localStorage('lang') >
+  navigator.language > 'en'、辞書は typed `ja: typeof en`) + nav 言語
+  スイッチ。方針は `docs/sketch/ja/i18n.md`
 - [x] **markdown エクスポート拡張** (features.md 3.12): issue は済。
   discussions/PR 移植時に対応分を追加 (PR の `Copy as markdown` 済)
 - [ ] **`cmd/fakeapi` の撤去**: スパイク用コードの整理

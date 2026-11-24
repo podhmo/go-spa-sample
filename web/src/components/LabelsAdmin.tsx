@@ -1,10 +1,13 @@
 import { useReducer } from 'react'
 import type { Label, LabelInput } from '../api'
 import { ConfirmDialog } from './ConfirmDialog'
+import { fmt, useMessages, type Messages } from '../i18n'
 import { LabelBadge } from './IssueList'
 
-// The MPA's labelScope / labelKind helpers (English): lowercase words.
-const scopeName = (l: Label) => (l.workspace_id == null ? 'shared' : 'workspace')
+const scopeName = (m: Messages, l: Label) =>
+  l.workspace_id == null ? m.labels.scopeNameShared : m.labels.scopeNameWorkspace
+const kindName = (m: Messages, kind: string) =>
+  kind === 'discussion' ? m.labels.kindDiscussion : m.labels.kindIssue
 
 type LabelFormState = { name: string; color: string }
 type LabelFormAction = { type: 'field'; field: keyof LabelFormState; value: string }
@@ -37,11 +40,12 @@ function LabelRow({
     },
     { editing: false, name: l.name, color: l.color },
   )
+  const m = useMessages()
   if (ui.editing) {
     return (
       <li className="label-row">
         <form
-          aria-label={`edit label ${l.name}`}
+          aria-label={fmt(m.labels.editAria, { name: l.name })}
           onSubmit={(e) => {
             e.preventDefault()
             onUpdate(l.id, { name: ui.name, color: ui.color })
@@ -49,7 +53,7 @@ function LabelRow({
           }}
         >
           <label htmlFor={`label-name-${l.id}`} className="visually-hidden">
-            Name
+            {m.labels.name}
           </label>
           <input
             type="text"
@@ -59,7 +63,7 @@ function LabelRow({
             required
           />
           <label htmlFor={`label-color-${l.id}`} className="visually-hidden">
-            Color
+            {m.labels.color}
           </label>
           <input
             id={`label-color-${l.id}`}
@@ -74,10 +78,10 @@ function LabelRow({
               className="btn btn-quiet"
               onClick={() => dispatch({ type: 'cancel' })}
             >
-              Cancel
+              {m.copy.cancel}
             </button>
             <button type="submit" className="btn btn-primary" disabled={pending}>
-              Save changes
+              {m.form.saveChanges}
             </button>
           </div>
         </form>
@@ -90,15 +94,15 @@ function LabelRow({
     <li className="label-row">
       <LabelBadge label={l} />{' '}
       <span className="label-scope">
-        {scopeName(l)}
-        {archived ? ` · ${l.kind}` : ''}
+        {scopeName(m, l)}
+        {archived ? ` · ${kindName(m, l.kind)}` : ''}
       </span>{' '}
       <button
         type="button"
         className="btn btn-quiet"
         onClick={() => dispatch({ type: 'edit', name: l.name, color: l.color })}
       >
-        Edit
+        {m.labels.edit}
       </button>{' '}
       {archived
         ? onRestore && (
@@ -108,15 +112,15 @@ function LabelRow({
               disabled={pending}
               onClick={() => onRestore(l)}
             >
-              Restore
+              {m.labels.restore}
             </button>
           )
         : onArchive && (
             <ConfirmDialog
-              label="Delete"
-              title={`Delete label "${l.name}"?`}
-              description="The label will be archived. Archived labels stay attached to the issues and discussions that already carry them, and can be restored later."
-              confirmLabel="Delete"
+              label={m.labels.delete}
+              title={fmt(m.labels.deleteTitle, { name: l.name })}
+              description={m.labels.deleteBody}
+              confirmLabel={m.labels.delete}
               triggerClass="btn btn-quiet"
               pending={pending}
               onConfirm={() => onArchive(l.id)}
@@ -197,23 +201,24 @@ export function LabelsAdmin({
     },
     { name: '', color: '#888888', kind: 'issue', shared: false },
   )
+  const m = useMessages()
   return (
     <div>
       <div className="page-head">
-        <h1>Labels</h1>
+        <h1>{m.labels.title}</h1>
       </div>
       <section className="card label-admin-form" aria-labelledby="new-label-heading">
-        <h2 id="new-label-heading">New label</h2>
+        <h2 id="new-label-heading">{m.labels.new}</h2>
         <form
           className="form-inline"
-          aria-label="new label"
+          aria-label={m.labels.newAria}
           onSubmit={(e) => {
             e.preventDefault()
             onCreate({ name: form.name, color: form.color, kind: form.kind, shared: form.shared })
           }}
         >
           <div className="field">
-            <label htmlFor="new-label-name">Name</label>
+            <label htmlFor="new-label-name">{m.labels.name}</label>
             <input
               type="text"
               id="new-label-name"
@@ -229,7 +234,7 @@ export function LabelsAdmin({
               aria-describedby={errors?.name ? 'new-label-name-api-error' : undefined}
             />
             <span id="new-label-name-error" className="error-msg">
-              Name is required.
+              {m.labels.nameRequired}
             </span>
             {errors?.name && (
               <em id="new-label-name-api-error" role="alert">
@@ -238,7 +243,7 @@ export function LabelsAdmin({
             )}
           </div>
           <div className="field">
-            <label htmlFor="new-label-color">Color</label>
+            <label htmlFor="new-label-color">{m.labels.color}</label>
             <input
               id="new-label-color"
               type="color"
@@ -256,40 +261,40 @@ export function LabelsAdmin({
             )}
           </div>
           <div className="field">
-            <label htmlFor="new-label-kind">Kind</label>
+            <label htmlFor="new-label-kind">{m.labels.kind}</label>
             <select
               id="new-label-kind"
               name="kind"
               value={form.kind}
               onChange={(e) => dispatch({ type: 'kind', value: e.target.value })}
             >
-              <option value="issue">Issue</option>
-              <option value="discussion">Discussion</option>
+              <option value="issue">{m.labels.kindIssue}</option>
+              <option value="discussion">{m.labels.kindDiscussion}</option>
             </select>
           </div>
           <div className="field">
-            <label htmlFor="new-label-scope">Scope</label>
+            <label htmlFor="new-label-scope">{m.labels.scope}</label>
             <select
               id="new-label-scope"
               name="scope"
               value={form.shared ? 'shared' : 'workspace'}
               onChange={(e) => dispatch({ type: 'scope', value: e.target.value })}
             >
-              <option value="workspace">This workspace</option>
-              <option value="shared">Shared (all workspaces)</option>
+              <option value="workspace">{m.labels.scopeWorkspace}</option>
+              <option value="shared">{m.labels.scopeShared}</option>
             </select>
           </div>
           {/* the MPA's form-inline keeps the submit unwrapped at the
               bottom-left of the form */}
           <button type="submit" className="btn btn-primary" disabled={pending}>
-            Create label
+            {m.labels.create}
           </button>
         </form>
       </section>
       <LabelGroup
         id="issue-labels-heading"
-        title="Issue labels"
-        empty="No issue labels yet."
+        title={m.labels.issueLabels}
+        empty={m.labels.noIssue}
         labels={active.filter((l) => l.kind === 'issue')}
         pending={pending}
         onUpdate={onUpdate}
@@ -297,8 +302,8 @@ export function LabelsAdmin({
       />
       <LabelGroup
         id="discussion-labels-heading"
-        title="Discussion labels"
-        empty="No discussion labels yet."
+        title={m.labels.discussionLabels}
+        empty={m.labels.noDiscussion}
         labels={active.filter((l) => l.kind === 'discussion')}
         pending={pending}
         onUpdate={onUpdate}
@@ -307,11 +312,8 @@ export function LabelsAdmin({
       {/* the MPA shows the Archived section only when it has rows */}
       {archived.length > 0 && (
         <section aria-labelledby="archived-labels-heading">
-          <h2 id="archived-labels-heading">Archived</h2>
-          <p className="field-hint">
-            Archived labels stay attached to the issues and discussions that already carry them.
-            Restoring a label makes it selectable again.
-          </p>
+          <h2 id="archived-labels-heading">{m.labels.archived}</h2>
+          <p className="field-hint">{m.labels.archivedHint}</p>
           <ul className="label-list" role="list">
             {archived.map((l) => (
               <LabelRow

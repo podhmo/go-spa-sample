@@ -166,8 +166,7 @@ export const en = {
     ariaUnhide: 'Unhide {noun} {id}',
     delete: 'Delete',
     deleteTitle: 'Delete {noun} #{id}?',
-    deleteCommentBody:
-      'This permanently removes the comment. This action cannot be undone.',
+    deleteCommentBody: 'This permanently removes the comment. This action cannot be undone.',
     deleteThreadBody:
       'This permanently removes the thread and its replies. This action cannot be undone.',
     deleteReplyBody: 'This permanently removes the reply. This action cannot be undone.',
