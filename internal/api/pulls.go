@@ -202,6 +202,27 @@ func (h *handler) listPulls(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// GET /api/v1/pulls/refs — branch and remote-tracking names for the
+// create form's base/head pickers.
+func (h *handler) listPullRefs(w http.ResponseWriter, r *http.Request) {
+	refs, err := h.repo.Refs(r.Context())
+	if err != nil {
+		if !h.gitError(w, err) {
+			writeError(w, http.StatusInternalServerError, "Internal server error.", nil)
+		}
+		return
+	}
+	type refDTO struct {
+		Name  string `json:"name"`
+		Short string `json:"short"`
+	}
+	out := make([]refDTO, 0, len(refs))
+	for _, ref := range refs {
+		out = append(out, refDTO{Name: ref.Name, Short: ref.Short})
+	}
+	writeJSON(w, http.StatusOK, map[string]any{"refs": out})
+}
+
 type pullBody struct {
 	Base  *string `json:"base"`
 	Head  *string `json:"head"`
@@ -652,7 +673,9 @@ func (h *handler) setPullStatus(w http.ResponseWriter, r *http.Request) {
 				return
 			}
 		}
-		mergeBase, _ := h.repo.MergeBase(ctx, pr.BaseRef, pr.HeadRef)
+		// Merge-base against the resolved head SHA (not the ref name) so
+		// a deleted head branch still pins the closed PR's diff range.
+		mergeBase, _ := h.repo.MergeBase(ctx, pr.BaseRef, headSHA)
 		if err := h.store.ClosePullRequest(ctx, pr.ID, headSHA, mergeBase); err != nil {
 			h.prStoreError(w, err)
 			return
