@@ -9,11 +9,13 @@ import { fmt, useFmtTime, useMessages } from '../i18n'
 import { AnsweredBadge, CategoryBadge } from './DiscussionList'
 import { Markdown } from './Markdown'
 
-type EditUI = { editing: boolean; replying: boolean; draft: string }
+type EditUI = { editing: boolean; replying: boolean; draft: string; replyDraft: string }
 type EditAction =
   | { type: 'start-edit'; body: string }
   | { type: 'cancel' }
+  | { type: 'submitted' }
   | { type: 'draft'; value: string }
+  | { type: 'reply-draft'; value: string }
   | { type: 'reply'; replying: boolean }
 
 const editReducer = (s: EditUI, a: EditAction): EditUI => {
@@ -21,13 +23,19 @@ const editReducer = (s: EditUI, a: EditAction): EditUI => {
     case 'start-edit':
       return { ...s, editing: true, draft: a.body }
     case 'cancel':
-      return { ...s, editing: false, replying: false, draft: '' }
+      // Close but keep the draft: a cancelled reply restores on reopen.
+      return { ...s, editing: false, replying: false }
+    case 'submitted':
+      return { ...s, replying: false, replyDraft: '' }
     case 'draft':
       return { ...s, draft: a.value }
+    case 'reply-draft':
+      return { ...s, replyDraft: a.value }
     case 'reply':
-      // The reply form shares `draft` with the edit forms — always open
-      // it empty so a previous edit/reply body is never reposted.
-      return { ...s, replying: a.replying, draft: '' }
+      // Pure toggle: collapsing must not throw the draft away, and
+      // reopening restores it. Edit and reply drafts are separate fields,
+      // so neither form can clobber the other's text.
+      return { ...s, replying: a.replying }
   }
 }
 
@@ -41,7 +49,7 @@ export type ThreadHandlers = {
   onHide?: ((tid: number, reason: string) => void) | undefined
   onUnhide?: ((tid: number) => void) | undefined
   onSetAnswer?: ((tid: number, answer: boolean) => void) | undefined
-  onReply?: ((tid: number, body: string) => void) | undefined
+  onReply?: ((tid: number, body: string) => Promise<boolean>) | undefined
 }
 
 export type ReplyHandlers = {
@@ -242,7 +250,12 @@ function ReplyItem({
   onHide,
   onUnhide,
 }: { reply: DiscussionReply; threadId: number } & ReplyHandlers) {
-  const [ui, dispatch] = useReducer(editReducer, { editing: false, replying: false, draft: '' })
+  const [ui, dispatch] = useReducer(editReducer, {
+    editing: false,
+    replying: false,
+    draft: '',
+    replyDraft: '',
+  })
   const m = useMessages()
   const fmtTime = useFmtTime()
   const noun = m.comments.nounReply
@@ -343,7 +356,12 @@ function ThreadItem({
 }: { thread: DiscussionThread } & ThreadHandlers & {
     replyHandlers: ReplyHandlers
   }) {
-  const [ui, dispatch] = useReducer(editReducer, { editing: false, replying: false, draft: '' })
+  const [ui, dispatch] = useReducer(editReducer, {
+    editing: false,
+    replying: false,
+    draft: '',
+    replyDraft: '',
+  })
   const m = useMessages()
   const fmtTime = useFmtTime()
   const noun = m.comments.nounThread
@@ -473,8 +491,12 @@ function ThreadItem({
           aria-label={fmt(m.comments.replyFormAria, { id: t.id })}
           onSubmit={(e) => {
             e.preventDefault()
-            onReply?.(t.id, ui.draft)
-            dispatch({ type: 'cancel' })
+            void onReply?.(t.id, ui.replyDraft).then((ok) => {
+              // Only a successful send closes the form and clears the
+              // draft — a rejection leaves everything in place so the
+              // user can retry instead of losing the text silently.
+              if (ok) dispatch({ type: 'submitted' })
+            })
           }}
         >
           <div className="field">
@@ -483,8 +505,8 @@ function ThreadItem({
             </label>
             <textarea
               id={`reply-${t.id}`}
-              value={ui.draft}
-              onChange={(e) => dispatch({ type: 'draft', value: e.target.value })}
+              value={ui.replyDraft}
+              onChange={(e) => dispatch({ type: 'reply-draft', value: e.target.value })}
               onKeyDown={submitOnCtrlEnter}
               rows={3}
               required

@@ -169,4 +169,60 @@ describe('route: /w/{ws}/discussions/{id}', () => {
       .toBeInTheDocument()
     expect(page.getByRole('button', { name: 'Mark as answer' }).elements()).toHaveLength(0)
   })
+
+  it('keeps a collapsed reply draft and restores it on reopen', async () => {
+    stubAPI(() => ({
+      body: { discussion: discussion(), threads: [thread()] },
+    }))
+    renderAt('/w/default/discussions/1')
+    await expect.element(page.getByText('op comment')).toBeInTheDocument()
+    const toggle = page.getByRole('button', { name: 'Reply' }).first()
+    await toggle.click()
+    const box = page.getByPlaceholder('Reply…')
+    await box.fill('half-written reply')
+    await toggle.click()
+    expect(page.getByPlaceholder('Reply…').elements()).toHaveLength(0)
+    await toggle.click()
+    await expect.element(page.getByPlaceholder('Reply…')).toHaveValue('half-written reply')
+  })
+
+  it('clears the reply draft after a successful post', async () => {
+    stubAPI((url, init) => {
+      if (init?.method === 'POST' && url.includes('/comments')) {
+        return { body: { reply: reply({ id: 9 }) } }
+      }
+      return { body: { discussion: discussion(), threads: [thread()] } }
+    })
+    renderAt('/w/default/discussions/1')
+    await expect.element(page.getByText('op comment')).toBeInTheDocument()
+    const toggle = page.getByRole('button', { name: 'Reply' }).first()
+    await toggle.click()
+    await page.getByPlaceholder('Reply…').fill('done reply')
+    await page.getByRole('button', { name: 'Reply', exact: true }).last().click()
+    // Wait for the round trip (post + invalidate) instead of a fixed delay.
+    await expect.poll(() => page.getByPlaceholder('Reply…').elements().length).toBe(0)
+    await toggle.click()
+    await expect.element(page.getByPlaceholder('Reply…')).toHaveValue('')
+  })
+
+  it('keeps the reply form open with its draft when the post is rejected', async () => {
+    let posts = 0
+    stubAPI((url, init) => {
+      if (init?.method === 'POST' && url.includes('/comments')) {
+        posts += 1
+        return { status: 500, body: { error: { message: 'boom' } } }
+      }
+      return { body: { discussion: discussion(), threads: [thread()] } }
+    })
+    renderAt('/w/default/discussions/1')
+    await expect.element(page.getByText('op comment')).toBeInTheDocument()
+    await page.getByRole('button', { name: 'Reply' }).first().click()
+    await page.getByPlaceholder('Reply…').fill('do not lose me')
+    await page.getByRole('button', { name: 'Reply', exact: true }).last().click()
+    // The rejection must actually have happened — otherwise the next
+    // assertion passes vacuously.
+    await expect.poll(() => posts).toBe(1)
+    // The form stays open with the text intact — no silent close.
+    await expect.element(page.getByPlaceholder('Reply…')).toHaveValue('do not lose me')
+  })
 })

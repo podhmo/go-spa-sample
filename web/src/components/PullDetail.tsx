@@ -182,7 +182,7 @@ export function PullDetail({
       )}
 
       <div className="issue-actions">
-        {p.status === 'open' && onMerge && (
+        {p.status === 'open' && onMerge && mergeable?.status !== 'conflicting' && (
           <MergeDialog pullId={p.id} pending={pending} onMerge={onMerge} />
         )}
         {onSetStatus && p.status === 'open' && (

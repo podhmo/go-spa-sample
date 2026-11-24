@@ -1356,13 +1356,28 @@ const discussionRoute = createRoute({
     // later invalidation supersedes, which would pin isPending forever.
     const [isPending, setPending] = useReducer((_: boolean, v: boolean) => v, false)
     const did = Number(discussionId)
+    const m = useMessages()
+    const [error, setError] = useReducer((_: string | null, v: string | null) => v, null)
     const mutate = (fn: () => Promise<unknown>) => {
       setPending(true)
-      void (async () => {
+      return (async () => {
         try {
           await fn()
-        } catch {
-          // mutation failures surface via the refetched state
+          setError(null)
+          return true
+        } catch (err) {
+          const fields = err instanceof RequestError ? err.apiError?.fields : undefined
+          // Field errors name the actual rejection reason (e.g. a
+          // whitespace-only reply); the bare message just says
+          // "Validation failed.".
+          setError(
+            fields
+              ? Object.values(fields).join(' ')
+              : err instanceof RequestError
+                ? err.message
+                : m.error.requestFailed,
+          )
+          return false
         } finally {
           setPending(false)
           void router.invalidate()
@@ -1371,9 +1386,9 @@ const discussionRoute = createRoute({
     }
     // Posting a thread or reply lands on the new entry's permalink like
     // the MPA's redirect-to-anchor flow.
-    const postAndGo = <T,>(fn: () => Promise<T>, anchor: (r: T) => string) => {
+    const postAndGo = <T,>(fn: () => Promise<T>, anchor: (r: T) => string): Promise<boolean> => {
       setPending(true)
-      void (async () => {
+      return (async () => {
         try {
           const created = await fn()
           await router.invalidate()
@@ -1384,15 +1399,16 @@ const discussionRoute = createRoute({
           requestAnimationFrame(() => {
             document.getElementById(anchor(created))?.scrollIntoView()
           })
+          return true
         } catch {
           // mutation failures surface via the refetched state
+          return false
         } finally {
           setPending(false)
         }
       })()
     }
     const answerable = discussion.category.format === 'qa'
-    const m = useMessages()
     return (
       <div>
         <nav className="breadcrumb" aria-label={m.chrome.breadcrumb}>
@@ -1460,6 +1476,7 @@ const discussionRoute = createRoute({
               onUnhide: (tid, cid) => mutate(() => api.unhideReply(ws, did, tid, cid)),
             }}
           />
+          {error && <em role="alert">{error}</em>}
           <CommentForm
             submitting={isPending}
             onSubmit={(body) =>
@@ -1792,14 +1809,22 @@ const pullFilesRoute = createRoute({
                   ...input,
                   anchor: headSha,
                 })
+                // Invalidate before navigating so the destination never
+                // serves the pre-mutation loader snapshot (ui-rules §13).
+                void router.invalidate()
                 await navigate({
                   to: '/pulls/$pullId',
                   params: { pullId },
                   hash: `comment-${comment.id}`,
                 })
+              } catch (err) {
+                // A stale anchor (e.g. a force-push moved head) fails
+                // until the diff reloads — invalidate so a retry posts
+                // against the live head.
+                void router.invalidate()
+                throw err
               } finally {
                 setPending(false)
-                void router.invalidate()
               }
             })()
           }}

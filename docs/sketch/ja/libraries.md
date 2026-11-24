@@ -190,3 +190,22 @@ SPA に適用したもの:
 - **`content-visibility: auto`** on `.issue-row`/`.comment` —
   画面外アイテムのレイアウト/描画をスキップ
   (faster-spa-view-transitions ガイドの DOM コスト削減)
+
+### パフォーマンス計測メモ (chrome-devtools-cli, 2026-11-25)
+
+`npx chrome-devtools-cli performance_start_trace '{"pageId":N,"reload":true,"autoStop":true"}`
+で reload trace を取得 (headless Chrome :9222、手順は
+`.agents/skills/chrome-devtools-cli`):
+
+- `/w/default/issues`: LCP 418ms (TTFB 3ms, render delay 415ms), CLS 0,
+  DOM 116 nodes
+- `/w/default/issues/8`: LCP 434ms (TTFB 4ms, render delay 429ms), CLS 0
+- `/w/default/discussions`: DOM 111 nodes
+- (`/w/default/pulls*` は dev server が `-repo` なしで起動しているため
+  404 側で計測不可 — pulls 計測は repo 付き起動時にやり直す)
+
+DOM 規模は全画面で ~40-120 nodes / depth ≤9 と小さく、
+`content-visibility` も適用済みのため DOM 自体は健全。render delay の
+大半は dev server の JS module 変換 + 初回 loader fetch の waterfall
+で、本番ビルド (418KB main, markdown 分割済) では縮む想定。
+現時点で追加の DOM 最適化は設けず、計測基盤のみ導入した。

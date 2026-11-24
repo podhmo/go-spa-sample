@@ -252,19 +252,43 @@ describe('route: /pulls/{id}/files', () => {
     await expect.element(page.getByText(/truncated/)).toBeInTheDocument()
   })
 
-  it('keeps the draft and shows the error when the comment post fails', async () => {
+  it('keeps the draft, shows the error, and re-anchors the retry after a failed post', async () => {
+    let diffCalls = 0
+    let posts = 0
+    const postBodies: unknown[] = []
     stubAPI((url, init) => {
-      if (url.endsWith('/diff')) return { body: DIFF, headers: { 'x-anchor-sha': 'abc123' } }
-      if (url.endsWith('/comments') && init?.method === 'POST') {
+      if (url.endsWith('/diff')) {
+        diffCalls++
+        // After the rejected post the route invalidates: the refetch
+        // returns a moved head (e.g. a force-push), so a retry must
+        // anchor to 'def456', not the stale 'abc123'. The refreshed
+        // diff gains a line so the test can wait for the new loader
+        // data to reach the page — counting requests alone races the
+        // anchor update.
+        const diff =
+          diffCalls === 1
+            ? DIFF
+            : DIFF.replace('@@ -1,2 +1,3 @@', '@@ -1,2 +1,4 @@') + '\n+fresh line'
         return {
-          status: 422,
-          body: {
-            error: {
-              message: 'Validation failed.',
-              fields: { anchor: 'Anchor must be a commit on the head branch.' },
-            },
-          },
+          body: diff,
+          headers: { 'x-anchor-sha': diffCalls === 1 ? 'abc123' : 'def456' },
         }
+      }
+      if (url.endsWith('/comments') && init?.method === 'POST') {
+        posts++
+        postBodies.push(JSON.parse(String(init.body)))
+        if (posts === 1) {
+          return {
+            status: 422,
+            body: {
+              error: {
+                message: 'Validation failed.',
+                fields: { anchor: 'Anchor must be a commit on the head branch.' },
+              },
+            },
+          }
+        }
+        return { body: { comment: prComment({ id: 9 }) } }
       }
       return { body: { pull_request: pull(), comments: [], commits: [] } }
     })
@@ -277,6 +301,14 @@ describe('route: /pulls/{id}/files', () => {
       .element(page.getByText('Anchor must be a commit on the head branch.'))
       .toBeInTheDocument()
     expect(page.getByLabelText('comment')).toHaveValue('draft survives')
+    // The refreshed diff reaching the page means the loader resolved
+    // and the closure now anchors to 'def456'.
+    await expect.element(page.getByText(/fresh line/)).toBeInTheDocument()
+    expect(postBodies[0]).toMatchObject({ anchor: 'abc123' })
+    // The kept row's form re-anchors to the refreshed head on retry.
+    await page.getByRole('button', { name: 'Comment', exact: true }).click()
+    await expect.poll(() => posts).toBe(2)
+    expect(postBodies[1]).toMatchObject({ anchor: 'def456' })
   })
 
   it('drops the draft when a refreshed diff puts different code at its anchor', async () => {
