@@ -223,4 +223,26 @@ func TestAuthRequiresJSONContentType(t *testing.T) {
 			t.Fatalf("login with Content-Type %q: status = %d, want 415", ct, resp.StatusCode)
 		}
 	}
+	// ...but it must tolerate JSON's case-insensitive media type.
+	req, _ := http.NewRequest(http.MethodPost, srv.URL+"/api/v1/auth/login",
+		bytes.NewReader([]byte(`{"name":"x","password":"y"}`)))
+	req.Header.Set("Content-Type", "Application/JSON; charset=utf-8")
+	resp, err := srv.Client().Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp.Body.Close()
+	if resp.StatusCode == 415 {
+		t.Fatal("Application/JSON was rejected")
+	}
+
+	// logout takes no body — a plain POST must reach it.
+	resp, err = srv.Client().Post(srv.URL+"/api/v1/auth/logout", "", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp.Body.Close()
+	if resp.StatusCode == 415 {
+		t.Fatal("bodyless logout was rejected")
+	}
 }

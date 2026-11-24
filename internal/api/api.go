@@ -200,7 +200,10 @@ func New(st Store, envToken string, repo *gitrepo.Repo) http.Handler {
 	for path, methods := range map[string]map[string]http.HandlerFunc{
 		"/api/v1/auth/register": {"POST": requireJSON(h.register)},
 		"/api/v1/auth/login":    {"POST": requireJSON(h.login)},
-		"/api/v1/auth/logout":   {"POST": requireJSON(h.logout)},
+		// logout takes no body — a plain POST must work. Cross-site logout
+		// CSRF is moot anyway: SameSite=Lax keeps the cookie off cross-site
+		// POSTs.
+		"/api/v1/auth/logout": {"POST": h.logout},
 	} {
 		top.HandleFunc(path, methodDispatch(methods))
 	}
@@ -217,7 +220,8 @@ func New(st Store, envToken string, repo *gitrepo.Repo) http.Handler {
 // decodeBody and work).
 func requireJSON(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		ct := r.Header.Get("Content-Type")
+		// HTTP media types are case-insensitive.
+		ct := strings.ToLower(r.Header.Get("Content-Type"))
 		if ct != "application/json" && !strings.HasPrefix(ct, "application/json;") {
 			writeError(w, http.StatusUnsupportedMediaType,
 				"Content-Type must be application/json.", nil)
