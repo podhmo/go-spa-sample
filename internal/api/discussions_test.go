@@ -220,13 +220,18 @@ func TestDiscussionAnswerMark(t *testing.T) {
 	if code != http.StatusOK || out["discussion"].(map[string]any)["answered"] != true {
 		t.Fatalf("answered = %v, want true after move", out["discussion"])
 	}
+	got := map[int64]bool{}
 	for _, t0 := range out["threads"].([]any) {
 		m := t0.(map[string]any)
-		id := int64(m["id"].(float64))
-		want := id == tids[1]
-		if m["is_answer"] != want {
-			t.Fatalf("thread %d is_answer = %v, want %v", id, m["is_answer"], want)
+		got[int64(m["id"].(float64))] = m["is_answer"] == true
+	}
+	for _, tid := range tids {
+		if _, ok := got[tid]; !ok {
+			t.Fatalf("thread %d missing from detail: %v", tid, got)
 		}
+	}
+	if got[tids[0]] || !got[tids[1]] {
+		t.Fatalf("is_answer = %v, want only thread %d marked", got, tids[1])
 	}
 }
 

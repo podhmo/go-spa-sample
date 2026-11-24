@@ -325,7 +325,9 @@ func (h *handler) createDiscussion(w http.ResponseWriter, r *http.Request, ws *s
 
 // PATCH /api/v1/w/{ws}/discussions/{id} — only fields present in the body
 // are updated; absent fields keep their current values. An explicitly
-// empty "labels"/"label_ids" clears the label set (nil means absent).
+// empty "labels"/"label_ids" clears the active label set (nil means
+// absent); attachments to archived labels survive, matching the issue
+// PATCH (see setDiscussionLabels).
 func (h *handler) updateDiscussion(w http.ResponseWriter, r *http.Request, ws *store.Workspace) {
 	var in discussionBody
 	if !decodeBody(w, r, &in) {
