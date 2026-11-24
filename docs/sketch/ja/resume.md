@@ -70,7 +70,7 @@ API サーバー部分を移植し、フロントを **SPA として作り直す
 | discussions/pulls の移植判断 | spec: `docs/ja/features.md` 3.5/3.6。store には残存。API routes は削除済み |
 | `cmd/fakeapi` 撤去 | 完了 |
 | i18n | 完了: localStorage+navigator 解決、`docs/sketch/ja/i18n.md` |
-| 本番構成 | dev proxy の `Bearer dev-token` 注入は開発専用。embed 配信+認証 or 別配備+token |
+| 本番構成 | 未決定 — 比較は `production.md` (A: embed+セッション / B: 別配備+token) |
 | (保留) TanStack Query | 評価済み・見送り。再検討条件は `docs/sketch/ja/tanstack-query.md` |
 
 ## 決まっていること
