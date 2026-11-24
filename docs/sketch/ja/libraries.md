@@ -101,6 +101,7 @@ issue tracker のSPA実装で使うライブラリ・スキルの使いどころ
 | ローカルUI状態 | `useReducer` | (useStateは禁止) |
 | pending表示 | `useTransition` / loader保留中のUI | `useMutation.isPending` |
 | フォーム | 素のform+useReducer → 複雑化したら TanStack Form | — |
+| Markdown描画 | react-markdown + remark-gfm + remark-github-blockquote-alert (構造型サニタイズ、innerHTML不使用) | marked+DOMPurify (評価済み・乗り換え: `docs/sketch/ja/markdown.md`) |
 | CSS | CSS Modules + app.css (`docs/sketch/ja/css.md`) | Panda CSS (将来) |
 | Web標準の実装指針 | modern-web-guidance | — |
 | ライブラリ仕様の確認 | context7 | 公式docs直接 |
