@@ -117,7 +117,7 @@ export function HideDialog({
               </option>
               {HIDE_REASONS.map((r) => (
                 <option key={r} value={r}>
-                  {r}
+                  {m.comments.hideReasons[r]}
                 </option>
               ))}
             </select>
