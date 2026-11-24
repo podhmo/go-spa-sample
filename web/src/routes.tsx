@@ -99,6 +99,9 @@ function SiteNav({ ws, pulls }: { ws: string | undefined; pulls: boolean }) {
 const rootRoute = createRootRoute({
   // Probes whether the server resolved a git repo; pulls routes 404
   // without one, so the nav link only renders when the API answers.
+  // staleTime keeps plain navigations from re-probing; router.invalidate()
+  // still re-runs it so the link appears/disappears after changes.
+  staleTime: 60_000,
   loader: () => api.pullsAvailable(),
   component: function RootLayout() {
     const { ws } = useParams({ strict: false })
@@ -1499,6 +1502,7 @@ const pullFilesRoute = createRoute({
     ),
   component: function PullFilesPage() {
     const { pull_request, diff } = pullFilesRoute.useLoaderData()
+    const { text: diffText, head_sha: headSha, truncated } = diff
     const { pullId } = pullFilesRoute.useParams()
     const router = useRouter()
     const navigate = useNavigate()
@@ -1534,29 +1538,33 @@ const pullFilesRoute = createRoute({
           </Link>
         </div>
 
+        {truncated && (
+          <p className="notice" role="status">
+            This diff is too large and was truncated — not all changes are shown.
+          </p>
+        )}
         <PullFiles
-          diff={diff}
+          diff={diffText}
           pending={isPending}
-          {...(pull_request.status === 'open'
-            ? {
-                onComment: (input: PRCommentInput) => {
-                  setPending(true)
-                  void (async () => {
-                    try {
-                      const { comment } = await api.createPRComment(Number(pullId), input)
-                      await navigate({
-                        to: '/pulls/$pullId',
-                        params: { pullId },
-                        hash: `comment-${comment.id}`,
-                      })
-                    } finally {
-                      setPending(false)
-                      void router.invalidate()
-                    }
-                  })()
-                },
+          onComment={(input: PRCommentInput) => {
+            setPending(true)
+            void (async () => {
+              try {
+                const { comment } = await api.createPRComment(Number(pullId), {
+                  ...input,
+                  anchor: headSha,
+                })
+                await navigate({
+                  to: '/pulls/$pullId',
+                  params: { pullId },
+                  hash: `comment-${comment.id}`,
+                })
+              } finally {
+                setPending(false)
+                void router.invalidate()
               }
-            : {})}
+            })()
+          }}
         />
       </div>
     )
@@ -1573,14 +1581,21 @@ const pullRoute = createRoute({
     const router = useRouter()
     const navigate = useNavigate()
     const [isPending, setPending] = useReducer((_: boolean, v: boolean) => v, false)
+    const [actionError, setActionError] = useReducer(
+      (_: string | null, v: string | null) => v,
+      null,
+    )
     const pid = Number(pullId)
     const mutate = (fn: () => Promise<unknown>) => {
       setPending(true)
+      setActionError(null)
       void (async () => {
         try {
           await fn()
-        } catch {
-          // mutation failures surface via the refetched state
+        } catch (err) {
+          // A failed merge changes nothing on refetch, so surface the
+          // rejection (e.g. a dirty worktree) instead of staying silent.
+          setActionError(err instanceof RequestError ? err.message : 'Request failed.')
         } finally {
           setPending(false)
           void router.invalidate()
@@ -1608,6 +1623,7 @@ const pullRoute = createRoute({
           pull={pull_request}
           mergeable={mergeable}
           pending={isPending}
+          actionError={actionError}
           onSetStatus={(status) => mutate(() => api.setPullStatus(pid, status))}
           onMerge={(method, message) =>
             mutate(() => api.mergePull(pid, method, message || undefined))
@@ -1641,12 +1657,10 @@ const pullRoute = createRoute({
             onHide={(cid, reason) => mutate(() => api.hidePRComment(pid, cid, reason))}
             onUnhide={(cid) => mutate(() => api.unhidePRComment(pid, cid))}
           />
-          {pull_request.status === 'open' && (
-            <CommentForm
-              submitting={isPending}
-              onSubmit={(body) => mutate(() => api.createPRComment(pid, { body }))}
-            />
-          )}
+          <CommentForm
+            submitting={isPending}
+            onSubmit={(body) => mutate(() => api.createPRComment(pid, { body }))}
+          />
         </section>
 
         <a className="back-to-top" href="#main-content" aria-label="Back to top">

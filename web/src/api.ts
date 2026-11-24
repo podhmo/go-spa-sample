@@ -175,6 +175,16 @@ export type PRCommentInput = {
   path?: string
   line?: number
   side?: string
+  // The head revision the commenter was looking at (X-Anchor-SHA from
+  // the diff endpoint) — keeps the comment pinned to the rendered code
+  // even if the head branch moved in the meantime.
+  anchor?: string | undefined
+}
+
+export type PullDiff = {
+  text: string
+  head_sha?: string | undefined
+  truncated: boolean
 }
 
 export type Workspace = {
@@ -434,7 +444,23 @@ export const api = {
       method: 'POST',
       ...json(message ? { method, message } : { method }),
     }),
-  getPullDiff: (id: number) => fetchText(`/api/v1/pulls/${id}/diff`),
+  getPullDiff: async (id: number): Promise<PullDiff> => {
+    const res = await fetch(`/api/v1/pulls/${id}/diff`)
+    if (!res.ok) {
+      let apiError: ApiError['error'] | null = null
+      try {
+        apiError = (await res.json()).error ?? null
+      } catch {
+        // non-JSON error body
+      }
+      throw new RequestError(res.status, apiError)
+    }
+    return {
+      text: await res.text(),
+      head_sha: res.headers.get('x-anchor-sha') ?? undefined,
+      truncated: res.headers.get('x-diff-truncated') === 'true',
+    }
+  },
   getPullMarkdown: (id: number) => fetchText(`/api/v1/pulls/${id}/markdown`),
   createPRComment: (id: number, input: PRCommentInput) =>
     fetchJSON<{ comment: PRComment }>(`/api/v1/pulls/${id}/comments`, {
