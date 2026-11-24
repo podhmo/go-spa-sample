@@ -109,6 +109,7 @@ workspace → discussions → pulls → accounts へ展開する。
   スイッチ。方針は `docs/sketch/ja/i18n.md`
 - [x] **markdown エクスポート拡張** (features.md 3.12): issue は済。
   discussions/PR 移植時に対応分を追加 (PR の `Copy as markdown` 済)
-- [ ] **`cmd/fakeapi` の撤去**: スパイク用コードの整理
+- [x] **`cmd/fakeapi` の撤去**: スパイク用コードの整理 (dev-workflow.md
+  の記述も zatudan 直起動に更新)
 - [ ] **本番構成の決定**: dev proxy の `Bearer dev-token` 注入は開発専用。
   embed 配信+セッション or 別配備+token のどちらにするか

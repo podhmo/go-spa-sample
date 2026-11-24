@@ -17,7 +17,7 @@ dropped — the SPA talks JSON only.
 
 ```
 cmd/zatudan/    API-only server (issues scope; -seed, -db, -api-token flags)
-cmd/fakeapi/    throwaway connectivity-spike server (slated for removal)
+cmd/zatu/       gh-style CLI — local (SQLite) and remote (/api/v1) backends
 internal/       store / api / auth / events / export (ported from the MPA)
 web/            the SPA — Vite + React 19 + TS 7 (@next) + TanStack Router
 docs/ja/        porting reference (full feature spec of the source app)
