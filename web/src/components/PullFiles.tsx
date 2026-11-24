@@ -18,6 +18,48 @@ type DiffFile = { path: string; oldPath?: string; lines: DiffLine[] }
 // parseDiff splits `git diff`-style output into per-file hunks and maps
 // every context/add/del row to its anchorable (path, line, side). The
 // server wants the post-image path and the line number on that side.
+// unquoteGitPath decodes git's C-style path quoting ("a/p\303\251")
+// back to the real path; unquoted input passes through unchanged.
+function unquoteGitPath(p: string): string {
+  if (p.length < 2 || !p.startsWith('"')) return p
+  const body = p.slice(1, -1)
+  const bytes: number[] = []
+  let out = ''
+  const flush = () => {
+    if (bytes.length === 0) return
+    out += decodeURIComponent(bytes.map((b) => '%' + b.toString(16).padStart(2, '0')).join(''))
+    bytes.length = 0
+  }
+  for (let i = 0; i < body.length; i++) {
+    const ch = body[i]!
+    if (ch !== '\\') {
+      flush()
+      out += ch
+      continue
+    }
+    const oct = /^[0-7]{1,3}/.exec(body.slice(i + 1, i + 4))
+    if (oct) {
+      bytes.push(parseInt(oct[0], 8))
+      i += oct[0].length
+    } else {
+      flush()
+      const e = body[++i] ?? ''
+      out += e === 'n' ? '\n' : e === 't' ? '\t' : e
+    }
+  }
+  flush()
+  return out
+}
+
+// diffSide reads a `--- a/x` / `+++ b/x` operand, quoted or not.
+function diffSide(rest: string): string | undefined {
+  if (rest === '/dev/null') return undefined
+  const q = /^"[ab]\/(?:\\.|[^"])*"$/.exec(rest)
+  if (q) return unquoteGitPath(q[0]).slice(2)
+  const u = /^[ab]\/(.+)$/.exec(rest)
+  return u?.[1]
+}
+
 function parseDiff(text: string): DiffFile[] {
   const files: DiffFile[] = []
   let cur: DiffFile | undefined
@@ -30,8 +72,9 @@ function parseDiff(text: string): DiffFile[] {
   // must still consume both counters.
   for (const raw of text.replace(/\n$/, '').split('\n')) {
     if (raw.startsWith('diff --git ')) {
-      const m = /^diff --git a\/(.+) b\/(.+)$/.exec(raw)
-      path = m?.[2] ?? ''
+      const m = /^diff --git ("a\/(?:\\.|[^"])*"|a\/.+) ("b\/(?:\\.|[^"])*"|b\/.+)$/.exec(raw)
+      const b = m?.[2]
+      path = b ? (b.startsWith('"') ? unquoteGitPath(b).slice(2) : b.slice(2)) : ''
       cur = { path, lines: [] }
       files.push(cur)
       inHunk = false
@@ -50,10 +93,19 @@ function parseDiff(text: string): DiffFile[] {
     }
     // Between "diff --git" and the first "@@" sit file headers (index,
     // modes, ---/+++ paths) — render them, but they anchor nothing.
+    // The ---/+++ paths are authoritative over the diff --git line:
+    // quoted names parse cleanly here and renamed files get both sides.
     if (!inHunk) {
       if (raw.startsWith('--- ')) {
-        const m = /^--- a\/(.+)$/.exec(raw)
-        if (m?.[1]) cur.oldPath = m[1]
+        const p = diffSide(raw.slice(4))
+        if (p !== undefined) cur.oldPath = p
+      }
+      if (raw.startsWith('+++ ')) {
+        const p = diffSide(raw.slice(4))
+        if (p !== undefined) {
+          path = p
+          cur.path = p
+        }
       }
       if (raw !== '') cur.lines.push({ kind: 'meta', text: raw })
       continue

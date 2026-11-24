@@ -1885,7 +1885,9 @@ fieldset.field:has(:is(:user-invalid, [aria-invalid='true'])) {
 }
 
 .diff-add-comment {
-  visibility: hidden;
+  /* opacity, not visibility:hidden — a hidden button can't be reached
+     by keyboard, so it would never get :focus-visible. */
+  opacity: 0;
   width: 1.5rem;
   height: 1.5rem;
   border: 1px solid var(--accent);
@@ -1898,9 +1900,28 @@ fieldset.field:has(:is(:user-invalid, [aria-invalid='true'])) {
 }
 
 .diff-line:hover .diff-add-comment,
+.diff-line:focus-within .diff-add-comment,
 .diff-add-comment:focus-visible,
 .diff-add-comment[aria-expanded='true'] {
-  visibility: visible;
+  opacity: 1;
+}
+
+.diff-add-comment:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.pull-action-error {
+  margin-block-start: 0.5rem;
+}
+
+.notice {
+  margin: 0 0 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--accent-soft);
+  color: var(--text-muted);
 }
 
 .diff-lineno {
