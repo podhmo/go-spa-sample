@@ -6,18 +6,18 @@
 ## 構成
 
 ```
-cmd/fakeapi/       捨てる前提のfake API (zatudanとは無関係の独自signature)
+cmd/zatudan/       実APIサーバー (`/api/v1`)
 web/               SPA (Vite + React + TS + TanStack Router)
 ```
 
-- fakeapi: `127.0.0.1:8080` で待ち受け (`GET /api/ping`, `GET/POST /api/counter*`)
-- vite dev: `127.0.0.1:5173`。`server.proxy` で `/api` → `http://127.0.0.1:8080`
+- zatudan: `127.0.0.1:8080` で待ち受け (`-seed -api-token dev-token -db /tmp/spa-zatudan.db`)
+- vite dev: `127.0.0.1:5173`。`server.proxy` で `/api` → `http://127.0.0.1:8080`、proxy が `Authorization: Bearer dev-token` を注入
   - 同一オリジンになるので CORS 不要。本番も同じ形 (Go側で静的ファイルをserveするか別ドメイン+認証) を想定
 
 ## 起動
 
 ```sh
-go run ./cmd/fakeapi          # terminal 1 (API :8080)
+go run ./cmd/zatudan -seed -api-token dev-token -db /tmp/spa-zatudan.db  # terminal 1 (API :8080)
 npm --prefix web run dev      # terminal 2 (vite :5173)
 ```
 
@@ -42,7 +42,6 @@ provider は playwright、`launchOptions.channel: 'chrome'` で
   (`src/browser.test.tsx` 参照)
 - browser mode でも vite dev server が使われるため、
   `server.proxy` の `/api` 設定がそのまま効く
-  (fetchするcomponentのテストは fakeapi 起動で済む)
 - 見た目の確認は `npx vitest --browser.headless=false` や
   `npx vitest --ui` でGUIを出しながら行える
 
@@ -61,10 +60,8 @@ npx playwright-cli requests        # ネットワークリクエスト確認
 npx playwright-cli close
 ```
 
-スパイクで確認したフロー: `/` のloaderが `/api/ping` を表示 →
-`/counter` で increment → POST `/api/counter/increment` →
-`router.invalidate()` で再fetch → 画面が `count: 1` に更新
-(`spike-counter.png`)。
+mutation 後は `router.invalidate()` で loader を再実行して画面を
+更新するのが共通パターン (例: issue の状態変更 → 一覧/詳細の再fetch)。
 
 ## ルール
 

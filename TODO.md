@@ -33,7 +33,6 @@ useReducer / Vitest / playwright-cli) を使った試行錯誤が完全に行え
     routing) + vite proxy `/api` → `127.0.0.1:8080`
   - [x] **playwright-cli での動作確認**: `/` で `/api/ping` の表示、
     `/counter` で POST→invalidate の反映をブラウザで確認
-    (`docs/sketch/ja/spike-counter.png`)
 - [x] **Vitest 導入**: `web/` に vitest を入れ `npm test` が通る。
   **browser mode 採用** (jsdomではなく実Chrome、playwright provider +
   `channel: 'chrome'` でDL不要) — componentの見た目確認はこれを主軸にし
@@ -109,6 +108,7 @@ workspace → discussions → pulls → accounts へ展開する。
   スイッチ。方針は `docs/sketch/ja/i18n.md`
 - [x] **markdown エクスポート拡張** (features.md 3.12): issue は済。
   discussions/PR 移植時に対応分を追加 (PR の `Copy as markdown` 済)
-- [ ] **`cmd/fakeapi` の撤去**: スパイク用コードの整理
+- [x] **`cmd/fakeapi` の撤去**: スパイク用コードの整理 (dev-workflow.md
+  の記述も zatudan 直起動に更新)
 - [ ] **本番構成の決定**: dev proxy の `Bearer dev-token` 注入は開発専用。
   embed 配信+セッション or 別配備+token のどちらにするか
