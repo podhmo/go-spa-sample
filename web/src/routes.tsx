@@ -7,63 +7,113 @@ import {
   notFound,
   redirect,
   useNavigate,
+  useParams,
   useRouter,
 } from '@tanstack/react-router'
 import { useReducer, useTransition } from 'react'
-import { RequestError, WS, api } from './api'
-import { CommentForm, IssueForm } from './components/forms'
+import { RequestError, api } from './api'
+import { CommentForm, IssueForm, WorkspaceForm } from './components/forms'
 import { CommentList, IssueDetail } from './components/IssueDetail'
 import { IssueList } from './components/IssueList'
 import { LabelsAdmin } from './components/LabelsAdmin'
+import { WorkspaceList } from './components/Workspaces'
 
-// Rethrows a 404 RequestError as the router's notFound() so a missing
-// resource shows the notFoundComponent instead of a generic error.
-const notFoundOn404 = async <T,>(p: Promise<T>): Promise<T> => {
+// A scoped API call: a plain 404 becomes the router's notFound, while a
+// cross-scope 404 names the owning workspace in error.workspace — the
+// API's in-band counterpart of the MPA's 302 — and rebase() throws a
+// redirect to the same page under that slug.
+const scoped = async <T,>(p: Promise<T>, rebase: (real: string) => never): Promise<T> => {
   try {
     return await p
   } catch (err) {
-    if (err instanceof RequestError && err.status === 404) throw notFound()
+    if (err instanceof RequestError && err.status === 404) {
+      const real = err.apiError?.workspace
+      if (typeof real === 'string') rebase(real)
+      throw notFound()
+    }
     throw err
   }
 }
 
-const rootRoute = createRootRoute({
-  // Same page chrome as the MPA's layout.html: skip link, sticky header
-  // (site title + nav + primary action), main landmark, footer.
-  component: () => (
+// Where a workspace-less URL lands: 'default' when it exists, else the
+// first workspace (the MPA's rule); null when none exist at all.
+const homeSlug = async (): Promise<string | null> => {
+  const { workspaces } = await api.listWorkspaces()
+  return (workspaces.find((w) => w.slug === 'default') ?? workspaces[0])?.slug ?? null
+}
+
+// The site chrome: same as the MPA's layout.html — skip link, sticky
+// header (site title + nav + primary action), main landmark, footer.
+// Inside a workspace the nav points at that workspace's pages; outside
+// one it uses the bare paths, which resolve to the home workspace.
+function SiteNav({ ws }: { ws: string | undefined }) {
+  if (ws !== undefined) {
+    return (
+      <>
+        <Link className="site-title" to="/w/$ws/issues" params={{ ws }}>
+          zatudan
+        </Link>
+        <nav className="site-nav" aria-label="Main">
+          <Link to="/w/$ws/issues" params={{ ws }}>
+            Issues
+          </Link>
+          <Link to="/w/$ws/labels" params={{ ws }}>
+            Labels
+          </Link>
+          <Link to="/workspaces">Workspaces</Link>
+          <Link className="btn" to="/w/$ws/issues/new" params={{ ws }}>
+            New issue
+          </Link>
+        </nav>
+      </>
+    )
+  }
+  return (
     <>
-      <a className="skip-link" href="#main-content">
-        Skip to content
-      </a>
-      <header className="site-header">
-        <div className="header-bar">
-          <div className="container header-inner">
-            <Link className="site-title" to="/issues">
-              zatudan
-            </Link>
-            <nav className="site-nav" aria-label="Main">
-              <Link to="/issues">Issues</Link>
-              <Link to="/labels">Labels</Link>
-              <Link className="btn" to="/issues/new">
-                New issue
-              </Link>
-            </nav>
-          </div>
-        </div>
-      </header>
-      <main className="container main-content" id="main-content" tabIndex={-1}>
-        <Outlet />
-      </main>
-      <footer className="site-footer">
-        <div className="container">
-          <p>
-            A single-page app port of zatudan — Go API + React, TanStack Router, minimal JavaScript
-            where it earns its place.
-          </p>
-        </div>
-      </footer>
+      <Link className="site-title" to="/">
+        zatudan
+      </Link>
+      <nav className="site-nav" aria-label="Main">
+        <Link to="/issues">Issues</Link>
+        <Link to="/labels">Labels</Link>
+        <Link to="/workspaces">Workspaces</Link>
+        <Link className="btn" to="/issues/new">
+          New issue
+        </Link>
+      </nav>
     </>
-  ),
+  )
+}
+
+const rootRoute = createRootRoute({
+  component: function RootLayout() {
+    const { ws } = useParams({ strict: false })
+    return (
+      <>
+        <a className="skip-link" href="#main-content">
+          Skip to content
+        </a>
+        <header className="site-header">
+          <div className="header-bar">
+            <div className="container header-inner">
+              <SiteNav ws={ws} />
+            </div>
+          </div>
+        </header>
+        <main className="container main-content" id="main-content" tabIndex={-1}>
+          <Outlet />
+        </main>
+        <footer className="site-footer">
+          <div className="container">
+            <p>
+              A single-page app port of zatudan — Go API + React, TanStack Router, minimal
+              JavaScript where it earns its place.
+            </p>
+          </div>
+        </footer>
+      </>
+    )
+  },
   notFoundComponent: () => (
     <div className="error-page">
       <p className="error-code">404</p>
@@ -89,11 +139,16 @@ const rootRoute = createRootRoute({
   ),
 })
 
+// --- Workspace-less compatibility routes ---------------------------------
+// Pre-workspace URLs still work: each redirects to the same path under
+// the resolved home workspace, like the MPA's 302 on /issues etc.
+
 const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/',
-  beforeLoad: () => {
-    throw redirect({ to: '/issues' })
+  beforeLoad: async () => {
+    const ws = await homeSlug()
+    throw redirect(ws ? { to: '/w/$ws/issues', params: { ws } } : { to: '/workspaces' })
   },
 })
 
@@ -113,28 +168,190 @@ const num = (v: unknown) => {
   return Number.isInteger(n) && n >= 1 ? n : undefined
 }
 
+const issueSearch = (search: Record<string, unknown>): IssueSearch => ({
+  status: str(search.status),
+  q: str(search.q),
+  label: str(search.label),
+  sort: str(search.sort),
+  page: num(search.page),
+})
+
+const issuesRedirectRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/issues',
+  validateSearch: issueSearch,
+  beforeLoad: async ({ search }) => {
+    const ws = await homeSlug()
+    throw redirect(ws ? { to: '/w/$ws/issues', params: { ws }, search } : { to: '/workspaces' })
+  },
+})
+
+const newIssueRedirectRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/issues/new',
+  beforeLoad: async () => {
+    const ws = await homeSlug()
+    throw redirect(ws ? { to: '/w/$ws/issues/new', params: { ws } } : { to: '/workspaces' })
+  },
+})
+
+const issueRedirectRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/issues/$issueId',
+  beforeLoad: async ({ params }) => {
+    const ws = await homeSlug()
+    throw redirect(
+      ws
+        ? { to: '/w/$ws/issues/$issueId', params: { ws, issueId: params.issueId } }
+        : { to: '/workspaces' },
+    )
+  },
+})
+
+const editIssueRedirectRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/issues/$issueId/edit',
+  beforeLoad: async ({ params }) => {
+    const ws = await homeSlug()
+    throw redirect(
+      ws
+        ? { to: '/w/$ws/issues/$issueId/edit', params: { ws, issueId: params.issueId } }
+        : { to: '/workspaces' },
+    )
+  },
+})
+
+const labelsRedirectRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/labels',
+  beforeLoad: async () => {
+    const ws = await homeSlug()
+    throw redirect(ws ? { to: '/w/$ws/labels', params: { ws } } : { to: '/workspaces' })
+  },
+})
+
+// --- Workspace management pages ------------------------------------------
+
+const workspacesRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/workspaces',
+  loader: () => api.listWorkspaces(),
+  component: function WorkspacesPage() {
+    const { workspaces } = workspacesRoute.useLoaderData()
+    const router = useRouter()
+    const [isPending, setPending] = useReducer((_: boolean, v: boolean) => v, false)
+    const [error, setError] = useReducer((_: string | null, v: string | null) => v, null)
+    const mutate = (fn: () => Promise<unknown>) => {
+      setPending(true)
+      void (async () => {
+        try {
+          await fn()
+          setError(null)
+        } catch (err) {
+          setError(err instanceof Error ? err.message : String(err))
+        } finally {
+          setPending(false)
+          void router.invalidate()
+        }
+      })()
+    }
+    return (
+      <div>
+        <div className="page-head">
+          <h1>Workspaces</h1>
+          <Link className="btn" to="/workspaces/new">
+            New workspace
+          </Link>
+        </div>
+        {error && (
+          <p role="alert" className="error-msg">
+            {error}
+          </p>
+        )}
+        <WorkspaceList
+          workspaces={workspaces}
+          pending={isPending}
+          onDelete={(slug) => mutate(() => api.deleteWorkspace(slug))}
+        />
+      </div>
+    )
+  },
+})
+
+const newWorkspaceRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/workspaces/new',
+  component: function NewWorkspacePage() {
+    const navigate = useNavigate()
+    const [isPending, startTransition] = useTransition()
+    const [errors, setErrors] = useReducer(
+      (_: Record<string, string>, e: Record<string, string>) => e,
+      {},
+    )
+    return (
+      <div>
+        <div className="page-head">
+          <h1>New workspace</h1>
+        </div>
+        <WorkspaceForm
+          submitting={isPending}
+          errors={errors}
+          cancelLink={
+            <Link className="btn btn-quiet" to="/workspaces">
+              Cancel
+            </Link>
+          }
+          onSubmit={(input) => {
+            startTransition(async () => {
+              try {
+                const { workspace } = await api.createWorkspace(input)
+                await navigate({ to: '/w/$ws/issues', params: { ws: workspace.slug } })
+              } catch (err) {
+                setErrors(apiFieldErrors(err, 'slug'))
+              }
+            })
+          }}
+        />
+      </div>
+    )
+  },
+})
+
+// --- Workspace-scoped pages (/w/{slug}/...) -------------------------------
+
+const wsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/w/$ws',
+  component: () => <Outlet />,
+})
+
+const wsIndexRoute = createRoute({
+  getParentRoute: () => wsRoute,
+  path: '/',
+  beforeLoad: ({ params }) => {
+    throw redirect({ to: '/w/$ws/issues', params: { ws: params.ws } })
+  },
+})
+
 const STATUS_TABS = ['open', 'closed', 'all'] as const
 
 const issuesRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => wsRoute,
   path: '/issues',
-  validateSearch: (search: Record<string, unknown>): IssueSearch => ({
-    status: str(search.status),
-    q: str(search.q),
-    label: str(search.label),
-    sort: str(search.sort),
-    page: num(search.page),
-  }),
+  validateSearch: issueSearch,
   loaderDeps: ({ search }) => search,
-  loader: async ({ deps }) => {
-    const [list, labels] = await Promise.all([
-      api.listIssues(WS, deps),
-      api.listLabels(WS, { kind: 'issue' }),
-    ])
+  loader: async ({ params, deps }) => {
+    const [list, labels] = await scoped(
+      Promise.all([api.listIssues(params.ws, deps), api.listLabels(params.ws, { kind: 'issue' })]),
+      (real) => {
+        throw redirect({ to: '/w/$ws/issues', params: { ws: real }, search: deps })
+      },
+    )
     return { list, labels: labels.labels }
   },
   component: function IssuesPage() {
     const { list: data, labels } = issuesRoute.useLoaderData()
+    const { ws } = issuesRoute.useParams()
     const search = issuesRoute.useSearch()
     const navigate = useNavigate()
     const status = search.status ?? 'open'
@@ -156,7 +373,8 @@ const issuesRoute = createRoute({
             <Link
               key={s}
               className={`tab${status === s ? ' tab-active' : ''}`}
-              to="/issues"
+              to="/w/$ws/issues"
+              params={{ ws }}
               search={{ ...search, status: s, page: undefined }}
               aria-current={status === s ? 'page' : undefined}
             >
@@ -176,7 +394,8 @@ const issuesRoute = createRoute({
               e.preventDefault()
               const fd = new FormData(e.currentTarget)
               void navigate({
-                to: '/issues',
+                to: '/w/$ws/issues',
+                params: { ws },
                 search: {
                   status: str(fd.get('status')),
                   q: str(fd.get('q')),
@@ -220,7 +439,7 @@ const issuesRoute = createRoute({
                 Apply
               </button>
               {hasActiveFilter && (
-                <Link className="btn btn-quiet" to="/issues">
+                <Link className="btn btn-quiet" to="/w/$ws/issues" params={{ ws }}>
                   Clear
                 </Link>
               )}
@@ -233,12 +452,17 @@ const issuesRoute = createRoute({
             Showing {rangeStart}–{rangeEnd} of {data.total} issues
           </p>
         )}
-        <IssueList issues={data.issues} filtered={hasActiveFilter} search={search} />
+        <IssueList issues={data.issues} ws={ws} filtered={hasActiveFilter} search={search} />
 
         {totalPages > 1 && (
           <nav className="pagination" aria-label="Pagination">
             {data.page > 1 ? (
-              <Link className="btn" to="/issues" search={{ ...search, page: data.page - 1 }}>
+              <Link
+                className="btn"
+                to="/w/$ws/issues"
+                params={{ ws }}
+                search={{ ...search, page: data.page - 1 }}
+              >
                 Previous
               </Link>
             ) : (
@@ -250,7 +474,12 @@ const issuesRoute = createRoute({
               Page {data.page} of {totalPages}
             </span>
             {data.page < totalPages ? (
-              <Link className="btn" to="/issues" search={{ ...search, page: data.page + 1 }}>
+              <Link
+                className="btn"
+                to="/w/$ws/issues"
+                params={{ ws }}
+                search={{ ...search, page: data.page + 1 }}
+              >
                 Next
               </Link>
             ) : (
@@ -266,18 +495,23 @@ const issuesRoute = createRoute({
 })
 
 // Maps a failed mutation to the per-field error map the API returns for
-// 422 ({"error":{"fields":{...}}}), falling back to a generic title error.
-const apiFieldErrors = (err: unknown): Record<string, string> =>
+// 422 ({"error":{"fields":{...}}}), falling back to a generic error under
+// `field`.
+const apiFieldErrors = (err: unknown, field = 'title'): Record<string, string> =>
   err instanceof RequestError && err.apiError?.fields
     ? err.apiError.fields
-    : { title: err instanceof Error ? err.message : String(err) }
+    : { [field]: err instanceof Error ? err.message : String(err) }
 
 const newIssueRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => wsRoute,
   path: '/issues/new',
-  loader: () => api.listLabels(WS, { kind: 'issue' }),
+  loader: ({ params }) =>
+    scoped(api.listLabels(params.ws, { kind: 'issue' }), (real) => {
+      throw redirect({ to: '/w/$ws/issues/new', params: { ws: real } })
+    }),
   component: function NewIssuePage() {
     const { labels } = newIssueRoute.useLoaderData()
+    const { ws } = newIssueRoute.useParams()
     const navigate = useNavigate()
     const [isPending, startTransition] = useTransition()
     const [errors, setErrors] = useReducer(
@@ -293,13 +527,18 @@ const newIssueRoute = createRoute({
           submitting={isPending}
           errors={errors}
           labels={labels}
+          cancelLink={
+            <Link className="btn btn-quiet" to="/w/$ws/issues" params={{ ws }}>
+              Cancel
+            </Link>
+          }
           onSubmit={(input) => {
             startTransition(async () => {
               try {
-                const { issue } = await api.createIssue(WS, input)
+                const { issue } = await api.createIssue(ws, input)
                 await navigate({
-                  to: '/issues/$issueId',
-                  params: { issueId: String(issue.id) },
+                  to: '/w/$ws/issues/$issueId',
+                  params: { ws, issueId: String(issue.id) },
                 })
               } catch (err) {
                 setErrors(apiFieldErrors(err))
@@ -313,20 +552,27 @@ const newIssueRoute = createRoute({
 })
 
 const editIssueRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => wsRoute,
   path: '/issues/$issueId/edit',
   loader: async ({ params }) => {
-    const [detail, labels] = await notFoundOn404(
+    const rebase = (real: string) => {
+      throw redirect({
+        to: '/w/$ws/issues/$issueId/edit',
+        params: { ws: real, issueId: params.issueId },
+      })
+    }
+    const [detail, labels] = await scoped(
       Promise.all([
-        api.getIssue(WS, Number(params.issueId)),
-        api.listLabels(WS, { kind: 'issue' }),
+        api.getIssue(params.ws, Number(params.issueId)),
+        api.listLabels(params.ws, { kind: 'issue' }),
       ]),
+      rebase,
     )
     return { ...detail, labels: labels.labels }
   },
   component: function EditIssuePage() {
     const { issue, labels } = editIssueRoute.useLoaderData()
-    const { issueId } = editIssueRoute.useParams()
+    const { ws, issueId } = editIssueRoute.useParams()
     const navigate = useNavigate()
     const [isPending, startTransition] = useTransition()
     const [errors, setErrors] = useReducer(
@@ -349,17 +595,17 @@ const editIssueRoute = createRoute({
           }}
           submitLabel="Save changes"
           cancelLink={
-            <Link className="btn btn-quiet" to="/issues/$issueId" params={{ issueId }}>
+            <Link className="btn btn-quiet" to="/w/$ws/issues/$issueId" params={{ ws, issueId }}>
               Cancel
             </Link>
           }
           onSubmit={(input) => {
             startTransition(async () => {
               try {
-                await api.updateIssue(WS, Number(issueId), input)
+                await api.updateIssue(ws, Number(issueId), input)
                 await navigate({
-                  to: '/issues/$issueId',
-                  params: { issueId },
+                  to: '/w/$ws/issues/$issueId',
+                  params: { ws, issueId },
                 })
               } catch (err) {
                 setErrors(apiFieldErrors(err))
@@ -373,12 +619,18 @@ const editIssueRoute = createRoute({
 })
 
 const issueRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => wsRoute,
   path: '/issues/$issueId',
-  loader: ({ params }) => notFoundOn404(api.getIssue(WS, Number(params.issueId))),
+  loader: ({ params }) =>
+    scoped(api.getIssue(params.ws, Number(params.issueId)), (real) => {
+      throw redirect({
+        to: '/w/$ws/issues/$issueId',
+        params: { ws: real, issueId: params.issueId },
+      })
+    }),
   component: function IssuePage() {
     const { issue, comments } = issueRoute.useLoaderData()
-    const { issueId } = issueRoute.useParams()
+    const { ws, issueId } = issueRoute.useParams()
     const router = useRouter()
     const navigate = useNavigate()
     // A reducer-driven busy flag, not an async transition: renders kicked
@@ -404,7 +656,7 @@ const issueRoute = createRoute({
         <nav className="breadcrumb" aria-label="Breadcrumb">
           <ol>
             <li>
-              <Link to="/issues" activeOptions={{ exact: true }}>
+              <Link to="/w/$ws/issues" params={{ ws }} activeOptions={{ exact: true }}>
                 Issues
               </Link>
             </li>
@@ -418,20 +670,21 @@ const issueRoute = createRoute({
 
         <IssueDetail
           issue={issue}
+          ws={ws}
           pending={isPending}
-          onSetStatus={(status) => mutate(() => api.setIssueStatus(WS, issueID, status))}
+          onSetStatus={(status) => mutate(() => api.setIssueStatus(ws, issueID, status))}
           onDelete={() => {
             setPending(true)
             void (async () => {
               try {
-                await api.deleteIssue(WS, issueID)
-                await navigate({ to: '/issues' })
+                await api.deleteIssue(ws, issueID)
+                await navigate({ to: '/w/$ws/issues', params: { ws } })
               } finally {
                 setPending(false)
               }
             })()
           }}
-          onCopyMarkdown={() => api.getIssueMarkdown(WS, issueID)}
+          onCopyMarkdown={() => api.getIssueMarkdown(ws, issueID)}
         />
 
         <section id="comments" className="comments">
@@ -442,14 +695,14 @@ const issueRoute = createRoute({
           <CommentList
             comments={comments}
             pending={isPending}
-            onEdit={(cid, body) => mutate(() => api.updateComment(WS, issueID, cid, body))}
-            onDelete={(cid) => mutate(() => api.deleteComment(WS, issueID, cid))}
-            onHide={(cid, reason) => mutate(() => api.hideComment(WS, issueID, cid, reason))}
-            onUnhide={(cid) => mutate(() => api.unhideComment(WS, issueID, cid))}
+            onEdit={(cid, body) => mutate(() => api.updateComment(ws, issueID, cid, body))}
+            onDelete={(cid) => mutate(() => api.deleteComment(ws, issueID, cid))}
+            onHide={(cid, reason) => mutate(() => api.hideComment(ws, issueID, cid, reason))}
+            onUnhide={(cid) => mutate(() => api.unhideComment(ws, issueID, cid))}
           />
           <CommentForm
             submitting={isPending}
-            onSubmit={(body) => mutate(() => api.createComment(WS, issueID, body))}
+            onSubmit={(body) => mutate(() => api.createComment(ws, issueID, body))}
           />
         </section>
 
@@ -462,17 +715,20 @@ const issueRoute = createRoute({
 })
 
 const labelsRoute = createRoute({
-  getParentRoute: () => rootRoute,
+  getParentRoute: () => wsRoute,
   path: '/labels',
-  loader: async () => {
-    const [active, archived] = await Promise.all([
-      api.listLabels(WS),
-      api.listLabels(WS, { archived: true }),
-    ])
+  loader: async ({ params }) => {
+    const [active, archived] = await scoped(
+      Promise.all([api.listLabels(params.ws), api.listLabels(params.ws, { archived: true })]),
+      (real) => {
+        throw redirect({ to: '/w/$ws/labels', params: { ws: real } })
+      },
+    )
     return { active: active.labels, archived: archived.labels }
   },
   component: function LabelsPage() {
     const { active, archived } = labelsRoute.useLoaderData()
+    const { ws } = labelsRoute.useParams()
     const router = useRouter()
     const [isPending, setPending] = useReducer((_: boolean, v: boolean) => v, false)
     const [errors, setErrors] = useReducer(
@@ -499,12 +755,12 @@ const labelsRoute = createRoute({
         archived={archived}
         pending={isPending}
         errors={errors}
-        onCreate={(input) => mutate(() => api.createLabel(WS, input))}
-        onUpdate={(id, patch) => mutate(() => api.updateLabel(WS, id, patch))}
-        onArchive={(id) => mutate(() => api.archiveLabel(WS, id))}
+        onCreate={(input) => mutate(() => api.createLabel(ws, input))}
+        onUpdate={(id, patch) => mutate(() => api.updateLabel(ws, id, patch))}
+        onArchive={(id) => mutate(() => api.archiveLabel(ws, id))}
         onRestore={(l) =>
           mutate(() =>
-            api.createLabel(WS, {
+            api.createLabel(ws, {
               name: l.name,
               color: l.color,
               kind: l.kind,
@@ -519,9 +775,19 @@ const labelsRoute = createRoute({
 
 export const routeTree = rootRoute.addChildren([
   indexRoute,
-  issuesRoute,
-  newIssueRoute,
-  issueRoute,
-  editIssueRoute,
-  labelsRoute,
+  issuesRedirectRoute,
+  newIssueRedirectRoute,
+  issueRedirectRoute,
+  editIssueRedirectRoute,
+  labelsRedirectRoute,
+  workspacesRoute,
+  newWorkspaceRoute,
+  wsRoute.addChildren([
+    wsIndexRoute,
+    issuesRoute,
+    newIssueRoute,
+    issueRoute,
+    editIssueRoute,
+    labelsRoute,
+  ]),
 ])
