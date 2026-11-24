@@ -39,6 +39,11 @@ export function stubAPI(handler: (url: string, init?: RequestInit) => StubRespon
   return vi.stubGlobal('fetch', async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = typeof input === 'string' ? input : input instanceof URL ? input.href : input.url
     const { status = 200, body } = handler(url, init)
+    // String bodies go out raw (text endpoints like /diff or /markdown);
+    // everything else is JSON.
+    if (typeof body === 'string') {
+      return new Response(body, { status, headers: { 'content-type': 'text/plain' } })
+    }
     return new Response(body === undefined ? null : JSON.stringify(body), {
       status,
       headers: { 'content-type': 'application/json' },
