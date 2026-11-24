@@ -107,7 +107,9 @@ function HideCommentDialog({
             </span>
           </div>
           <div className="form-actions">
-            <button type="submit" className="btn" value="cancel" autoFocus>
+            {/* Chrome validates required controls even on method="dialog"
+                submits — formnovalidate lets Cancel close without a reason. */}
+            <button type="submit" className="btn" value="cancel" formNoValidate autoFocus>
               Cancel
             </button>
             <button type="submit" className="btn btn-primary" value="hide">
