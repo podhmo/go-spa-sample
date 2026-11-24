@@ -73,14 +73,28 @@ function HideCommentDialog({
         <h1 id={`${dialogId}-title`}>Hide comment #{commentId}?</h1>
         <form method="dialog">
           <div className="field">
-            <label htmlFor={`${dialogId}-reason`}>Reason</label>
-            <select id={`${dialogId}-reason`} name="reason">
+            <label htmlFor={`${dialogId}-reason`}>
+              Reason <span aria-hidden="true">*</span>
+            </label>
+            <select
+              id={`${dialogId}-reason`}
+              name="reason"
+              required
+              data-error={`${dialogId}-reason-error`}
+              defaultValue=""
+            >
+              <option value="" disabled>
+                choose a reason…
+              </option>
               {HIDE_REASONS.map((r) => (
                 <option key={r} value={r}>
                   {r}
                 </option>
               ))}
             </select>
+            <span id={`${dialogId}-reason-error`} className="error-msg">
+              A reason is required.
+            </span>
           </div>
           <button type="submit" value="cancel">
             cancel

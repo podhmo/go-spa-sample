@@ -165,6 +165,17 @@ em[role='alert'] {
   white-space: nowrap !important;
 }
 
+/* copy feedback bubble: opacity keeps it in the accessibility tree */
+.copy-tip {
+  opacity: 0;
+  font-size: 0.85em;
+  transition: opacity 0.15s;
+}
+
+.copy-tip[data-shown] {
+  opacity: 1;
+}
+
 /* dialog */
 dialog {
   border: 1px solid var(--border);

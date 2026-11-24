@@ -274,7 +274,7 @@ describe('route: /issues/$issueId', () => {
 
     // hide via the reason dialog
     await page.getByRole('button', { name: 'hide' }).click()
-    await page.getByLabelText('Reason').selectOptions('spam')
+    await page.getByLabelText(/Reason/).selectOptions('spam')
     await page.getByRole('button', { name: 'hide comment' }).click()
     await expect.element(page.getByText(/This comment was hidden \(spam\)/)).toBeInTheDocument()
     const hide = requests.find((r) => r.url.endsWith('/hide'))
@@ -314,7 +314,7 @@ describe('route: /issues/$issueId', () => {
     const writeText = vi.spyOn(navigator.clipboard, 'writeText').mockResolvedValue(undefined)
     renderAt('/issues/1')
     await page.getByRole('button', { name: 'copy as markdown' }).click()
-    await expect.element(page.getByRole('button', { name: 'copied' })).toBeInTheDocument()
+    await expect.element(page.getByText('copied')).toBeInTheDocument()
     expect(calls.some((u) => u.endsWith('/issues/1/markdown'))).toBe(true)
     expect(writeText).toHaveBeenCalled()
   })

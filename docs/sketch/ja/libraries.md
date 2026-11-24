@@ -131,3 +131,15 @@ SPA に適用したもの:
 - **CSS**: `font: inherit`/`font-size: max(1rem,1em)`、タップターゲット
   `min-height: 2.5rem`、`dialog:modal`/`::backdrop` の
   `overscroll-behavior: contain` (scroll chaining 防止、未対応は無害)
+
+### parity実装で追加適用したもの (features.md parity対応時)
+
+- **hide理由 select は `required` + disabled placeholder** — 先頭値 (spam)
+  の暗黙選択を防ぎ、理由の明示選択を強制 (`select-menu-interaction` /
+  `required-field-feedback` ガイド)
+- **コピーボタンのフィードバックはボタン外の `role="status"` bubble**
+  (`copy-button` ガイド) — ボタン内のライブリージョンは確実に読まれない。
+  `opacity` で表示制御 (a11y tree に残す)、timer は `useReducer` の
+  state に持ち clearTimeout で重複防止、feedback中もボタンは無効化しない
+- **コメントの編集/削除/hide は `<dialog>` + `form method="dialog"` +
+  `returnValue` パターンを再利用** (ConfirmDialog と同型)
