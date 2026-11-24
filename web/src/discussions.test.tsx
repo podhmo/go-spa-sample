@@ -205,6 +205,28 @@ describe('route: /w/{ws}/discussions/{id}', () => {
     await expect.element(page.getByPlaceholder('Reply…')).toHaveValue('')
   })
 
+  it('guards a collapsed reply draft: declining keeps the text, accepting navigates', async () => {
+    stubAPI((url) => {
+      if (url.includes('/pulls')) return { status: 404, body: {} }
+      if (url.endsWith('/discussions') || url.includes('/discussions?')) {
+        return { body: { discussions: [], total: 0, page: 1, per_page: 20 } }
+      }
+      return { body: { discussion: discussion(), threads: [thread()] } }
+    })
+    renderAt('/w/default/discussions/1')
+    await expect.element(page.getByText('op comment')).toBeInTheDocument()
+    const toggle = page.getByRole('button', { name: 'Reply' }).first()
+    await toggle.click()
+    await page.getByPlaceholder('Reply…').fill('collapsed draft')
+    await toggle.click() // collapse — the draft must still be guarded
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false)
+    await page.getByRole('link', { name: 'Discussions' }).first().click()
+    await expect.poll(() => confirm.mock.calls.length > 0).toBeTruthy()
+    await toggle.click()
+    await expect.element(page.getByPlaceholder('Reply…')).toHaveValue('collapsed draft')
+    confirm.mockRestore()
+  })
+
   it('keeps the reply form open with its draft when the post is rejected', async () => {
     let posts = 0
     stubAPI((url, init) => {

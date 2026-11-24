@@ -1,4 +1,5 @@
 import { useEffect, useReducer, useRef } from 'react'
+import { useLeaveGuard } from '../leave-guard'
 import { RequestError, type PRCommentInput } from '../api'
 import { submitOnCtrlEnter } from '../enter-submit'
 import { fmt, useMessages } from '../i18n'
@@ -252,10 +253,22 @@ function DiffRow({
   onSubmit: (body: string) => Promise<void> | void
 }) {
   const [postError, setPostError] = useReducer((_: string | null, v: string | null) => v, null)
+  const [dirty, setDirty] = useReducer((_: boolean, v: boolean) => v, false)
+  const [blank, setBlank] = useReducer((_: boolean, v: boolean) => v, true)
   const m = useMessages()
+  useLeaveGuard(formOpen && dirty, m.form.unsavedChanges)
   // The disabled button only blocks clicks: Ctrl+Enter (requestSubmit)
   // still fires, so the send itself must be re-entrant-safe.
   const sending = useRef(false)
+  // The textarea is uncontrolled, so closing the form discards the DOM
+  // draft: every toggle must reset the flags or a reopen shows an empty
+  // box with Comment enabled / a phantom dirty guard.
+  const toggle = () => {
+    setDirty(false)
+    setBlank(true)
+    setPostError(null)
+    onToggle()
+  }
   if (line.kind === 'meta') {
     return (
       <tr className="diff-line diff-meta">
@@ -274,7 +287,7 @@ function DiffRow({
             <button
               type="button"
               className="diff-add-comment"
-              onClick={onToggle}
+              onClick={toggle}
               aria-expanded={formOpen}
               aria-label={fmt(m.pulls.commentOnLine, {
                 path: line.path ?? '',
@@ -308,11 +321,17 @@ function DiffRow({
                 sending.current = true
                 const body = String(new FormData(e.currentTarget).get('body') ?? '')
                 setPostError(null)
+                // Clear the guard before awaiting: the route navigates
+                // to the new comment inside onSubmit, and a still-dirty
+                // flag would intercept that redirect.
+                setDirty(false)
                 void (async () => {
                   try {
                     await onSubmit(body)
-                    onToggle()
+                    toggle()
                   } catch (err) {
+                    // The draft is still in the textarea — re-arm.
+                    setDirty(true)
                     // Field errors name the actual rejection reason
                     // (e.g. a stale anchor); a bare message just says
                     // "Validation failed.".
@@ -342,6 +361,10 @@ function DiffRow({
                   name="body"
                   rows={3}
                   required
+                  onChange={(e) => {
+                    setDirty(e.target.value.trim() !== '')
+                    setBlank(e.target.value.trim() === '')
+                  }}
                   onKeyDown={submitOnCtrlEnter}
                   data-error={`dc-${line.path}-${line.line}-error`}
                   placeholder={m.pulls.reviewCommentPh}
@@ -352,10 +375,10 @@ function DiffRow({
                 {postError && <em role="alert">{postError}</em>}
               </div>
               <div className="form-actions">
-                <button type="button" className="btn btn-quiet" onClick={onToggle}>
+                <button type="button" className="btn btn-quiet" onClick={toggle}>
                   {m.copy.cancel}
                 </button>
-                <button type="submit" className="btn btn-primary" disabled={pending}>
+                <button type="submit" className="btn btn-primary" disabled={pending || blank}>
                   {m.pulls.commentSubmit}
                 </button>
               </div>

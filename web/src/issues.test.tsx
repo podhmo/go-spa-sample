@@ -264,6 +264,73 @@ describe('route: /issues/$issueId', () => {
     expect(requests.find((r) => r.init?.method === 'DELETE')?.url).toContain('/comments/1')
   })
 
+  it('disables the comment submit while the body is blank', async () => {
+    stubAPI(() => ({ body: { issue: issue(), comments: [] } }))
+    renderAt('/w/default/issues/1')
+    const submit = page.getByRole('button', { name: 'Comment', exact: true })
+    await expect.element(submit).toBeDisabled()
+    await page.getByLabelText(/Add a comment/).fill('a draft')
+    await expect.element(submit).toBeEnabled()
+    await page.getByLabelText(/Add a comment/).fill('   ')
+    await expect.element(submit).toBeDisabled()
+  })
+
+  it('confirms before leaving with a comment draft, and navigates on accept', async () => {
+    stubAPI((url) => {
+      if (url.includes('/labels')) return { body: { labels: [] } }
+      if (url.includes('/pulls')) return { status: 404, body: {} }
+      if (url.endsWith('/issues') || url.includes('/issues?')) {
+        return { body: { issues: [], total: 0, page: 1, per_page: 20 } }
+      }
+      return { body: { issue: issue(), comments: [] } }
+    })
+    renderAt('/w/default/issues/1')
+    await page.getByLabelText(/Add a comment/).fill('draft to lose')
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(false)
+    const breadcrumb = page.getByRole('navigation', { name: /breadcrumb/i })
+    await breadcrumb.getByRole('link', { name: 'Issues' }).click()
+    await expect.poll(() => confirm.mock.calls.length > 0).toBeTruthy()
+    // declined: still on the detail page, draft intact
+    await expect.element(page.getByLabelText(/Add a comment/)).toHaveValue('draft to lose')
+    confirm.mockReturnValue(true)
+    await breadcrumb.getByRole('link', { name: 'Issues' }).click()
+    await expect.element(page.getByText('No issues here yet.')).toBeInTheDocument()
+    confirm.mockRestore()
+  })
+
+  it('asks once for several dirty drafts and re-arms on the next page', async () => {
+    stubAPI((url) => {
+      if (url.includes('/labels')) return { body: { labels: [] } }
+      if (url.includes('/pulls')) return { status: 404, body: {} }
+      if (url.endsWith('/issues') || url.includes('/issues?')) {
+        return { body: { issues: [], total: 0, page: 1, per_page: 20 } }
+      }
+      return { body: { issue: issue(), comments: [comment()] } }
+    })
+    const { router } = renderAt('/w/default/issues/1')
+    // two independent dirty guards: the new-comment box and a comment edit
+    await page.getByLabelText(/Add a comment/).fill('draft one')
+    await page.getByRole('button', { name: 'Edit comment 1' }).click()
+    await page.getByLabelText('comment body').fill('edited draft')
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true)
+    const breadcrumb = page.getByRole('navigation', { name: /breadcrumb/i })
+    await breadcrumb.getByRole('link', { name: 'Issues' }).click()
+    await expect.element(page.getByText('No issues here yet.')).toBeInTheDocument()
+    // one accepted confirm releases every guard on the page
+    expect(confirm).toHaveBeenCalledTimes(1)
+    // the latch re-arms on navigation: a fresh draft on the detail page
+    // asks again (renderAt wires the same onResolved reset as main.tsx)
+    await router.navigate({
+      to: '/w/$ws/issues/$issueId',
+      params: { ws: 'default', issueId: '1' },
+    })
+    await page.getByLabelText(/Add a comment/).fill('draft two')
+    await breadcrumb.getByRole('link', { name: 'Issues' }).click()
+    await expect.element(page.getByText('No issues here yet.')).toBeInTheDocument()
+    expect(confirm).toHaveBeenCalledTimes(2)
+    confirm.mockRestore()
+  })
+
   it('hides a comment with a reason and unhides it', async () => {
     const requests: { url: string; init?: RequestInit | undefined }[] = []
     let hidden = false

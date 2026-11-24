@@ -81,6 +81,7 @@ export const ja: Messages = {
     saveChanges: '変更を保存',
     saving: '保存中…',
     posting: '投稿中…',
+    unsavedChanges: '未保存の変更があります。このページを離れますか?',
     select: '選択…',
     name: '名前',
     nameRequired: '名前は必須です。',

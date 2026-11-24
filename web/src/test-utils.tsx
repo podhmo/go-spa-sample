@@ -7,6 +7,7 @@ import {
 import type { ReactNode } from 'react'
 import { render } from 'vitest-browser-react'
 import { vi } from 'vitest'
+import { watchLeaveGuardReset } from './leave-guard'
 import { routeTree } from './routes'
 
 // renderAt mounts the real route tree on an in-memory history — component
@@ -17,6 +18,7 @@ export function renderAt(initialPath: string) {
     routeTree,
     history: createMemoryHistory({ initialEntries: [initialPath] }),
   })
+  watchLeaveGuardReset(router)
   return { router, ...render(<RouterProvider router={router} />) }
 }
 

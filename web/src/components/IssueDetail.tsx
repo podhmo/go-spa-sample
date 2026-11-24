@@ -1,5 +1,6 @@
 import { Link } from '@tanstack/react-router'
 import { useId, useReducer } from 'react'
+import { useLeaveGuard } from '../leave-guard'
 import { HIDE_REASONS, type Comment, type Issue } from '../api'
 import { ConfirmDialog } from './ConfirmDialog'
 import { CopyButton } from './CopyButton'
@@ -136,6 +137,7 @@ function CommentItem({
 }: { comment: Comment } & CommentHandlers) {
   const [ui, dispatch] = useReducer(commentUIReducer, { editing: false, draft: '' })
   const m = useMessages()
+  useLeaveGuard(ui.editing && ui.draft !== c.body, m.form.unsavedChanges)
   const fmtTime = useFmtTime()
   const permalink = () => `${location.origin}${location.pathname}#comment-${c.id}`
   return (
@@ -206,7 +208,11 @@ function CommentItem({
             >
               {m.copy.cancel}
             </button>
-            <button type="submit" className="btn btn-primary" disabled={pending}>
+            <button
+              type="submit"
+              className="btn btn-primary"
+              disabled={pending || !ui.draft.trim()}
+            >
               {m.form.saveChanges}
             </button>
           </div>
