@@ -85,6 +85,14 @@ describe('component: DiscussionForm', () => {
       label_ids: [],
     })
   })
+
+  it('rejects submit without a category', async () => {
+    const onSubmit = vi.fn()
+    renderWithRouter(<DiscussionForm onSubmit={onSubmit} categories={[cat(), qaCat]} />)
+    await page.getByLabelText(/Title/).fill('hello discussion')
+    await page.getByRole('button', { name: 'Create discussion' }).click()
+    expect(onSubmit).not.toHaveBeenCalled()
+  })
 })
 
 describe('route: /w/{ws}/discussions', () => {
