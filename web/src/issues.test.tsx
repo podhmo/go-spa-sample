@@ -330,13 +330,14 @@ describe('route: /labels', () => {
       label({ id: 2, name: 'q', kind: 'discussion' }),
     ]
     const archived: Label[] = []
+    let nextId = 9
     stubAPI((url, init) => {
       requests.push({ url, init })
       if (!url.includes('/labels')) return { status: 404, body: {} }
       if (url.includes('archived=1')) return { body: { labels: archived } }
       if (init?.method === 'POST') {
         const b = JSON.parse(String(init.body)) as LabelInput
-        const created = label({ id: 9, ...b, workspace_id: b.shared ? null : 1 })
+        const created = label({ id: nextId++, ...b, workspace_id: b.shared ? null : 1 })
         const i = archived.findIndex((l) => l.name === b.name)
         if (i >= 0) archived.splice(i, 1)
         active.push(created)
