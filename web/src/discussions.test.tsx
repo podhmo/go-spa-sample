@@ -199,9 +199,26 @@ describe('route: /w/{ws}/discussions/{id}', () => {
     await toggle.click()
     await page.getByPlaceholder('Reply…').fill('done reply')
     await page.getByRole('button', { name: 'Reply', exact: true }).last().click()
-    await new Promise((r) => setTimeout(r, 100))
-    expect(page.getByPlaceholder('Reply…').elements()).toHaveLength(0)
+    // Wait for the round trip (post + invalidate) instead of a fixed delay.
+    await expect.poll(() => page.getByPlaceholder('Reply…').elements().length).toBe(0)
     await toggle.click()
     await expect.element(page.getByPlaceholder('Reply…')).toHaveValue('')
+  })
+
+  it('keeps the reply form open with its draft when the post is rejected', async () => {
+    stubAPI((url, init) => {
+      if (init?.method === 'POST' && url.includes('/comments')) {
+        return { status: 500, body: { error: { message: 'boom' } } }
+      }
+      return { body: { discussion: discussion(), threads: [thread()] } }
+    })
+    renderAt('/w/default/discussions/1')
+    await expect.element(page.getByText('op comment')).toBeInTheDocument()
+    await page.getByRole('button', { name: 'Reply' }).first().click()
+    await page.getByPlaceholder('Reply…').fill('do not lose me')
+    await page.getByRole('button', { name: 'Reply', exact: true }).last().click()
+    await new Promise((r) => setTimeout(r, 300))
+    // The form must stay open with the text intact — no silent close.
+    await expect.element(page.getByPlaceholder('Reply…')).toHaveValue('do not lose me')
   })
 })
