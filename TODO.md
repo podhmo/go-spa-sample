@@ -111,11 +111,12 @@ workspace → discussions → pulls → accounts へ展開する。
 - [x] **`cmd/fakeapi` の撤去**: スパイク用コードの整理 (dev-workflow.md
   の記述も zatudan 直起動に更新)
 - [x] **SPA版 ui-rules.md の策定** (`docs/ja/ui-rules.md`)
-- [ ] **入力中の離脱ガード** ([`docs/ja/ui-rules.md` §3](docs/ja/ui-rules.md)):
-  `beforeunload` (ブラウザ離脱) + TanStack Router blocker (アプリ内遷移)
-  の両対応。MPA は leave-guard.js 相当が未移植
-- [ ] **コメント空入力の送信 Disabled** ([`docs/ja/ui-rules.md` §6](docs/ja/ui-rules.md)):
-  トップレベル・返信両方で、本文が空のうちは送信ボタンを disabled にする
-  (MPA の comment-submit-disabled.js 相当。現状は `required` + pending のみ)
+- [x] **入力中の離脱ガード** ([`docs/ja/ui-rules.md` §3](docs/ja/ui-rules.md)):
+  `web/src/leave-guard.ts` の `useLeaveGuard` が `useBlocker` でアプリ内遷移を
+  confirm、`beforeunload` でブラウザ離脱をガード (submit 後の遷移は
+  reducer の `submitted` flag で解除)
+- [x] **コメント空入力の送信 Disabled** ([`docs/ja/ui-rules.md` §6](docs/ja/ui-rules.md)):
+  トップレベル・返信・編集インラインとも本文が空/空白のみなら disabled
+  (MPA の comment-submit-disabled.js 相当)
 - [ ] **本番構成の決定**: dev proxy の `Bearer dev-token` 注入は開発専用。
   embed 配信+セッション or 別配備+token のどちらにするか

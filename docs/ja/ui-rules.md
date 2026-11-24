@@ -72,10 +72,13 @@ loader + mutation + `router.invalidate()` + `navigate()` に置き換わる。
   loader suspend を避けるため。AGENTS.md の "Pending UI via
   `useTransition`" と併記するが、本項が詳細側）。失敗時は入力を消さず
   `role="alert"` のインラインエラーを出す（state が残る＝ドラフト保持）。
-- [変更予定] **入力中の離脱ガード**。MPA は `beforeunload`（leave-guard.js）
-  で全画面離脱をガードしていた。SPA はアプリ内遷移もあるため
-  `beforeunload`（ブラウザ離脱）+ TanStack Router の blocker
-  （アプリ内遷移）の両対応が必要。未実装。
+- [正（代案）] **入力中の離脱ガードは `useLeaveGuard`**（`web/src/leave-guard.ts`）。
+  MPA は `beforeunload`（leave-guard.js）で全画面離脱をガードしていたが、
+  SPA はアプリ内遷移もあるため `useBlocker`（in-app 遷移を `window.confirm`
+  で止める）+ `beforeunload`（ブラウザ離脱）の両対応とした。dirty 判定は
+  各フォームが行い、submit した時点で reducer の `submitted` flag を立てて
+  ガードを解除する（§13a の送信後遷移をブロックしないため。失敗時は次の
+  編集で再武装する）。
 
 ## 4. 一覧（リスト画面）
 
@@ -110,9 +113,11 @@ loader + mutation + `router.invalidate()` + `navigate()` に置き換わる。
 ## 6. コメント追加 UI
 
 - [正] **トップレベル入力欄は画面最下部に常時展開**、キャンセルボタンなし。
-- [変更予定] **コメント欄が空のとき送信ボタンを Disabled に**
-  （MPA: comment-submit-disabled.js。SPA は現状 `required` + pending のみ。
-  トップレベル・返信両方）。
+- [正] **コメント欄が空のとき送信ボタンを Disabled に**
+  （MPA: comment-submit-disabled.js 相当）。トップレベル・返信・インライン編集
+  とも、本文が空/空白のみのときは `disabled`。Ctrl+Enter（`requestSubmit`）は
+  `disabled` を迂回するため `enter-submit.ts` 側でも submit ボタンの disabled を
+  見て弾いている。
 - [正（代案）] **返信欄は "Reply" ボタンでトグルするインラインフォーム**
   （`aria-expanded` を持つ `.comment-action` ボタン + `replying` reducer
   state。MPA は `<details>` 畳みの擬似入力バーだったが、SPA は state 駆動の
