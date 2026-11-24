@@ -98,8 +98,10 @@ workspace → discussions → pulls → accounts へ展開する。
   SPA は /login /register + nav のユーザー名/ログアウト + `?next=`
   誘導。投稿の author 付与は保存済み (actorID → created_by)；残りは
   表示側 (UI での author 名表示・共有 token 投稿との区別)
-- [ ] **`zatu` CLI 移植判断** (features.md 3.11): gh 風 CLI。ローカル
-  (SQLite直叩き)/リモート (API+token) 両バックエンド
+- [x] **`zatu` CLI 移植判断** (features.md 3.11): **移植**。store の
+  メソッド面は MPA と完全一致なのでローカル (SQLite直叩き) /
+  リモート (`--server`/`--token` → `/api/v1`) 両バックエンドを
+  `internal/cli` + `internal/client` + `cmd/zatu` として移植
 - [ ] **i18n** (features.md 3.10): 元は en/ja 2ロケール (cookie +
   Accept-Language 解決)。SPA では URL/localStorage/Accept-Language の
   どれで持つか方針から
