@@ -3,7 +3,9 @@ import { useId, useReducer } from 'react'
 import { HIDE_REASONS, type Comment, type Issue } from '../api'
 import { ConfirmDialog } from './ConfirmDialog'
 import { CopyButton } from './CopyButton'
-import { LabelBadge, StatusBadge } from './IssueList'
+import { submitOnCtrlEnter } from '../enter-submit'
+import { fmtTime, labelStyle } from '../format'
+import { StatusBadge } from './IssueList'
 import { Markdown } from './Markdown'
 
 type CommentUIState = { editing: boolean; draft: string }
@@ -51,13 +53,16 @@ function HideCommentDialog({
     <>
       <button
         type="button"
+        className="comment-action"
         {...({ commandfor: dialogId, command: 'show-modal' } as Record<string, string>)}
         disabled={pending}
+        aria-label={`Hide comment ${commentId}`}
       >
-        hide
+        Hide
       </button>
       <dialog
         id={dialogId}
+        className="confirm-dialog"
         aria-labelledby={`${dialogId}-title`}
         ref={(el) => {
           if (el && !el.hasAttribute('closedby')) el.setAttribute('closedby', 'any')
@@ -72,11 +77,14 @@ function HideCommentDialog({
           d.returnValue = ''
         }}
       >
-        <h1 id={`${dialogId}-title`}>Hide comment #{commentId}?</h1>
+        <h2 id={`${dialogId}-title`}>Hide comment #{commentId}?</h2>
         <form method="dialog">
           <div className="field">
             <label htmlFor={`${dialogId}-reason`}>
-              Reason <span aria-hidden="true">*</span>
+              Reason{' '}
+              <span className="req" aria-hidden="true">
+                *
+              </span>
             </label>
             <select
               id={`${dialogId}-reason`}
@@ -86,7 +94,7 @@ function HideCommentDialog({
               defaultValue=""
             >
               <option value="" disabled>
-                choose a reason…
+                Select…
               </option>
               {HIDE_REASONS.map((r) => (
                 <option key={r} value={r}>
@@ -98,12 +106,14 @@ function HideCommentDialog({
               A reason is required.
             </span>
           </div>
-          <button type="submit" value="cancel">
-            cancel
-          </button>{' '}
-          <button type="submit" value="hide">
-            hide comment
-          </button>
+          <div className="form-actions">
+            <button type="submit" className="btn" value="cancel" autoFocus>
+              Cancel
+            </button>
+            <button type="submit" className="btn btn-primary" value="hide">
+              Hide comment
+            </button>
+          </div>
         </form>
       </dialog>
     </>
@@ -121,9 +131,32 @@ function CommentItem({
   const [ui, dispatch] = useReducer(commentUIReducer, { editing: false, draft: '' })
   const permalink = () => `${location.origin}${location.pathname}#comment-${c.id}`
   return (
-    <li id={`comment-${c.id}`} data-hidden={c.hidden || undefined}>
+    <li className={`card comment${c.hidden ? ' comment-hidden' : ''}`} id={`comment-${c.id}`}>
+      <header className="comment-meta">
+        <span className="comment-author">{c.author?.name ?? 'anonymous'} commented</span>{' '}
+        <a className="comment-permalink" href={`#comment-${c.id}`}>
+          <time dateTime={c.created_at}>{fmtTime(c.created_at)}</time>
+        </a>
+        {c.edited_at && (
+          <>
+            {' '}
+            · <span className="comment-edited">edited</span>
+          </>
+        )}
+        <CopyButton className="copy-btn" label="copy link" getText={permalink} pending={pending} />
+      </header>
       {c.hidden ? (
-        <em>This comment was hidden{c.hidden_reason ? ` (${c.hidden_reason})` : ''}.</em>
+        <>
+          <p className="comment-hidden-note">
+            This comment was marked as {c.hidden_reason ?? 'hidden'}.
+          </p>
+          <details className="comment-hidden-body">
+            <summary>show comment</summary>
+            <div className="comment-body">
+              <Markdown text={c.body} />
+            </div>
+          </details>
+        </>
       ) : ui.editing ? (
         <form
           aria-label={`edit comment ${c.id}`}
@@ -133,58 +166,81 @@ function CommentItem({
             dispatch({ type: 'cancel' })
           }}
         >
-          <textarea
-            value={ui.draft}
-            onChange={(e) => dispatch({ type: 'draft', value: e.target.value })}
-            rows={4}
-            required
-            aria-label="comment body"
-          />{' '}
-          <button type="submit" disabled={pending}>
-            save
-          </button>{' '}
-          <button type="button" onClick={() => dispatch({ type: 'cancel' })}>
-            cancel
-          </button>
+          <div className="field">
+            <label htmlFor={`comment-edit-${c.id}`} className="visually-hidden">
+              comment body
+            </label>
+            <textarea
+              id={`comment-edit-${c.id}`}
+              value={ui.draft}
+              onChange={(e) => dispatch({ type: 'draft', value: e.target.value })}
+              onKeyDown={submitOnCtrlEnter}
+              rows={4}
+              required
+              aria-label="comment body"
+            />
+          </div>
+          <div className="form-actions">
+            <button
+              type="button"
+              className="btn btn-quiet"
+              onClick={() => dispatch({ type: 'cancel' })}
+            >
+              Cancel
+            </button>
+            <button type="submit" className="btn btn-primary" disabled={pending}>
+              Save changes
+            </button>
+          </div>
         </form>
       ) : (
-        <Markdown text={c.body} />
+        <div className="comment-body">
+          <Markdown text={c.body} />
+        </div>
       )}
-      <small>
-        {c.author ? c.author.name : 'anonymous'} — {c.created_at}
-        {c.edited_at && (
-          <>
-            {' '}
-            — <em>edited</em>
-          </>
-        )}
-      </small>{' '}
       {!ui.editing && (
-        <>
-          {!c.hidden && onEdit && (
-            <button type="button" onClick={() => dispatch({ type: 'start-edit', body: c.body })}>
-              edit
+        <div className="comment-actions">
+          {onEdit && (
+            <button
+              type="button"
+              className="comment-action"
+              onClick={() => dispatch({ type: 'start-edit', body: c.body })}
+              aria-label={`Edit comment ${c.id}`}
+            >
+              Edit
             </button>
-          )}{' '}
-          {!c.hidden && onHide && (
-            <HideCommentDialog commentId={c.id} pending={pending} onHide={(r) => onHide(c.id, r)} />
-          )}{' '}
-          {c.hidden && onUnhide && (
-            <button type="button" disabled={pending} onClick={() => onUnhide(c.id)}>
-              unhide
-            </button>
-          )}{' '}
-          {!c.hidden && onDelete && (
+          )}
+          {c.hidden
+            ? onUnhide && (
+                <button
+                  type="button"
+                  className="comment-action"
+                  disabled={pending}
+                  onClick={() => onUnhide(c.id)}
+                  aria-label={`Unhide comment ${c.id}`}
+                >
+                  Unhide
+                </button>
+              )
+            : onHide && (
+                <HideCommentDialog
+                  commentId={c.id}
+                  pending={pending}
+                  onHide={(r) => onHide(c.id, r)}
+                />
+              )}
+          {onDelete && (
             <ConfirmDialog
-              label="delete"
+              label="Delete"
               title={`Delete comment #${c.id}?`}
-              confirmLabel="delete"
+              description="This permanently removes the comment. This action cannot be undone."
+              confirmLabel="Delete comment"
+              triggerClass="comment-action comment-action-danger"
               pending={pending}
               onConfirm={() => onDelete(c.id)}
             />
-          )}{' '}
-          <CopyButton label="permalink" getText={permalink} pending={pending} />
-        </>
+          )}
+        </div>
       )}
     </li>
   )
@@ -192,75 +248,102 @@ function CommentItem({
 
 export function CommentList({ comments, ...handlers }: { comments: Comment[] } & CommentHandlers) {
   if (comments.length === 0) {
-    return <p>No comments yet.</p>
+    return <p className="muted">No comments yet.</p>
   }
   return (
-    <ul>
+    <ol className="comment-list" role="list">
       {comments.map((c) => (
         <CommentItem key={c.id} comment={c} {...handlers} />
       ))}
-    </ul>
+    </ol>
   )
 }
 
+// The issue article card. The comments section + form live next to it
+// in the page component, mirroring the MPA's issue_detail.html.
 export function IssueDetail({
   issue,
-  comments,
   onSetStatus,
   onDelete,
   onCopyMarkdown,
-  commentHandlers,
   pending,
 }: {
   issue: Issue
-  comments: Comment[]
   onSetStatus?: (status: 'open' | 'closed') => void
   onDelete?: () => void
   onCopyMarkdown?: () => Promise<string>
-  commentHandlers?: CommentHandlers
   pending?: boolean
 }) {
   const next = issue.status === 'open' ? 'closed' : 'open'
   return (
-    <article>
-      <header>
-        <h2>
-          #{issue.id} {issue.title} <StatusBadge status={issue.status} />
-        </h2>
-        <p>
-          {issue.labels.map((l) => (
-            <LabelBadge key={l.id} label={l} />
-          ))}{' '}
-          {issue.author ? `opened by ${issue.author.name}` : ''} — {issue.created_at}
+    <article className="card issue-detail" id="issue-article">
+      <header className="issue-detail-head">
+        <div className="issue-title-row">
+          <StatusBadge status={issue.status} />
+          <h1>
+            {issue.title} <span className="issue-num">#{issue.id}</span>
+          </h1>
+        </div>
+        {issue.labels.length > 0 && (
+          <div className="issue-labels">
+            {issue.labels.map((l) => (
+              <Link
+                className="label-badge"
+                style={labelStyle(l)}
+                key={l.id}
+                to="/issues"
+                search={{ status: 'all', label: l.name }}
+              >
+                {l.name}
+              </Link>
+            ))}
+          </div>
+        )}
+        <p className="issue-meta">
+          Opened by {issue.author?.name ?? 'anonymous'}{' '}
+          <time dateTime={issue.created_at}>{fmtTime(issue.created_at)}</time> · Last updated{' '}
+          <time dateTime={issue.updated_at}>{fmtTime(issue.updated_at)}</time>
         </p>
+      </header>
+
+      {issue.body ? (
+        <div className="issue-body">
+          <Markdown text={issue.body} />
+        </div>
+      ) : (
+        <div className="issue-body issue-body-empty">
+          <em>No description provided.</em>
+        </div>
+      )}
+
+      <div className="issue-actions">
+        <Link className="btn" to="/issues/$issueId/edit" params={{ issueId: String(issue.id) }}>
+          Edit
+        </Link>
         {onSetStatus && (
-          <button onClick={() => onSetStatus(next)} disabled={pending}>
-            {pending ? '…' : `mark ${next}`}
+          <button
+            type="button"
+            className="btn"
+            onClick={() => onSetStatus(next)}
+            disabled={pending}
+          >
+            {next === 'closed' ? 'Close issue' : 'Reopen issue'}
           </button>
-        )}{' '}
-        <Link to="/issues/$issueId/edit" params={{ issueId: String(issue.id) }}>
-          edit
-        </Link>{' '}
+        )}
+        {onCopyMarkdown && (
+          <CopyButton label="Copy as markdown" getText={onCopyMarkdown} pending={pending} />
+        )}
         {onDelete && (
           <ConfirmDialog
-            label="delete"
+            label="Delete"
             title={`Delete issue #${issue.id}?`}
-            confirmLabel="delete"
+            description={`This permanently removes ${issue.title} and all of its comments. This action cannot be undone.`}
+            confirmLabel="Delete issue"
             pending={pending}
             onConfirm={onDelete}
           />
-        )}{' '}
-        {onCopyMarkdown && (
-          <CopyButton label="copy as markdown" getText={onCopyMarkdown} pending={pending} />
         )}
-      </header>
-      <section>
-        <Markdown text={issue.body} />
-      </section>
-      <section>
-        <h3>Comments ({comments.length})</h3>
-        <CommentList comments={comments} pending={pending} {...commentHandlers} />
-      </section>
+      </div>
     </article>
   )
 }
