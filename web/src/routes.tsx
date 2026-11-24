@@ -254,23 +254,31 @@ const issueRoute = createRoute({
     const router = useRouter()
     const navigate = useNavigate()
     const [isPending, startTransition] = useTransition()
+    const issueID = Number(issueId)
+    const mutate = (fn: () => Promise<unknown>) => {
+      startTransition(async () => {
+        await fn()
+        await router.invalidate()
+      })
+    }
     return (
       <div>
         <IssueDetail
           issue={issue}
           comments={comments}
           pending={isPending}
-          onSetStatus={(status) => {
-            startTransition(async () => {
-              await api.setIssueStatus(WS, Number(issueId), status)
-              await router.invalidate()
-            })
-          }}
+          onSetStatus={(status) => mutate(() => api.setIssueStatus(WS, issueID, status))}
           onDelete={() => {
             startTransition(async () => {
-              await api.deleteIssue(WS, Number(issueId))
+              await api.deleteIssue(WS, issueID)
               await navigate({ to: '/issues' })
             })
+          }}
+          commentHandlers={{
+            onEdit: (cid, body) => mutate(() => api.updateComment(WS, issueID, cid, body)),
+            onDelete: (cid) => mutate(() => api.deleteComment(WS, issueID, cid)),
+            onHide: (cid, reason) => mutate(() => api.hideComment(WS, issueID, cid, reason)),
+            onUnhide: (cid) => mutate(() => api.unhideComment(WS, issueID, cid)),
           }}
         />
         <CommentForm

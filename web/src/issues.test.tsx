@@ -191,4 +191,97 @@ describe('route: /issues/$issueId', () => {
     expect(statusCall?.init?.method).toBe('POST')
     expect(JSON.parse(String(statusCall?.init?.body))).toEqual({ status: 'closed' })
   })
+
+  it('each comment has a #comment-N anchor and a permalink button', async () => {
+    stubAPI(() => ({ body: { issue: issue(), comments: [comment()] } }))
+    renderAt('/issues/1')
+    await expect.element(page.getByText('a comment')).toBeInTheDocument()
+    expect(document.getElementById('comment-1')).not.toBeNull()
+    await expect.element(page.getByRole('button', { name: 'permalink' })).toBeInTheDocument()
+  })
+
+  it('edits a comment inline and shows the edited badge', async () => {
+    const requests: { url: string; init?: RequestInit }[] = []
+    let edited = false
+    stubAPI((url, init) => {
+      requests.push({ url, init })
+      if (init?.method === 'PATCH' && url.includes('/comments/')) {
+        edited = true
+        return {
+          body: { comment: comment({ body: 'edited body', edited_at: '2026-01-02T00:00:00Z' }) },
+        }
+      }
+      return {
+        body: {
+          issue: issue(),
+          comments: [
+            comment(edited ? { body: 'edited body', edited_at: '2026-01-02T00:00:00Z' } : {}),
+          ],
+        },
+      }
+    })
+    renderAt('/issues/1')
+    await expect.element(page.getByText('a comment')).toBeInTheDocument()
+    await page.getByRole('button', { name: 'edit' }).click()
+    await page.getByLabelText('comment body').fill('edited body')
+    await page.getByRole('button', { name: 'save' }).click()
+
+    await expect.element(page.getByText('edited', { exact: true })).toBeInTheDocument()
+    const patch = requests.find((r) => r.init?.method === 'PATCH')
+    expect(patch?.url).toContain('/comments/1')
+    expect(JSON.parse(String(patch?.init?.body))).toEqual({ body: 'edited body' })
+  })
+
+  it('deletes a comment through the confirm dialog', async () => {
+    const requests: { url: string; init?: RequestInit }[] = []
+    stubAPI((url, init) => {
+      requests.push({ url, init })
+      return { body: { issue: issue(), comments: [comment()] } }
+    })
+    renderAt('/issues/1')
+    await expect.element(page.getByText('a comment')).toBeInTheDocument()
+    // the comment's delete trigger lives inside its <li> (the issue's
+    // own delete button is in the header)
+    await page.getByRole('listitem').getByRole('button', { name: 'delete' }).click()
+    await page.getByRole('dialog').getByRole('button', { name: 'delete' }).click()
+    await expect.poll(() => requests.find((r) => r.init?.method === 'DELETE')).toBeTruthy()
+    expect(requests.find((r) => r.init?.method === 'DELETE')?.url).toContain('/comments/1')
+  })
+
+  it('hides a comment with a reason and unhides it', async () => {
+    const requests: { url: string; init?: RequestInit }[] = []
+    let hidden = false
+    stubAPI((url, init) => {
+      requests.push({ url, init })
+      if (url.endsWith('/hide')) {
+        hidden = true
+        return { body: { comment: comment({ hidden: true, hidden_reason: 'spam' }) } }
+      }
+      if (url.endsWith('/unhide')) {
+        hidden = false
+        return { body: { comment: comment() } }
+      }
+      return {
+        body: {
+          issue: issue(),
+          comments: [comment(hidden ? { hidden: true, hidden_reason: 'spam' } : {})],
+        },
+      }
+    })
+    renderAt('/issues/1')
+    await expect.element(page.getByText('a comment')).toBeInTheDocument()
+
+    // hide via the reason dialog
+    await page.getByRole('button', { name: 'hide' }).click()
+    await page.getByLabelText('Reason').selectOptions('spam')
+    await page.getByRole('button', { name: 'hide comment' }).click()
+    await expect.element(page.getByText(/This comment was hidden \(spam\)/)).toBeInTheDocument()
+    const hide = requests.find((r) => r.url.endsWith('/hide'))
+    expect(JSON.parse(String(hide?.init?.body))).toEqual({ reason: 'spam' })
+
+    // unhide restores the body
+    await page.getByRole('button', { name: 'unhide' }).click()
+    await expect.element(page.getByText('a comment')).toBeInTheDocument()
+    expect(requests.some((r) => r.url.endsWith('/unhide'))).toBe(true)
+  })
 })
