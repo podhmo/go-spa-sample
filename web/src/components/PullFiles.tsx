@@ -1,4 +1,5 @@
 import { useEffect, useReducer, useRef } from 'react'
+import { useLeaveGuard } from '../leave-guard'
 import { RequestError, type PRCommentInput } from '../api'
 import { submitOnCtrlEnter } from '../enter-submit'
 import { fmt, useMessages } from '../i18n'
@@ -252,7 +253,9 @@ function DiffRow({
   onSubmit: (body: string) => Promise<void> | void
 }) {
   const [postError, setPostError] = useReducer((_: string | null, v: string | null) => v, null)
+  const [dirty, setDirty] = useReducer((_: boolean, v: boolean) => v, false)
   const m = useMessages()
+  useLeaveGuard(formOpen && dirty, m.form.unsavedChanges)
   // The disabled button only blocks clicks: Ctrl+Enter (requestSubmit)
   // still fires, so the send itself must be re-entrant-safe.
   const sending = useRef(false)
@@ -311,6 +314,7 @@ function DiffRow({
                 void (async () => {
                   try {
                     await onSubmit(body)
+                    setDirty(false)
                     onToggle()
                   } catch (err) {
                     // Field errors name the actual rejection reason
@@ -342,6 +346,7 @@ function DiffRow({
                   name="body"
                   rows={3}
                   required
+                  onChange={(e) => setDirty(e.target.value.trim() !== '')}
                   onKeyDown={submitOnCtrlEnter}
                   data-error={`dc-${line.path}-${line.line}-error`}
                   placeholder={m.pulls.reviewCommentPh}

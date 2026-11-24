@@ -10,24 +10,30 @@ import type {
 } from '../api'
 import { submitOnCtrlEnter } from '../enter-submit'
 import { useMessages } from '../i18n'
+import { useLeaveGuard } from '../leave-guard'
 import { LabelBadge } from './IssueList'
 
-type IssueFormState = { title: string; body: string; label_ids: number[] }
+type IssueFormState = { title: string; body: string; label_ids: number[]; submitted: boolean }
 type IssueFormAction =
   | { type: 'field'; field: 'title' | 'body'; value: string }
   | { type: 'toggle-label'; id: number }
+  | { type: 'submitted' }
 
 const issueFormReducer = (s: IssueFormState, a: IssueFormAction): IssueFormState => {
   switch (a.type) {
     case 'field':
-      return { ...s, [a.field]: a.value }
+      return { ...s, [a.field]: a.value, submitted: false }
     case 'toggle-label':
       return {
         ...s,
+        submitted: false,
         label_ids: s.label_ids.includes(a.id)
           ? s.label_ids.filter((id) => id !== a.id)
           : [...s.label_ids, a.id],
       }
+    case 'submitted':
+      // The leave-guard must release before the parent navigates away.
+      return { ...s, submitted: true }
   }
 }
 
@@ -52,19 +58,30 @@ export function IssueForm({
   // from; the MPA posts forms to their own URLs — the SPA navigates).
   cancelLink?: ReactNode
 }) {
-  const [state, dispatch] = useReducer(issueFormReducer, {
+  const init = {
     title: initial?.title ?? '',
     body: initial?.body ?? '',
     label_ids: initial?.label_ids ?? [],
-  })
+  }
+  const [state, dispatch] = useReducer(issueFormReducer, { ...init, submitted: false })
   const m = useMessages()
+  useLeaveGuard(
+    !state.submitted &&
+      (state.title !== init.title ||
+        state.body !== init.body ||
+        state.label_ids.length !== init.label_ids.length ||
+        state.label_ids.some((id) => !init.label_ids.includes(id))),
+    m.form.unsavedChanges,
+  )
   return (
     <form
       className="card issue-form"
       aria-label={initial ? m.issues.editAria : m.issues.newAria}
       onSubmit={(e) => {
         e.preventDefault()
-        onSubmit(state)
+        dispatch({ type: 'submitted' })
+        const { submitted: _submitted, ...input } = state
+        onSubmit(input)
       }}
     >
       <p className="form-note">
@@ -160,9 +177,12 @@ export function IssueForm({
 type WorkspaceFormState = { slug: string; name: string; description: string }
 
 const workspaceFormReducer = (
-  s: WorkspaceFormState,
-  a: { field: keyof WorkspaceFormState; value: string },
-): WorkspaceFormState => ({ ...s, [a.field]: a.value })
+  s: WorkspaceFormState & { submitted: boolean },
+  a: { field?: keyof WorkspaceFormState; value?: string; submitted?: boolean },
+): WorkspaceFormState & { submitted: boolean } =>
+  a.submitted
+    ? { ...s, submitted: true }
+    : { ...s, [a.field as keyof WorkspaceFormState]: a.value, submitted: false }
 
 // The MPA's /workspaces/new form — slug (immutable identifier, used in
 // /w/<slug>/... URLs), optional display name and description.
@@ -181,15 +201,22 @@ export function WorkspaceForm({
     slug: '',
     name: '',
     description: '',
+    submitted: false,
   })
   const m = useMessages()
+  useLeaveGuard(
+    !state.submitted && Boolean(state.slug || state.name || state.description),
+    m.form.unsavedChanges,
+  )
   return (
     <form
       className="card issue-form"
       aria-label={m.workspaces.formAria}
       onSubmit={(e) => {
         e.preventDefault()
-        onSubmit(state)
+        dispatch({ submitted: true })
+        const { submitted: _submitted, ...input } = state
+        onSubmit(input)
       }}
     >
       <p className="form-note">
@@ -283,11 +310,13 @@ type DiscussionFormState = {
   body: string
   category_id: number | null
   label_ids: number[]
+  submitted: boolean
 }
 type DiscussionFormAction =
   | { type: 'field'; field: 'title' | 'body'; value: string }
   | { type: 'category'; id: number }
   | { type: 'toggle-label'; id: number }
+  | { type: 'submitted' }
 
 const discussionFormReducer = (
   s: DiscussionFormState,
@@ -295,16 +324,20 @@ const discussionFormReducer = (
 ): DiscussionFormState => {
   switch (a.type) {
     case 'field':
-      return { ...s, [a.field]: a.value }
+      return { ...s, [a.field]: a.value, submitted: false }
     case 'category':
-      return { ...s, category_id: a.id }
+      return { ...s, category_id: a.id, submitted: false }
     case 'toggle-label':
       return {
         ...s,
+        submitted: false,
         label_ids: s.label_ids.includes(a.id)
           ? s.label_ids.filter((id) => id !== a.id)
           : [...s.label_ids, a.id],
       }
+    case 'submitted':
+      // The leave-guard must release before the parent navigates away.
+      return { ...s, submitted: true }
   }
 }
 
@@ -335,19 +368,30 @@ export function DiscussionForm({
   submitLabel?: string
   cancelLink?: ReactNode
 }) {
-  const [state, dispatch] = useReducer(discussionFormReducer, {
+  const init = {
     title: initial?.title ?? '',
     body: initial?.body ?? '',
     category_id: initial?.category_id ?? null,
     label_ids: initial?.label_ids ?? [],
-  })
+  }
+  const [state, dispatch] = useReducer(discussionFormReducer, { ...init, submitted: false })
   const m = useMessages()
+  useLeaveGuard(
+    !state.submitted &&
+      (state.title !== init.title ||
+        state.body !== init.body ||
+        state.category_id !== init.category_id ||
+        state.label_ids.length !== init.label_ids.length ||
+        state.label_ids.some((id) => !init.label_ids.includes(id))),
+    m.form.unsavedChanges,
+  )
   return (
     <form
       className="card issue-form"
       aria-label={initial ? m.discussions.editAria : m.discussions.newAria}
       onSubmit={(e) => {
         e.preventDefault()
+        dispatch({ type: 'submitted' })
         onSubmit({
           title: state.title,
           body: state.body,
@@ -486,6 +530,7 @@ export function CommentForm({
 }) {
   const [body, setBody] = useReducer((_: string, v: string) => v, '')
   const m = useMessages()
+  useLeaveGuard(body.trim() !== '', m.form.unsavedChanges)
   return (
     <form
       className="card comment-form"
@@ -523,7 +568,10 @@ export function CommentForm({
         </p>
       </div>
       <div className="form-actions">
-        <button type="submit" className="btn btn-primary" disabled={submitting}>
+        {/* disabled while empty: an empty post can only 422, so the
+            GitHub-style rule disables the button until there is input
+            (ui-rules §6) */}
+        <button type="submit" className="btn btn-primary" disabled={submitting || !body.trim()}>
           {submitting ? m.form.posting : m.pulls.commentSubmit}
         </button>
       </div>
@@ -531,13 +579,24 @@ export function CommentForm({
   )
 }
 
-type PullFormState = { title: string; body: string; base: string; head: string }
-type PullFormAction = { type: 'field'; field: keyof PullFormState; value: string }
+type PullFormState = {
+  title: string
+  body: string
+  base: string
+  head: string
+  submitted: boolean
+}
+type PullFormAction =
+  | { type: 'field'; field: 'title' | 'body' | 'base' | 'head'; value: string }
+  | { type: 'submitted' }
 
 const pullFormReducer = (s: PullFormState, a: PullFormAction): PullFormState => {
   switch (a.type) {
     case 'field':
-      return { ...s, [a.field]: a.value }
+      return { ...s, [a.field]: a.value, submitted: false }
+    case 'submitted':
+      // The leave-guard must release before the parent navigates away.
+      return { ...s, submitted: true }
   }
 }
 
@@ -562,24 +621,36 @@ export function PullForm({
   cancelLink?: ReactNode
 }) {
   const editing = initial !== undefined
+  const init = { title: initial?.title ?? '', body: initial?.body ?? '' }
   const [state, dispatch] = useReducer(pullFormReducer, {
-    title: initial?.title ?? '',
-    body: initial?.body ?? '',
+    title: init.title,
+    body: init.body,
     base: '',
     head: '',
+    submitted: false,
   })
   const branches = (refs ?? []).filter((r) => r.name.startsWith('refs/heads/'))
   // Head may be a remote-tracking ref too (createPull accepts any ref);
   // base must stay a local branch because merging advances it.
   const headRefs = (refs ?? []).filter((r) => !r.name.startsWith('refs/tags/'))
   const m = useMessages()
+  useLeaveGuard(
+    !state.submitted &&
+      (state.title !== init.title ||
+        state.body !== init.body ||
+        state.base !== '' ||
+        state.head !== ''),
+    m.form.unsavedChanges,
+  )
   return (
     <form
       className="card issue-form"
       aria-label={editing ? m.pulls.editAria : m.pulls.newAria}
       onSubmit={(e) => {
         e.preventDefault()
-        onSubmit(editing ? { title: state.title, body: state.body } : state)
+        dispatch({ type: 'submitted' })
+        const { submitted: _submitted, ...input } = state
+        onSubmit(editing ? { title: input.title, body: input.body } : input)
       }}
     >
       <p className="form-note">

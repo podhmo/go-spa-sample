@@ -82,6 +82,7 @@ export const en = {
     saveChanges: 'Save changes',
     saving: 'Saving…',
     posting: 'Posting…',
+    unsavedChanges: 'You have unsaved changes — leave this page?',
     select: 'Select…',
     name: 'Name',
     nameRequired: 'A name is required.',

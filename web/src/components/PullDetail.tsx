@@ -1,5 +1,6 @@
 import { Link } from '@tanstack/react-router'
 import { useId, useReducer } from 'react'
+import { useLeaveGuard } from '../leave-guard'
 import type { PRComment, PRCommit, PullMergeable, PullRequest } from '../api'
 import { ConfirmDialog } from './ConfirmDialog'
 import { CopyButton } from './CopyButton'
@@ -282,7 +283,9 @@ export function PRCommentItem({
   onUnhide?: (cid: number) => void
 }) {
   const [editing, setEditing] = useReducer((s: boolean) => !s, false)
+  const [dirty, setDirty] = useReducer((_: boolean, v: boolean) => v, false)
   const m = useMessages()
+  useLeaveGuard(editing && dirty, m.form.unsavedChanges)
   const fmtTime = useFmtTime()
   const id = `comment-${c.id}`
   return (
@@ -348,6 +351,7 @@ export function PRCommentItem({
               id={`edit-${c.id}`}
               name="body"
               defaultValue={c.body}
+              onChange={(e) => setDirty(e.target.value !== c.body)}
               onKeyDown={submitOnCtrlEnter}
               rows={4}
               required

@@ -1,5 +1,6 @@
 import { Link } from '@tanstack/react-router'
 import { useId, useReducer } from 'react'
+import { useLeaveGuard } from '../leave-guard'
 import { HIDE_REASONS, type Discussion, type DiscussionReply, type DiscussionThread } from '../api'
 import { ConfirmDialog } from './ConfirmDialog'
 import { CopyButton } from './CopyButton'
@@ -165,6 +166,7 @@ function InlineEditForm({
 }) {
   const [draft, setDraft] = useReducer((_: string, v: string) => v, initial)
   const m = useMessages()
+  useLeaveGuard(draft !== initial, m.form.unsavedChanges)
   const id = useId().replace(/[^a-zA-Z0-9_-]/g, '')
   return (
     <form
@@ -197,7 +199,7 @@ function InlineEditForm({
         <button type="button" className="btn btn-quiet" onClick={onCancel}>
           {m.copy.cancel}
         </button>
-        <button type="submit" className="btn btn-primary" disabled={pending}>
+        <button type="submit" className="btn btn-primary" disabled={pending || !draft.trim()}>
           {m.form.saveChanges}
         </button>
       </div>
@@ -363,6 +365,7 @@ function ThreadItem({
     replyDraft: '',
   })
   const m = useMessages()
+  useLeaveGuard(ui.replying && ui.draft.trim() !== '', m.form.unsavedChanges)
   const fmtTime = useFmtTime()
   const noun = m.comments.nounThread
   const permalink = () => `${location.origin}${location.pathname}#thread-${t.id}`
@@ -491,6 +494,7 @@ function ThreadItem({
           aria-label={fmt(m.comments.replyFormAria, { id: t.id })}
           onSubmit={(e) => {
             e.preventDefault()
+            if (pending) return
             void onReply?.(t.id, ui.replyDraft).then((ok) => {
               // Only a successful send closes the form and clears the
               // draft — a rejection leaves everything in place so the
@@ -518,7 +522,7 @@ function ThreadItem({
             </span>
           </div>
           <div className="form-actions">
-            <button type="submit" className="btn" disabled={pending}>
+            <button type="submit" className="btn" disabled={pending || !ui.draft.trim()}>
               {m.comments.reply}
             </button>
           </div>
