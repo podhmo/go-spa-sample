@@ -183,6 +183,7 @@ export const ja: Messages = {
     replyLabel: '返信',
     reply: '返信',
     replyPh: '返信…',
+    replyRequired: '返信本文を入力してください。',
     replyFormAria: 'スレッド {id} へ返信',
     nounComment: 'コメント',
     nounThread: 'スレッド',

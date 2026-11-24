@@ -182,7 +182,7 @@ function InlineEditForm({
           data-error={`edit-${id}-error`}
         />
         <span id={`edit-${id}-error`} className="error-msg">
-          Body is required.
+          {m.form.bodyRequired}
         </span>
       </div>
       <div className="form-actions">
@@ -492,7 +492,7 @@ function ThreadItem({
               data-error={`reply-${t.id}-error`}
             />
             <span id={`reply-${t.id}-error`} className="error-msg">
-              Reply is required.
+              {m.comments.replyRequired}
             </span>
           </div>
           <div className="form-actions">

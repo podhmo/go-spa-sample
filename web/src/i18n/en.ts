@@ -186,6 +186,7 @@ export const en = {
     replyLabel: 'reply',
     reply: 'Reply',
     replyPh: 'Reply…',
+    replyRequired: 'A reply body is required.',
     replyFormAria: 'reply to thread {id}',
     // Localized nouns for `noun` placeholders (ja: コメント/スレッド/返信).
     nounComment: 'comment',
