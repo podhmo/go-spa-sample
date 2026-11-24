@@ -7,8 +7,18 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      // Fake Go API server (cmd/fakeapi) — same-origin /api, no CORS needed.
-      '/api': 'http://127.0.0.1:8080',
+      // Go API server (cmd/zatudan, ported zatudan API) — same-origin /api,
+      // no CORS needed. The API is Bearer-token fail-closed, so the dev
+      // proxy injects the credential the server was started with
+      // (`-api-token dev-token`). Dev-only shortcut, not for production.
+      '/api': {
+        target: 'http://127.0.0.1:8080',
+        configure: (proxy) => {
+          proxy.on('proxyReq', (proxyReq) => {
+            proxyReq.setHeader('authorization', 'Bearer dev-token')
+          })
+        },
+      },
     },
   },
   test: {
