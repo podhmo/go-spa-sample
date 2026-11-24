@@ -1,7 +1,7 @@
 import { page } from 'vitest/browser'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { render } from 'vitest-browser-react'
-import type { Comment, Issue, Label } from './api'
+import type { Comment, Issue, Label, LabelInput } from './api'
 import { IssueForm } from './components/forms'
 import { IssueList } from './components/IssueList'
 import { renderAt, stubAPI } from './test-utils'
@@ -317,6 +317,69 @@ describe('route: /issues/$issueId', () => {
     await expect.element(page.getByRole('button', { name: 'copied' })).toBeInTheDocument()
     expect(calls.some((u) => u.endsWith('/issues/1/markdown'))).toBe(true)
     expect(writeText).toHaveBeenCalled()
+  })
+})
+
+describe('route: /labels', () => {
+  it('lists labels by kind plus archived, and creates/archives/restores', async () => {
+    const requests: { url: string; init?: RequestInit }[] = []
+    const active: Label[] = [
+      label({ name: 'Bug' }),
+      label({ id: 2, name: 'q', kind: 'discussion' }),
+    ]
+    const archived: Label[] = []
+    stubAPI((url, init) => {
+      requests.push({ url, init })
+      if (!url.includes('/labels')) return { status: 404, body: {} }
+      if (url.includes('archived=1')) return { body: { labels: archived } }
+      if (init?.method === 'POST') {
+        const b = JSON.parse(String(init.body)) as LabelInput
+        const created = label({ id: 9, ...b, workspace_id: b.shared ? null : 1 })
+        const i = archived.findIndex((l) => l.name === b.name)
+        if (i >= 0) archived.splice(i, 1)
+        active.push(created)
+        return { status: 201, body: { label: created } }
+      }
+      if (init?.method === 'DELETE') {
+        const i = active.findIndex((l) => l.id === 1)
+        archived.push({ ...active.splice(i, 1)[0], archived: true })
+        return { status: 204 }
+      }
+      return { body: { labels: active } }
+    })
+    renderAt('/labels')
+    // grouped by kind
+    await expect.element(page.getByText('Issue labels')).toBeInTheDocument()
+    await expect.element(page.getByText('Bug')).toBeInTheDocument()
+    await expect.element(page.getByText('Discussion labels')).toBeInTheDocument()
+    await expect.element(page.getByText('q', { exact: true })).toBeInTheDocument()
+
+    // create sends name/color/kind/scope
+    await page.getByLabelText('Name').fill('triage')
+    await page.getByRole('button', { name: 'create label' }).click()
+    await expect.element(page.getByText('triage')).toBeInTheDocument()
+    const post = requests.find((r) => r.init?.method === 'POST')
+    expect(JSON.parse(String(post?.init?.body))).toMatchObject({
+      name: 'triage',
+      kind: 'issue',
+      shared: false,
+    })
+
+    // archive via the confirm dialog moves it to the Archived section
+    await page
+      .getByRole('listitem')
+      .filter({ hasText: 'Bug' })
+      .getByRole('button', { name: 'archive' })
+      .click()
+    await page.getByRole('dialog').getByRole('button', { name: 'archive' }).click()
+    await expect.element(page.getByRole('button', { name: 'restore' })).toBeInTheDocument()
+    expect(requests.find((r) => r.init?.method === 'DELETE')?.url).toContain('/labels/1')
+
+    // restore re-POSTs the same name/scope and it returns to active
+    await page.getByRole('button', { name: 'restore' }).click()
+    await expect.element(page.getByRole('button', { name: 'restore' })).not.toBeInTheDocument()
+    await expect.element(page.getByText('Bug')).toBeInTheDocument()
+    expect(requests.filter((r) => r.init?.method === 'POST')).toHaveLength(2)
   })
 })
 

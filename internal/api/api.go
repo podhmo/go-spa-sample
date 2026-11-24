@@ -38,6 +38,7 @@ type Store interface {
 	DeleteComment(ctx context.Context, issueID, commentID int64) error
 	SetCommentHidden(ctx context.Context, issueID, commentID int64, reason string) error
 	ListLabels(ctx context.Context, wsID int64, kind string) ([]*store.Label, error)
+	ListArchivedLabels(ctx context.Context, wsID int64, kind string) ([]*store.Label, error)
 	GetLabel(ctx context.Context, id int64) (*store.Label, error)
 	CreateLabel(ctx context.Context, wsID int64, kind string, in store.LabelInput) (int64, error)
 	UpdateLabel(ctx context.Context, id int64, in store.LabelInput) error

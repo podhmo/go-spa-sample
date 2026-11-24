@@ -12,10 +12,17 @@ import (
 	"github.com/podhmo/go-spa-sample/internal/store"
 )
 
-// GET /api/v1/w/{ws}/labels?kind=issue|discussion → {"labels": [...]}
-// kind filters; absent returns both kinds.
+// GET /api/v1/w/{ws}/labels?kind=issue|discussion&archived=1 → {"labels": [...]}
+// kind filters; absent returns both kinds. archived=1|true lists the
+// archived rows instead of the active ones (the admin page's archived
+// section — the HTML app lists them via ListArchivedLabels too).
 func (h *handler) listLabels(w http.ResponseWriter, r *http.Request, ws *store.Workspace) {
 	kind := r.URL.Query().Get("kind")
+	archived := r.URL.Query().Get("archived")
+	list := h.store.ListLabels
+	if archived == "1" || archived == "true" {
+		list = h.store.ListArchivedLabels
+	}
 	out := []Label{}
 	kinds := []string{kind}
 	if kind == "" {
@@ -26,7 +33,7 @@ func (h *handler) listLabels(w http.ResponseWriter, r *http.Request, ws *store.W
 			writeError(w, http.StatusUnprocessableEntity, "Validation failed.", map[string]string{"kind": "Kind must be \"issue\" or \"discussion\"."})
 			return
 		}
-		labels, err := h.store.ListLabels(r.Context(), ws.ID, k)
+		labels, err := list(r.Context(), ws.ID, k)
 		if err != nil {
 			h.storeError(w, err)
 			return

@@ -14,6 +14,7 @@ import { RequestError, WS, api } from './api'
 import { CommentForm, IssueForm } from './components/forms'
 import { IssueDetail } from './components/IssueDetail'
 import { IssueList } from './components/IssueList'
+import { LabelsAdmin } from './components/LabelsAdmin'
 
 // Rethrows a 404 RequestError as the router's notFound() so a missing
 // resource shows the notFoundComponent instead of a generic error.
@@ -32,6 +33,7 @@ const rootRoute = createRootRoute({
       <nav style={{ display: 'flex', gap: '1rem' }}>
         <Link to="/issues">Issues</Link>
         <Link to="/issues/new">New issue</Link>
+        <Link to="/labels">Labels</Link>
       </nav>
       <hr />
       <Outlet />
@@ -290,16 +292,23 @@ const issueRoute = createRoute({
     const { issueId } = issueRoute.useParams()
     const router = useRouter()
     const navigate = useNavigate()
-    const [isPending, startTransition] = useTransition()
+    // A reducer-driven busy flag, not an async transition: renders kicked
+    // off by router.invalidate() can suspend on a loader thenable that a
+    // later invalidation supersedes, which would pin isPending forever.
+    const [isPending, setPending] = useReducer((_: boolean, v: boolean) => v, false)
     const issueID = Number(issueId)
-    // invalidate is fired without awaiting: the refetch updates the page
-    // whenever it lands, while isPending tracks just the mutation. (A
-    // stalled invalidate promise would otherwise pin isPending forever.)
     const mutate = (fn: () => Promise<unknown>) => {
-      startTransition(async () => {
-        await fn()
-        void router.invalidate()
-      })
+      setPending(true)
+      void (async () => {
+        try {
+          await fn()
+        } catch {
+          // mutation failures surface via the refetched state
+        } finally {
+          setPending(false)
+          void router.invalidate()
+        }
+      })()
     }
     return (
       <div>
@@ -309,10 +318,15 @@ const issueRoute = createRoute({
           pending={isPending}
           onSetStatus={(status) => mutate(() => api.setIssueStatus(WS, issueID, status))}
           onDelete={() => {
-            startTransition(async () => {
-              await api.deleteIssue(WS, issueID)
-              await navigate({ to: '/issues' })
-            })
+            setPending(true)
+            void (async () => {
+              try {
+                await api.deleteIssue(WS, issueID)
+                await navigate({ to: '/issues' })
+              } finally {
+                setPending(false)
+              }
+            })()
           }}
           onCopyMarkdown={() => api.getIssueMarkdown(WS, issueID)}
           commentHandlers={{
@@ -331,10 +345,67 @@ const issueRoute = createRoute({
   },
 })
 
+const labelsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/labels',
+  loader: async () => {
+    const [active, archived] = await Promise.all([
+      api.listLabels(WS),
+      api.listLabels(WS, { archived: true }),
+    ])
+    return { active: active.labels, archived: archived.labels }
+  },
+  component: function LabelsPage() {
+    const { active, archived } = labelsRoute.useLoaderData()
+    const router = useRouter()
+    const [isPending, setPending] = useReducer((_: boolean, v: boolean) => v, false)
+    const [errors, setErrors] = useReducer(
+      (_: Record<string, string>, e: Record<string, string>) => e,
+      {},
+    )
+    const mutate = (fn: () => Promise<unknown>) => {
+      setPending(true)
+      void (async () => {
+        try {
+          await fn()
+          setErrors({})
+        } catch (err) {
+          setErrors(apiFieldErrors(err))
+        } finally {
+          setPending(false)
+          void router.invalidate()
+        }
+      })()
+    }
+    return (
+      <LabelsAdmin
+        active={active}
+        archived={archived}
+        pending={isPending}
+        errors={errors}
+        onCreate={(input) => mutate(() => api.createLabel(WS, input))}
+        onUpdate={(id, patch) => mutate(() => api.updateLabel(WS, id, patch))}
+        onArchive={(id) => mutate(() => api.archiveLabel(WS, id))}
+        onRestore={(l) =>
+          mutate(() =>
+            api.createLabel(WS, {
+              name: l.name,
+              color: l.color,
+              kind: l.kind,
+              shared: l.workspace_id == null,
+            }),
+          )
+        }
+      />
+    )
+  },
+})
+
 export const routeTree = rootRoute.addChildren([
   indexRoute,
   issuesRoute,
   newIssueRoute,
   issueRoute,
   editIssueRoute,
+  labelsRoute,
 ])
