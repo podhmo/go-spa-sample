@@ -158,6 +158,7 @@ func New(st Store, envToken string, repo *gitrepo.Repo) http.Handler {
 	// repo-less deployment /api/v1/pulls* falls to the JSON 404 below.
 	if repo != nil {
 		for path, methods := range map[string]map[string]http.HandlerFunc{
+			"/api/v1/pulls/refs":                       {"GET": h.listPullRefs},
 			"/api/v1/pulls":                            {"GET": h.listPulls, "POST": h.createPull},
 			"/api/v1/pulls/{id}":                       {"GET": h.getPull, "PATCH": h.updatePull, "DELETE": h.deletePull},
 			"/api/v1/pulls/{id}/comments":              {"GET": h.listPRComments, "POST": h.createPRComment},
