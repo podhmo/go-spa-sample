@@ -23,7 +23,7 @@ tsconfig を見直し、厳格化した。起点は1ファイル統合案のド�
 | | tsconfig.app.json | tsconfig.node.json |
 | --- | --- | --- |
 | 対象 | `src/` (ブラウザで動くコード+テスト) | `vite.config.ts` のみ |
-| lib | ES2023 + DOM | ES2023 (DOM なし) |
+| lib | ES2025 + DOM | ES2025 (DOM なし) |
 | types | `["vite/client"]` | `["node"]` |
 | module | esnext + moduleResolution: bundler | nodenext |
 
@@ -48,8 +48,9 @@ tsconfig を見直し、厳格化した。起点は1ファイル統合案のド�
 
 - `tsBuildInfoFile`: `tsc -b` の incremental 情報の出力先。
   `noEmit` でも buildinfo は生成されるので node_modules/.tmp に逃がす。
-- `target: es2023`: 型上の言語レベル。Vite 8 の build target も現代
-  ブラウザ前提なので過剰に下げる理由がない。
+- `target: es2025`: 型上の言語レベル。TS7 のデフォルトが es2025 で、
+  Vite 8 の build target (baseline-widely-available) も現代ブラウザ
+  前提なので合わせた (下記「追記」参照)。
 - `lib`: 実行環境の組み込み型。app は DOM、node は ES のみ。
 - `module: esnext` (app) / `nodenext` (node): app は Vite がバンドル
   するので esnext で十分。node 側は `package.json` の `"type": "module"`
@@ -121,7 +122,7 @@ tsconfig を見直し、厳格化した。起点は1ファイル統合案のド�
 | `lib: [..., "DOM.Iterable"]` | `["ES2023", "DOM"]` | TS7 の `lib.dom.d.ts` は `HTMLCollectionBase`/`NodeList`/`FormData` 等に `[Symbol.iterator]` を内蔵済み (`[...form.elements]` が DOM.Iterable 無しで通ることを確認)。DOM.Iterable は後方互換用で実質不要 |
 | `rootDir`/`outDir` | 不採用 | `noEmit` (型検査専用) では emit 先もソース境界も意味を持たない |
 | `strict`, `noUncheckedIndexedAccess`, `exactOptionalPropertyTypes`, `verbatimModuleSyntax`, `isolatedModules` | 採用 | verbatimModuleSyntax は scaffold 済み。残りは今回追加 |
-| `skipLibCheck`, `types: ["vite/client"]`, `target: ES2022` | 採用 (target は scaffold の es2023) | scaffold の es2023 で十分新しく、下げる理由なし |
+| `skipLibCheck`, `types: ["vite/client"]`, `target: ES2022` | 採用 (target は当時 scaffold の es2023 → 後の追記で es2025 へ更新) | scaffold のもので十分新しく、下げる理由なし |
 
 ## 検討して採用しなかったオプション
 
@@ -168,3 +169,97 @@ tsconfig を見直し、厳格化した。起点は1ファイル統合案のド�
   browser mode, 17/17): 全て pass。
 - 新フラグ導入時のエラー件数: `exactOptionalPropertyTypes` が 19 件、
   `noUncheckedIndexedAccess` が 1 件、`strict` 以下他は 0 件。
+
+---
+
+## 追記 (2026-11-25): TypeScript 7 のデフォルト変更の実測検証
+
+「TS7 (native port) でデフォルト値や削除オプションが変わった」という
+記事の主張を、インストール済みの **typescript@7.0.2** に対して
+`npx tsc --help --all` と最小 repro で実地検証した結果と、それに
+基づく設定更新の記録。記事は盲信せず全件検証した。
+
+### 検証で確認できた主張 (adopted の根拠)
+
+| 記事の主張 | 7.0.2 での実測 | 検証方法 |
+| --- | --- | --- |
+| `strict` のデフォルトが `true` 化 | **真**。`--help` に `default: true` と明記。`compilerOptions: {}` で implicit any が TS7006 エラーになった。`strict: false` での opt-out も有効 | help + repro |
+| `target` デフォルト `es2025` | **真**。`--help` に `default: es2025`。選択肢は es6/es2015〜esnext で **es5/es3 は列挙自体が消えた** | help |
+| `moduleResolution` は `module` から派生 (概ね bundler) | **真**。help 記載: 「nodenext → nodenext、node16/node18 → node16、それ以外 → bundler」。`module: esnext` で `--traceResolution` を見ると `using 'Bundler'` と出た。`module: commonjs` でも bundler 扱い | help + traceResolution |
+| `lib` は `target` から派生 | **真**。`target: es2020` + lib 未指定で `RegExp.escape`/`Set.prototype.union` が TS2550 (es2025 以降の lib が要ると言われる)。またデフォルト lib には **DOM も含まれる** (空 options で `document.title` が通った) — node 側で DOM を外したいので明示 `lib` は依然必須 | repro |
+| `dom.iterable` は `dom` に吸収 (TS6+) | **真**。`lib: ["es2025","dom"]` のみで `[...form.elements]` / `FormData.entries()` / `querySelectorAll` spread が全て通る。ただし `dom.iterable` は **削除されておらず** 指定しても受理される no-op (記事の「folded into」表現は正確だが「削除」ではない) | repro + help に選択肢残存 |
+| `baseUrl` は削除/エラー | **真 (ただし --help が不誠実)**。`baseUrl` を使うと `error TS5102: Option 'baseUrl' has been removed` — `"paths": {"*": ["./*"]}` を使えと言われる。一方 `tsc --help --all` には **baseUrl が普通に列挙されている** (罠)。`paths` 単体 (baseUrl 無し) は問題なく動作 | repro |
+| `target: es5` 等の古い target はエラー | **真**。`es5` → TS5108 "removed"、`es3` → TS6046 (選択肢外) | repro |
+
+### 追加で判明した削除/仕様
+
+- `module: amd` / `umd` / `system` → 全て TS5108 "removed"
+  (amd 指定時に moduleResolution 派生 bundler との衝突エラー TS5095 が
+  併発するのが面白い)。
+- `moduleResolution: node` / `node10` / `classic` → 全て TS5108。
+  選択肢は `node16` / `nodenext` / `bundler` のみ。
+- 以下は「removed」ではなく完全な未定義 (TS5023 Unknown compiler
+  option): `out`, `charset`, `importsNotUsedAsValues`,
+  `preserveValueImports`, `suppressImplicitAnyIndexErrors`,
+  `keyofStringsOnly`, `noImplicitUseStrict`,
+  `suppressExcessPropertyErrors`。
+- `esModuleInterop` / `allowSyntheticDefaultImports` のデフォルトが
+  **true** (help 記載 + `export =` なモジュールの default import が
+  空 options で通ることを確認)。我々の設定は未指定なので実質
+  true で動いている。
+- `moduleDetection` のデフォルトは `auto` のまま (help 記載)。
+  `force` 明示の価値は維持。
+- `useDefineForClassFields` は help 上「ES2022+ でデフォルト true」。
+- **記事とのずれ**: `--allowImportingTsExtensions` の help 記述は
+  「requires moduleResolution bundler」とあるが、実際には
+  `module: nodenext` でも受理された (TS5097 要件として有効に機能)。
+  help 文面が古い。
+- `tsc --init` の出力も変化: `strict`, `moduleDetection: "force"`,
+  `noUncheckedSideEffectImports`, `isolatedModules`,
+  `verbatimModuleSyntax`, `noUncheckedIndexedAccess`,
+  `exactOptionalPropertyTypes` まで初期生成する (= 我々が手で足した
+  厳格系フラグが公式 recommended 化している)。
+
+### 今回の設定変更 (両ファイル共通)
+
+- `target: es2023 → es2025`、`lib: ES2023 → ES2025` (app は + DOM)。
+  noEmit なので target は型の lib 面だけに効く。Vite 8.3.8 の
+  `build.target` デフォルトは `'baseline-widely-available'`
+  (node_modules/vite/dist/node/index.d.ts 記載) で、ES2025 lib の
+  API (Set methods / Iterator helpers / RegExp.escape /
+  Float16Array / Promise.try) は baseline ブラウザと Node 24
+  (@types/node ^24) で利用可能。
+- `strict: true` は **明示維持**。TS7 でデフォルト化したので
+  書かなくても true だが、`tsc --init` が自ら出力する recommended
+  項目であり、TS7 のデフォルト変更を知らない読者にも意図が
+  自明。冗長だが害はない。
+- `moduleResolution: bundler` (app) も同様に **明示維持**。
+  `module: esnext` からの派生デフォルトと一致するが、template
+  parity と module 値を変えた場合の保険として残す。
+
+### create-vite 9.2.1 template-react-ts との差分
+
+`npm pack create-vite@9.2.1` で template を取り出し比較。記事の
+言う `allowArbitraryExtensions` / `allowImportingTsExtensions` /
+`moduleDetection: "force"` / `tsBuildInfoFile` は **全て既に設定済み**
+(template 由来)。template には無く我々が追加しているのは strict 系
+フラグ群のみで、今回 target/lib の es2025 化が template からの
+唯一の新規差分になった。
+
+- `allowImportingTsExtensions` は scaffold 飾りではなく実稼働中:
+  `src/main.tsx` が `import { routeTree } from './routes.tsx'` と
+  `.tsx` 拡張子付きで import している。
+- `allowArbitraryExtensions` は現状 `*.css.d.ts` パターンの使用実が
+  ないが、template parity で維持 (CSS import は `vite/client` types
+  が解決)。
+- template 側も `strict` 系を出力しないので、我々の追加は継続有効。
+
+### 検証結果 (es2025 化後)
+
+- `npm run format` / `npm run lint` (0 warnings) /
+  `npm run build` (`tsc -b` + `vite build`): pass。
+- `npm test` (vitest browser): 実行時点で 8 件 fail したが、原因は
+  **同時進行の src リファクタ** (ボタンの accessible name が
+  aria-label 化され `getByRole({name})` が取れない)。tsconfig を
+  es2023 に戻して同一テストを再実行しても同じ fail を確認済み —
+  型設定変更とは無関係。`tsc -b` 自体は es2025 でエラー 0 件。
