@@ -1133,6 +1133,12 @@ const discussionRoute = createRoute({
           const created = await fn()
           await router.invalidate()
           void navigate({ to: '.', hash: anchor(created), replace: true })
+          // The reloaded list renders after invalidate resolves, so the
+          // router's hash scroll may run before the entry exists — retry
+          // on the next frame.
+          requestAnimationFrame(() => {
+            document.getElementById(anchor(created))?.scrollIntoView()
+          })
         } catch {
           // mutation failures surface via the refetched state
         } finally {
