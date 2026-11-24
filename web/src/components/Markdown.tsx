@@ -1,4 +1,4 @@
-import { Suspense, lazy } from 'react'
+import { Component, Suspense, lazy, type ReactNode } from 'react'
 
 // GFM (tables, task lists, strikethrough, autolinks) + GitHub-style
 // [!NOTE] alerts, matching the MPA's goldmark setup. Rendering stays in
@@ -28,12 +28,30 @@ const LazyMarkdown = lazy(async () => {
   }
 })
 
+// A failed chunk fetch (offline, stale deploy) must not take the whole
+// detail page to the route error boundary — fall back to the raw text
+// permanently for this render, same shape as the loading fallback.
+class MarkdownBoundary extends Component<
+  { text: string; children: ReactNode },
+  { failed: boolean }
+> {
+  state = { failed: false }
+  static getDerivedStateFromError() {
+    return { failed: true }
+  }
+  render() {
+    return this.state.failed ? this.props.text : this.props.children
+  }
+}
+
 export function Markdown({ text }: { text: string }) {
   return (
     <div className="markdown-body">
-      <Suspense fallback={text}>
-        <LazyMarkdown text={text} />
-      </Suspense>
+      <MarkdownBoundary text={text}>
+        <Suspense fallback={text}>
+          <LazyMarkdown text={text} />
+        </Suspense>
+      </MarkdownBoundary>
     </div>
   )
 }
