@@ -52,6 +52,10 @@ type authBody struct {
 	Password *string `json:"password"`
 }
 
+// All /auth/* POSTs require Content-Type: application/json (415
+// otherwise) — see requireJSON: it is the CSRF gate, not input
+// validation, so logout needs it despite taking no body.
+//
 // POST /api/v1/auth/register {"name","password"} → 201 {"user"}.
 // Registration logs in immediately, like the MPA's form: a fresh session
 // cookie rides the response.
