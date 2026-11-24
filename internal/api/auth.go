@@ -79,6 +79,18 @@ func (h *handler) register(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusUnprocessableEntity, "Validation failed.", fields)
 		return
 	}
+	// Check the name before hashing: argon2 is deliberately expensive and
+	// this endpoint is public, so obviously-taken names must be cheap.
+	// The insert below can still race — ErrDuplicateName stays the
+	// authoritative rejection.
+	if _, err := h.store.UserByName(r.Context(), name); err == nil {
+		writeError(w, http.StatusUnprocessableEntity, "Validation failed.",
+			map[string]string{"name": "This name is already taken."})
+		return
+	} else if !errors.Is(err, store.ErrNotFound) {
+		writeError(w, http.StatusInternalServerError, "Internal server error.", nil)
+		return
+	}
 	hash, err := auth.HashPassword(password)
 	if err != nil {
 		writeError(w, http.StatusInternalServerError, "Internal server error.", nil)
