@@ -261,8 +261,15 @@ describe('route: /pulls/{id}/files', () => {
         diffCalls++
         // After the rejected post the route invalidates: the refetch
         // returns a moved head (e.g. a force-push), so a retry must
-        // anchor to 'def456', not the stale 'abc123'.
-        return { body: DIFF, headers: { 'x-anchor-sha': diffCalls === 1 ? 'abc123' : 'def456' } }
+        // anchor to 'def456', not the stale 'abc123'. The refreshed
+        // diff gains a line so the test can wait for the new loader
+        // data to reach the page — counting requests alone races the
+        // anchor update.
+        const diff = diffCalls === 1 ? DIFF : `${DIFF}\n+fresh line`
+        return {
+          body: diff,
+          headers: { 'x-anchor-sha': diffCalls === 1 ? 'abc123' : 'def456' },
+        }
       }
       if (url.endsWith('/comments') && init?.method === 'POST') {
         posts++
@@ -291,7 +298,9 @@ describe('route: /pulls/{id}/files', () => {
       .element(page.getByText('Anchor must be a commit on the head branch.'))
       .toBeInTheDocument()
     expect(page.getByLabelText('comment')).toHaveValue('draft survives')
-    await expect.poll(() => diffCalls > 1).toBeTruthy()
+    // The refreshed diff reaching the page means the loader resolved
+    // and the closure now anchors to 'def456'.
+    await expect.element(page.getByText(/fresh line/)).toBeInTheDocument()
     expect(postBodies[0]).toMatchObject({ anchor: 'abc123' })
     // The kept row's form re-anchors to the refreshed head on retry.
     await page.getByRole('button', { name: 'Comment', exact: true }).click()
