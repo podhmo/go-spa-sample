@@ -46,7 +46,8 @@ func main() {
 			"equivalent to the 'init' subcommand")
 	apiToken := flag.String("api-token", envOr("ZATUDAN_API_TOKEN", ""),
 		"Bearer token for the JSON API under /api/v1 (env ZATUDAN_API_TOKEN); "+
-			"empty disables the API entirely")
+			"empty adds no token — /api/v1 stays mounted and authenticates via "+
+			"session cookies and api_tokens rows only")
 	seed := flag.Bool("seed", envBool("ZATUDAN_SEED"),
 		"insert demo issues, discussions and the demo user (env ZATUDAN_SEED); "+
 			"master data (workspace, labels, categories) is ensured either way")

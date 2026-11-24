@@ -4,7 +4,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"net/http"
+	"net/http/httptest"
+	"path/filepath"
 	"testing"
+
+	"github.com/podhmo/go-spa-sample/internal/store"
 )
 
 // The public /auth/* endpoints are exercised here without any bearer
@@ -143,5 +147,80 @@ func TestAuthFlow(t *testing.T) {
 	meResp.Body.Close()
 	if meResp.StatusCode != 401 {
 		t.Fatalf("me anonymous status = %d", meResp.StatusCode)
+	}
+}
+
+// No env token, no api_tokens rows: the API still mounts and a session
+// cookie alone carries requests through the credential gate.
+func TestTokenlessStartup(t *testing.T) {
+	st, err := store.Open(filepath.Join(t.TempDir(), "test.db"))
+	if err != nil {
+		t.Fatalf("store.Open: %v", err)
+	}
+	t.Cleanup(func() { st.Close() })
+	srv := httptest.NewServer(New(st, "", nil))
+	t.Cleanup(srv.Close)
+
+	// Anonymous calls are rejected — there is no shared token to borrow.
+	resp, err := srv.Client().Get(srv.URL + "/api/v1/auth/me")
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp.Body.Close()
+	if resp.StatusCode != 401 {
+		t.Fatalf("anonymous me status = %d", resp.StatusCode)
+	}
+
+	// Register → the session cookie alone authenticates /auth/me.
+	resp, err = srv.Client().Post(srv.URL+"/api/v1/auth/register",
+		"application/json", bytes.NewReader([]byte(`{"name":"solo","password":"hunter22ok"}`)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if resp.StatusCode != 201 {
+		t.Fatalf("register status = %d", resp.StatusCode)
+	}
+	var cookie *http.Cookie
+	for _, c := range resp.Cookies() {
+		if c.Name == sessionCookieName {
+			cookie = c
+		}
+	}
+	resp.Body.Close()
+	if cookie == nil {
+		t.Fatal("no session cookie in response")
+	}
+	req, _ := http.NewRequest(http.MethodGet, srv.URL+"/api/v1/auth/me", nil)
+	req.AddCookie(cookie)
+	meResp, err := srv.Client().Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	meResp.Body.Close()
+	if meResp.StatusCode != 200 {
+		t.Fatalf("cookie me status = %d", meResp.StatusCode)
+	}
+}
+
+// The public /auth/* endpoints only take application/json. A hostile
+// site can only emit a "simple" cross-origin POST — form or text/plain,
+// even with a JSON body — so without this check login CSRF could plant
+// an attacker-chosen session in a visitor's browser.
+func TestAuthRequiresJSONContentType(t *testing.T) {
+	srv, _ := newServer(t)
+	for _, ct := range []string{"", "text/plain", "application/x-www-form-urlencoded"} {
+		req, _ := http.NewRequest(http.MethodPost, srv.URL+"/api/v1/auth/login",
+			bytes.NewReader([]byte(`{"name":"x","password":"y"}`)))
+		if ct != "" {
+			req.Header.Set("Content-Type", ct)
+		}
+		resp, err := srv.Client().Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		resp.Body.Close()
+		if resp.StatusCode != 415 {
+			t.Fatalf("login with Content-Type %q: status = %d, want 415", ct, resp.StatusCode)
+		}
 	}
 }
