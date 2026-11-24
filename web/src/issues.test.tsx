@@ -74,6 +74,7 @@ describe('route: /issues', () => {
     stubAPI((url) => {
       if (url.includes('/labels'))
         return { body: { labels: [label({ name: 'Bug' }), label({ id: 2, name: 'Feature' })] } }
+      if (url.includes('/pulls')) return { status: 404, body: {} } // availability probe
       expect(url).toContain('/api/v1/w/default/issues')
       return {
         body: {
@@ -94,6 +95,7 @@ describe('route: /issues', () => {
     const calls: string[] = []
     stubAPI((url) => {
       if (url.includes('/labels')) return { body: { labels: [] } }
+      if (url.includes('/pulls')) return { status: 404, body: {} } // availability probe
       calls.push(url)
       return { body: { issues: [], total: 0, page: 1, per_page: 20 } }
     })
@@ -108,6 +110,7 @@ describe('route: /issues', () => {
     stubAPI((url) => {
       if (url.includes('/labels'))
         return { body: { labels: [label({ name: 'Bug' }), label({ id: 2, name: 'Feature' })] } }
+      if (url.includes('/pulls')) return { status: 404, body: {} } // availability probe
       calls.push(url)
       return {
         body: {

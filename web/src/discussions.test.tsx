@@ -100,6 +100,7 @@ describe('route: /w/{ws}/discussions', () => {
     const calls: string[] = []
     stubAPI((url) => {
       if (url.includes('/discussion-categories')) return { body: { categories: [cat(), qaCat] } }
+      if (url.includes('/pulls')) return { status: 404, body: {} } // availability probe
       calls.push(url)
       return {
         body: {
@@ -132,6 +133,7 @@ describe('route: /w/{ws}/discussions', () => {
 describe('route: /w/{ws}/discussions/{id}', () => {
   it('renders the discussion with threads and a nested reply', async () => {
     stubAPI((url) => {
+      if (url.includes('/pulls')) return { status: 404, body: {} } // availability probe
       expect(url).toContain('/w/default/discussions/1')
       return {
         body: {

@@ -429,10 +429,11 @@ func (h *handler) listPRComments(w http.ResponseWriter, r *http.Request) {
 }
 
 type prCommentBody struct {
-	Body *string `json:"body"`
-	Path *string `json:"path"`
-	Line *int    `json:"line"`
-	Side *string `json:"side"`
+	Body   *string `json:"body"`
+	Path   *string `json:"path"`
+	Line   *int    `json:"line"`
+	Side   *string `json:"side"`
+	Anchor *string `json:"anchor"`
 }
 
 // POST /api/v1/pulls/{id}/comments {"body","path"?,"line"?,"side"?} → 201
@@ -469,10 +470,46 @@ func (h *handler) createPRComment(w http.ResponseWriter, r *http.Request) {
 		if side == "" {
 			side = "right"
 		}
+		input.Path, input.Line, input.Side = *in.Path, line, side
+		// Anchor + snippet rules mirror the HTML handler: the head tip
+		// while open (recorded sha once closed), the merge-base blob for
+		// left-side comments. A client-supplied anchor names the head
+		// revision it rendered (X-Anchor-SHA on GET /diff): commits pushed
+		// between load and post must not move the comment to other code.
+		anchorSHA := pr.HeadSHA
+		if pr.Open() {
+			if in.Anchor != nil && *in.Anchor != "" {
+				anchorSHA = deref(in.Anchor)
+				sha, err := h.repo.RevParse(ctx, anchorSHA)
+				onHead, ancErr := h.repo.IsAncestor(ctx, sha, pr.HeadRef)
+				if err != nil || sha != anchorSHA || ancErr != nil || !onHead {
+					writeError(w, http.StatusUnprocessableEntity, "Validation failed.",
+						map[string]string{"anchor": "Anchor must be a commit on the head branch."})
+					return
+				}
+			} else if sha, err := h.repo.RevParse(ctx, pr.HeadRef); err == nil {
+				anchorSHA = sha
+			}
+		}
+		input.AnchorSHA = anchorSHA
+		// The comment is judged against the diff the client rendered:
+		// merge-base(base, anchor) → anchor while open, the recorded shas
+		// once closed. A live merge-base→head range would reject files
+		// that a newer head already dropped out of the diff.
+		from, to := h.diffRange(r, pr)
+		snippetSHA := anchorSHA
+		if pr.Open() && anchorSHA != "" {
+			to = anchorSHA
+			if mb, err := h.repo.MergeBase(ctx, pr.BaseRef, anchorSHA); err == nil && mb != "" {
+				from = mb
+			}
+		}
+		if side == "left" {
+			snippetSHA = from
+		}
 		// A review comment must anchor to a file the PR actually touches:
 		// accepting any repo path would let a token holder read unrelated
 		// files via the returned diff_snippet.
-		from, to := h.diffRange(r, pr)
 		changes, cherr := h.repo.ChangedFiles(ctx, from, to)
 		inDiff := false
 		if cherr == nil {
@@ -487,26 +524,6 @@ func (h *handler) createPRComment(w http.ResponseWriter, r *http.Request) {
 			writeError(w, http.StatusUnprocessableEntity, "Validation failed.",
 				map[string]string{"path": "Path is not part of the pull request diff."})
 			return
-		}
-		input.Path, input.Line, input.Side = *in.Path, line, side
-		// Anchor + snippet rules mirror the HTML handler: the head tip
-		// while open (recorded sha once closed), the merge-base blob for
-		// left-side comments.
-		anchorSHA := pr.HeadSHA
-		if pr.Open() {
-			if sha, err := h.repo.RevParse(ctx, pr.HeadRef); err == nil {
-				anchorSHA = sha
-			}
-		}
-		input.AnchorSHA = anchorSHA
-		snippetSHA := anchorSHA
-		if side == "left" {
-			snippetSHA = pr.MergeBaseSHA
-			if pr.Open() {
-				if mb, err := h.repo.MergeBase(ctx, pr.BaseRef, pr.HeadRef); err == nil {
-					snippetSHA = mb
-				}
-			}
 		}
 		if snippetSHA != "" {
 			if snippet, _, err := h.repo.Snippet(ctx, snippetSHA, input.Path, line, 2); err == nil {
@@ -782,7 +799,7 @@ func (h *handler) pullDiff(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	from, to := h.diffRange(r, pr)
-	diff, _, err := h.repo.Diff(r.Context(), from, to)
+	diff, truncated, err := h.repo.Diff(r.Context(), from, to)
 	if err != nil {
 		if !h.gitError(w, err) {
 			writeError(w, http.StatusInternalServerError, "Internal server error.", nil)
@@ -790,6 +807,15 @@ func (h *handler) pullDiff(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
+	// The head revision this diff covers: review comments echo it back
+	// as their anchor so a moved head can't shift them to other lines.
+	if sha, shaErr := h.repo.RevParse(r.Context(), to); shaErr == nil && sha != "" {
+		w.Header().Set("X-Anchor-SHA", sha)
+	}
+	// Diffs are byte-capped; tell the reader when part of it is missing.
+	if truncated {
+		w.Header().Set("X-Diff-Truncated", "true")
+	}
 	io.WriteString(w, diff)
 }
 

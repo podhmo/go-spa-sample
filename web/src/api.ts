@@ -116,6 +116,77 @@ export type DiscussionListFilter = {
   page?: number | undefined
 }
 
+export type PullRequest = {
+  id: number
+  title: string
+  body: string
+  status: 'open' | 'closed' | 'merged'
+  base: string
+  head: string
+  author: User | null
+  head_sha?: string
+  merge_sha?: string
+  merge_method?: string
+  created_at: string
+  updated_at: string
+  closed_at?: string
+}
+
+export type PRComment = {
+  id: number
+  body: string
+  path?: string
+  line?: number
+  side?: string
+  anchor_sha?: string
+  diff_snippet?: string
+  author: User | null
+  created_at: string
+} & Moderation
+
+export type PRCommit = { sha: string; subject: string; author: string; date: string }
+
+export type PullRef = { name: string; short: string }
+
+export type PullMergeable =
+  | { status: 'clean' | 'conflicting' | 'unknown'; files?: string[] }
+  | undefined
+
+export type PullList = { pulls: PullRequest[]; total: number; page: number; per_page: number }
+
+export type PullDetail = {
+  pull_request: PullRequest
+  comments: PRComment[]
+  commits: PRCommit[]
+  mergeable?: PullMergeable
+}
+
+export type PullListFilter = {
+  status?: string | undefined
+  q?: string | undefined
+  sort?: string | undefined
+  page?: number | undefined
+}
+
+export type PullInput = { title: string; body: string; base: string; head: string }
+
+export type PRCommentInput = {
+  body: string
+  path?: string
+  line?: number
+  side?: string
+  // The head revision the commenter was looking at (X-Anchor-SHA from
+  // the diff endpoint) — keeps the comment pinned to the rendered code
+  // even if the head branch moved in the meantime.
+  anchor?: string | undefined
+}
+
+export type PullDiff = {
+  text: string
+  head_sha?: string | undefined
+  truncated: boolean
+}
+
 export type Workspace = {
   id: number
   slug: string
@@ -335,6 +406,84 @@ export const api = {
       `/api/v1/w/${ws}/discussions/${id}/threads/${tid}/comments/${cid}/unhide`,
       { method: 'POST', ...json({}) },
     ),
+  // Pull requests are workspace-independent and mount only when the
+  // server resolved a git repo (internal/api/pulls.go); on a repo-less
+  // deployment every call below 404s.
+  pullsAvailable: async () => {
+    try {
+      await fetchJSON<PullList>('/api/v1/pulls?per_page=1')
+      return true
+    } catch {
+      return false
+    }
+  },
+  listPullRefs: () => fetchJSON<{ refs: PullRef[] }>('/api/v1/pulls/refs'),
+  listPulls: (f: PullListFilter = {}) =>
+    fetchJSON<PullList>(
+      `/api/v1/pulls${qs({ status: f.status, q: f.q, sort: f.sort, page: f.page })}`,
+    ),
+  getPull: (id: number) => fetchJSON<PullDetail>(`/api/v1/pulls/${id}`),
+  createPull: (input: PullInput) =>
+    fetchJSON<{ pull_request: PullRequest }>('/api/v1/pulls', {
+      method: 'POST',
+      ...json(input),
+    }),
+  updatePull: (id: number, input: { title: string; body: string }) =>
+    fetchJSON<{ pull_request: PullRequest }>(`/api/v1/pulls/${id}`, {
+      method: 'PATCH',
+      ...json(input),
+    }),
+  deletePull: (id: number) => fetchJSON<void>(`/api/v1/pulls/${id}`, { method: 'DELETE' }),
+  setPullStatus: (id: number, status: 'open' | 'closed') =>
+    fetchJSON<{ pull_request: PullRequest }>(`/api/v1/pulls/${id}/status`, {
+      method: 'POST',
+      ...json({ status }),
+    }),
+  mergePull: (id: number, method: string, message?: string) =>
+    fetchJSON<{ pull_request: PullRequest }>(`/api/v1/pulls/${id}/merge`, {
+      method: 'POST',
+      ...json(message ? { method, message } : { method }),
+    }),
+  getPullDiff: async (id: number): Promise<PullDiff> => {
+    const res = await fetch(`/api/v1/pulls/${id}/diff`)
+    if (!res.ok) {
+      let apiError: ApiError['error'] | null = null
+      try {
+        apiError = (await res.json()).error ?? null
+      } catch {
+        // non-JSON error body
+      }
+      throw new RequestError(res.status, apiError)
+    }
+    return {
+      text: await res.text(),
+      head_sha: res.headers.get('x-anchor-sha') ?? undefined,
+      truncated: res.headers.get('x-diff-truncated') === 'true',
+    }
+  },
+  getPullMarkdown: (id: number) => fetchText(`/api/v1/pulls/${id}/markdown`),
+  createPRComment: (id: number, input: PRCommentInput) =>
+    fetchJSON<{ comment: PRComment }>(`/api/v1/pulls/${id}/comments`, {
+      method: 'POST',
+      ...json(input),
+    }),
+  updatePRComment: (id: number, cid: number, body: string) =>
+    fetchJSON<{ comment: PRComment }>(`/api/v1/pulls/${id}/comments/${cid}`, {
+      method: 'PATCH',
+      ...json({ body }),
+    }),
+  deletePRComment: (id: number, cid: number) =>
+    fetchJSON<void>(`/api/v1/pulls/${id}/comments/${cid}`, { method: 'DELETE' }),
+  hidePRComment: (id: number, cid: number, reason: string) =>
+    fetchJSON<{ comment: PRComment }>(`/api/v1/pulls/${id}/comments/${cid}/hide`, {
+      method: 'POST',
+      ...json({ reason }),
+    }),
+  unhidePRComment: (id: number, cid: number) =>
+    fetchJSON<{ comment: PRComment }>(`/api/v1/pulls/${id}/comments/${cid}/unhide`, {
+      method: 'POST',
+      ...json({}),
+    }),
   listWorkspaces: () => fetchJSON<{ workspaces: Workspace[] }>('/api/v1/workspaces'),
   createWorkspace: (input: WorkspaceInput) =>
     fetchJSON<{ workspace: Workspace }>('/api/v1/workspaces', {

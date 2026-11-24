@@ -37,8 +37,13 @@ API サーバー部分を移植し、フロントを **SPA として作り直す
   category/answered/q/sort/page フィルタ、詳細の threads+replies 1段
   ネスト、作成/編集/削除、hide・unhide、qa の answer マーク、markdown
   エクスポート、`#thread-N`/`#comment-N` permalink) を MPA 準拠で復元
-- **次の一手**: Pull Requests 移植 (TODO.md 順序の先頭。gitrepo +
-  `-repo` フラグ/`.git` 自動検出のゲーティングが最大の塊)
+- **Pull Requests 移植完了**: `internal/gitrepo` + pulls JSON API
+  (`-repo` フラグ / `ZATUDAN_REPO` / `.git` 自動検出、repo 無しは 404)
+  と SPA (`/pulls` 一覧・新規・詳細・編集・Files diff + 行アンカー
+  review コメント、merge/squash/rebase、status 遷移、markdown
+  エクスポート)。nav の Pulls リンクは availability probe で条件表示
+- **次の一手**: アカウント・セッション (TODO.md 順序の先頭。認証
+  モデルは「本番構成」とセットで考える)
 
 ## 残りタスク (`TODO.md` が正)
 

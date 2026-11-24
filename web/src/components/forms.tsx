@@ -1,6 +1,13 @@
 import { Link } from '@tanstack/react-router'
 import { useReducer, type ReactNode } from 'react'
-import type { DiscussionCategory, DiscussionInput, IssueInput, Label, WorkspaceInput } from '../api'
+import type {
+  DiscussionCategory,
+  DiscussionInput,
+  IssueInput,
+  Label,
+  PullRef,
+  WorkspaceInput,
+} from '../api'
 import { submitOnCtrlEnter } from '../enter-submit'
 import { LabelBadge } from './IssueList'
 
@@ -518,6 +525,194 @@ export function CommentForm({
       <div className="form-actions">
         <button type="submit" className="btn btn-primary" disabled={submitting}>
           {submitting ? 'Posting…' : 'Comment'}
+        </button>
+      </div>
+    </form>
+  )
+}
+
+type PullFormState = { title: string; body: string; base: string; head: string }
+type PullFormAction = { type: 'field'; field: keyof PullFormState; value: string }
+
+const pullFormReducer = (s: PullFormState, a: PullFormAction): PullFormState => {
+  switch (a.type) {
+    case 'field':
+      return { ...s, [a.field]: a.value }
+  }
+}
+
+// New/edit pull request. Creation needs base+head (branch refs from
+// /api/v1/pulls/refs); editing touches title/body only, matching the
+// PATCH endpoint.
+export function PullForm({
+  onSubmit,
+  submitting,
+  errors,
+  initial,
+  refs,
+  submitLabel,
+  cancelLink,
+}: {
+  onSubmit: (input: { title: string; body: string; base?: string; head?: string }) => void
+  submitting?: boolean
+  errors?: Record<string, string>
+  initial?: { title: string; body: string }
+  refs?: PullRef[]
+  submitLabel?: string
+  cancelLink?: ReactNode
+}) {
+  const editing = initial !== undefined
+  const [state, dispatch] = useReducer(pullFormReducer, {
+    title: initial?.title ?? '',
+    body: initial?.body ?? '',
+    base: '',
+    head: '',
+  })
+  const branches = (refs ?? []).filter((r) => r.name.startsWith('refs/heads/'))
+  // Head may be a remote-tracking ref too (createPull accepts any ref);
+  // base must stay a local branch because merging advances it.
+  const headRefs = (refs ?? []).filter((r) => !r.name.startsWith('refs/tags/'))
+  return (
+    <form
+      className="card issue-form"
+      aria-label={editing ? 'edit pull request' : 'new pull request'}
+      onSubmit={(e) => {
+        e.preventDefault()
+        onSubmit(editing ? { title: state.title, body: state.body } : state)
+      }}
+    >
+      <p className="form-note">
+        Fields marked{' '}
+        <span className="req" aria-hidden="true">
+          *
+        </span>{' '}
+        are required.
+      </p>
+      {!editing && (
+        <div className="pull-refs-row">
+          <div className="field">
+            <label htmlFor="pull-head">
+              Head{' '}
+              <span className="req" aria-hidden="true">
+                *
+              </span>
+            </label>
+            <select
+              id="pull-head"
+              name="head"
+              value={state.head}
+              onChange={(e) => dispatch({ type: 'field', field: 'head', value: e.target.value })}
+              required
+              data-error="pull-head-error"
+              aria-invalid={errors?.head ? 'true' : 'false'}
+              aria-describedby={errors?.head ? 'pull-head-api-error' : undefined}
+            >
+              <option value="" disabled>
+                Compare branch…
+              </option>
+              {headRefs.map((r) => (
+                <option key={r.name} value={r.name}>
+                  {r.short}
+                </option>
+              ))}
+            </select>
+            <span id="pull-head-error" className="error-msg">
+              A head branch is required.
+            </span>
+            {errors?.head && (
+              <em id="pull-head-api-error" role="alert">
+                {errors.head}
+              </em>
+            )}
+          </div>
+          <div className="field">
+            <label htmlFor="pull-base">
+              Base{' '}
+              <span className="req" aria-hidden="true">
+                *
+              </span>
+            </label>
+            <select
+              id="pull-base"
+              name="base"
+              value={state.base}
+              onChange={(e) => dispatch({ type: 'field', field: 'base', value: e.target.value })}
+              required
+              data-error="pull-base-error"
+              aria-invalid={errors?.base ? 'true' : 'false'}
+              aria-describedby={errors?.base ? 'pull-base-api-error' : undefined}
+            >
+              <option value="" disabled>
+                Base branch…
+              </option>
+              {branches.map((r) => (
+                <option key={r.name} value={r.name}>
+                  {r.short}
+                </option>
+              ))}
+            </select>
+            <span id="pull-base-error" className="error-msg">
+              A base branch is required.
+            </span>
+            {errors?.base && (
+              <em id="pull-base-api-error" role="alert">
+                {errors.base}
+              </em>
+            )}
+          </div>
+        </div>
+      )}
+      <div className="field">
+        <label htmlFor="pull-title">
+          Title{' '}
+          <span className="req" aria-hidden="true">
+            *
+          </span>
+        </label>
+        <input
+          type="text"
+          id="pull-title"
+          name="title"
+          value={state.title}
+          onChange={(e) => dispatch({ type: 'field', field: 'title', value: e.target.value })}
+          required
+          data-error="pull-title-error"
+          aria-invalid={errors?.title ? 'true' : 'false'}
+          aria-describedby={errors?.title ? 'pull-title-api-error' : undefined}
+        />
+        <span id="pull-title-error" className="error-msg">
+          Title is required.
+        </span>
+        {errors?.title && (
+          <em id="pull-title-api-error" role="alert">
+            {errors.title}
+          </em>
+        )}
+      </div>
+      <div className="field">
+        <label htmlFor="pull-body">Body</label>
+        <textarea
+          id="pull-body"
+          name="body"
+          value={state.body}
+          onChange={(e) => dispatch({ type: 'field', field: 'body', value: e.target.value })}
+          onKeyDown={submitOnCtrlEnter}
+          rows={8}
+          aria-invalid={errors?.body ? 'true' : 'false'}
+          aria-describedby={errors?.body ? 'pull-body-api-error' : undefined}
+        />
+        {errors?.body && (
+          <em id="pull-body-api-error" role="alert">
+            {errors.body}
+          </em>
+        )}
+      </div>
+      <div className="form-actions">
+        {cancelLink}
+        <button type="submit" className="btn btn-primary" disabled={submitting}>
+          {submitting
+            ? 'Saving…'
+            : (submitLabel ?? (editing ? 'Save changes' : 'Create pull request'))}
         </button>
       </div>
     </form>
