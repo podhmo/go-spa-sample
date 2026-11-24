@@ -1358,11 +1358,13 @@ const discussionRoute = createRoute({
     const did = Number(discussionId)
     const mutate = (fn: () => Promise<unknown>) => {
       setPending(true)
-      void (async () => {
+      return (async () => {
         try {
           await fn()
+          return true
         } catch {
           // mutation failures surface via the refetched state
+          return false
         } finally {
           setPending(false)
           void router.invalidate()

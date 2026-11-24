@@ -13,6 +13,7 @@ type EditUI = { editing: boolean; replying: boolean; draft: string }
 type EditAction =
   | { type: 'start-edit'; body: string }
   | { type: 'cancel' }
+  | { type: 'submitted' }
   | { type: 'draft'; value: string }
   | { type: 'reply'; replying: boolean }
 
@@ -21,6 +22,9 @@ const editReducer = (s: EditUI, a: EditAction): EditUI => {
     case 'start-edit':
       return { ...s, editing: true, draft: a.body }
     case 'cancel':
+      // Close but keep the draft: a cancelled reply restores on reopen.
+      return { ...s, editing: false, replying: false }
+    case 'submitted':
       return { ...s, editing: false, replying: false, draft: '' }
     case 'draft':
       return { ...s, draft: a.value }
@@ -41,7 +45,7 @@ export type ThreadHandlers = {
   onHide?: ((tid: number, reason: string) => void) | undefined
   onUnhide?: ((tid: number) => void) | undefined
   onSetAnswer?: ((tid: number, answer: boolean) => void) | undefined
-  onReply?: ((tid: number, body: string) => void) | undefined
+  onReply?: ((tid: number, body: string) => Promise<boolean>) | undefined
 }
 
 export type ReplyHandlers = {
@@ -473,8 +477,11 @@ function ThreadItem({
           aria-label={fmt(m.comments.replyFormAria, { id: t.id })}
           onSubmit={(e) => {
             e.preventDefault()
-            onReply?.(t.id, ui.draft)
-            dispatch({ type: 'cancel' })
+            void onReply?.(t.id, ui.draft).then((ok) => {
+              // submitted clears the draft; a failed send keeps it so the
+              // reopened form restores what the user typed.
+              dispatch({ type: ok ? 'submitted' : 'cancel' })
+            })
           }}
         >
           <div className="field">
