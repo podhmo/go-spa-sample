@@ -298,6 +298,39 @@ describe('route: /issues/$issueId', () => {
     confirm.mockRestore()
   })
 
+  it('asks once for several dirty drafts and re-arms on the next page', async () => {
+    stubAPI((url) => {
+      if (url.includes('/labels')) return { body: { labels: [] } }
+      if (url.includes('/pulls')) return { status: 404, body: {} }
+      if (url.endsWith('/issues') || url.includes('/issues?')) {
+        return { body: { issues: [], total: 0, page: 1, per_page: 20 } }
+      }
+      return { body: { issue: issue(), comments: [comment()] } }
+    })
+    const { router } = renderAt('/w/default/issues/1')
+    // two independent dirty guards: the new-comment box and a comment edit
+    await page.getByLabelText(/Add a comment/).fill('draft one')
+    await page.getByRole('button', { name: 'Edit comment 1' }).click()
+    await page.getByLabelText('comment body').fill('edited draft')
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true)
+    const breadcrumb = page.getByRole('navigation', { name: /breadcrumb/i })
+    await breadcrumb.getByRole('link', { name: 'Issues' }).click()
+    await expect.element(page.getByText('No issues here yet.')).toBeInTheDocument()
+    // one accepted confirm releases every guard on the page
+    expect(confirm).toHaveBeenCalledTimes(1)
+    // the latch re-arms on navigation: a fresh draft on the detail page
+    // asks again (renderAt wires the same onResolved reset as main.tsx)
+    await router.navigate({
+      to: '/w/$ws/issues/$issueId',
+      params: { ws: 'default', issueId: '1' },
+    })
+    await page.getByLabelText(/Add a comment/).fill('draft two')
+    await breadcrumb.getByRole('link', { name: 'Issues' }).click()
+    await expect.element(page.getByText('No issues here yet.')).toBeInTheDocument()
+    expect(confirm).toHaveBeenCalledTimes(2)
+    confirm.mockRestore()
+  })
+
   it('hides a comment with a reason and unhides it', async () => {
     const requests: { url: string; init?: RequestInit | undefined }[] = []
     let hidden = false

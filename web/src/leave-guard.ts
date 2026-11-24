@@ -9,6 +9,15 @@ export function resetLeaveGuardLatch() {
   latch.approved = false
 }
 
+// A completed navigation re-arms the latch. main.tsx installs this on the
+// real router and test-utils.renderAt installs it on the test router, so
+// every environment gets the same reset-on-navigation behavior.
+export function watchLeaveGuardReset(router: {
+  subscribe: (event: 'onResolved', fn: () => void) => unknown
+}) {
+  router.subscribe('onResolved', resetLeaveGuardLatch)
+}
+
 // Unsaved-changes guard (docs/ja/ui-rules.md §3): while `dirty`, blocks
 // in-app navigation with a native confirm and browser close/reload via
 // beforeunload. Call inside any form-bearing component; the guard

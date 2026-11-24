@@ -292,7 +292,8 @@ describe('route: /pulls/{id}/files', () => {
       }
       return { body: { pull_request: pull(), comments: [], commits: [] } }
     })
-    renderAt('/pulls/1/files')
+    const { router } = renderAt('/pulls/1/files')
+    const confirm = vi.spyOn(window, 'confirm').mockReturnValue(true)
     await page.getByRole('button', { name: 'Comment on a.txt line 2 (right side)' }).click()
     await page.getByLabelText('comment').fill('draft survives')
     await page.getByRole('button', { name: 'Comment', exact: true }).click()
@@ -309,6 +310,12 @@ describe('route: /pulls/{id}/files', () => {
     await page.getByRole('button', { name: 'Comment', exact: true }).click()
     await expect.poll(() => posts).toBe(2)
     expect(postBodies[1]).toMatchObject({ anchor: 'def456' })
+    // The success redirect lands on the new comment — without the
+    // leave-guard's discard prompt intercepting it.
+    await expect.poll(() => router.state.location.pathname).toBe('/pulls/1')
+    expect(router.state.location.hash).toBe('comment-9')
+    expect(confirm).not.toHaveBeenCalled()
+    confirm.mockRestore()
   })
 
   it('drops the draft when a refreshed diff puts different code at its anchor', async () => {

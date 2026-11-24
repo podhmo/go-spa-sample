@@ -3,7 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { RouterProvider, createRouter } from '@tanstack/react-router'
 import './index.css'
 import { setupFieldErrorSync } from './a11y'
-import { resetLeaveGuardLatch } from './leave-guard'
+import { watchLeaveGuardReset } from './leave-guard'
 import { routeTree } from './routes.tsx'
 
 setupFieldErrorSync()
@@ -20,9 +20,9 @@ const router = createRouter({
 // Full-page loads move focus to the top of the new document; a
 // client-side nav does not, so move it to the main landmark when the
 // path (not just search or hash) changes.
+// A completed navigation re-arms the leave-guard latch (leave-guard.ts).
+watchLeaveGuardReset(router)
 router.subscribe('onResolved', ({ fromLocation, toLocation }) => {
-  // A completed navigation re-arms the leave-guard latch (leave-guard.ts).
-  resetLeaveGuardLatch()
   if (fromLocation && fromLocation.pathname !== toLocation.pathname) {
     requestAnimationFrame(() => {
       document.getElementById('main-content')?.focus({ preventScroll: true })
