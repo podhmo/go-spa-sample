@@ -24,8 +24,11 @@ loader + mutation + `router.invalidate()` + `navigate()` に置き換わる。
 
 - [正] **確定系は右、取り消し系は左、右寄せ配置**。`.form-actions` が
   `justify-content: flex-end` を持ち、作成/編集フォーム・`<dialog>`・
-  返信フォームのすべてで「Cancel（`<button type="button">` or `<a>`）
-  → 確定（`<button type="submit">`）」の順に統一する。
+  返信フォームのすべてで「Cancel → 確定（`<button type="submit">`）」
+  の順に統一する。Cancel は `<a>`、`<button type="button">`、または
+  `<dialog>` 内の `method="dialog"` フォームの `value="cancel"` submit
+  （`formmethod="dialog"` は送信せず dialog を閉じるだけの submit なので
+  例外的に submit 型のまま使う。`ConfirmDialog` がこの形）。
 - [正] **1 画面 1 プライマリ**（ページ内アクションに限る）。
 - [正] **グローバルヘッダの "New issue" / "New discussion" は枠線 `.btn`**。
   Primary はページ内アクション 1 つのみ。
@@ -62,8 +65,12 @@ loader + mutation + `router.invalidate()` + `navigate()` に置き換わる。
   赤文言で出す。タイピング中は出さない。
 - [正] **Ctrl/Cmd+Enter で送信**（`enter-submit.ts` の `submitOnCtrlEnter` を
   textarea の `onKeyDown` に付ける）。`aria-keyshortcuts` と `.field-hint` で示唆。
-- [正] **二重送信防止**: mutation は reducer の `pending`/`submitting` フラグで
-  submit を非活性化（`disabled={pending}`）。失敗時は入力を消さず
+- [正] **二重送信防止**: mutation は pending フラグで submit を非活性化
+  （`disabled={pending}`）。フラグの取り方は画面によって
+  `useTransition` の `isPending` か reducer の `pending` — invalidate を
+  伴う mutation は reducer 側（transition 内で supersedes される
+  loader suspend を避けるため。AGENTS.md の "Pending UI via
+  `useTransition`" と併記するが、本項が詳細側）。失敗時は入力を消さず
   `role="alert"` のインラインエラーを出す（state が残る＝ドラフト保持）。
 - [変更予定] **入力中の離脱ガード**。MPA は `beforeunload`（leave-guard.js）
   で全画面離脱をガードしていた。SPA はアプリ内遷移もあるため
@@ -202,9 +209,15 @@ loader + mutation + `router.invalidate()` + `navigate()` に置き換わる。
   Primary でも Danger でもない第三の階層。
 - [正] **コピー等の小さなフィードバックは `role="status"` のインライン
   表示 + 数秒で消去**（`CopyButton` の `.copy-tip`）。
-- [正（代案）] **状態変更は mutation → `router.invalidate()` → `navigate()`**。
-  MPA の POST→303→GET（PRG）に相当し、loader の再検証で最新データを描画する。
-  mutation handler 内では必ず invalidate を先に呼ぶ（stale preload 防止）。
+- [正（代案）] **状態変更は mutation の後、画面の動きに応じて
+  `router.invalidate()` と `navigate()` を使い分ける**。MPA の
+  POST→303→GET（PRG）に相当する。実際には3パターンがある:
+  (a) 作成→詳細へ移るものは `navigate()` のみ（遷移先の loader が新規取得
+  するので invalidate 不要） (b) 同画面内の状態変更（コメント投稿・
+  ステータス切替等）は `router.invalidate()` のみ (c) 編集・削除のように
+  mutation→navigate を両方行うものは navigate の前に必ず
+  `router.invalidate()` を呼ぶ（`_preloads` 済みの古い preload データが
+  出るのを防ぐ）。
   （元の規定: POST → 303 → GET（PRG）、部分更新のアナウンスは 1 系統）
 - [正] **ページネーションは Previous/Next + "Page X of Y"**、端では非リンク表記。
   ページ番号は URL の search param に乗せる。

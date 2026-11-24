@@ -200,7 +200,9 @@ SPA に適用したもの:
 - `/w/default/issues`: LCP 418ms (TTFB 3ms, render delay 415ms), CLS 0,
   DOM 116 nodes
 - `/w/default/issues/8`: LCP 434ms (TTFB 4ms, render delay 429ms), CLS 0
-- `/w/default/pulls/1/files`: DOM 40 nodes (max depth 8)
+- `/w/default/discussions`: DOM 111 nodes
+- (`/w/default/pulls*` は dev server が `-repo` なしで起動しているため
+  404 側で計測不可 — pulls 計測は repo 付き起動時にやり直す)
 
 DOM 規模は全画面で ~40-120 nodes / depth ≤9 と小さく、
 `content-visibility` も適用済みのため DOM 自体は健全。render delay の

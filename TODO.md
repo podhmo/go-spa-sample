@@ -110,15 +110,12 @@ workspace → discussions → pulls → accounts へ展開する。
   discussions/PR 移植時に対応分を追加 (PR の `Copy as markdown` 済)
 - [x] **`cmd/fakeapi` の撤去**: スパイク用コードの整理 (dev-workflow.md
   の記述も zatudan 直起動に更新)
-- [x] **SPA版 ui-rules.md の策定**: MPA版 `docs/ja/ui-rules.md` を SPA 構成
-  向きに翻訳した `docs/ja/ui-rules.md` を作成 (16セクション+N/A一覧、
-  PRG→mutation+invalidate+navigate、storybook→vitest browser mode 等を
-  読み替え)。以降のUI作業の規約とする
-- [ ] **入力中の離脱ガード** (ui-rules §3): `beforeunload` (ブラウザ離脱) +
-  TanStack Router blocker (アプリ内遷移) の両対応。MPA は leave-guard.js
-  相当が未移植
-- [ ] **コメント空入力の送信 Disabled** (ui-rules §6): トップレベル・返信
-  両方で、本文が空のうちは送信ボタンを disabled にする (MPA の
-  comment-submit-disabled.js 相当。現状は `required` + pending のみ)
+- [x] **SPA版 ui-rules.md の策定** (`docs/ja/ui-rules.md`)
+- [ ] **入力中の離脱ガード** ([`docs/ja/ui-rules.md` §3](docs/ja/ui-rules.md)):
+  `beforeunload` (ブラウザ離脱) + TanStack Router blocker (アプリ内遷移)
+  の両対応。MPA は leave-guard.js 相当が未移植
+- [ ] **コメント空入力の送信 Disabled** ([`docs/ja/ui-rules.md` §6](docs/ja/ui-rules.md)):
+  トップレベル・返信両方で、本文が空のうちは送信ボタンを disabled にする
+  (MPA の comment-submit-disabled.js 相当。現状は `required` + pending のみ)
 - [ ] **本番構成の決定**: dev proxy の `Bearer dev-token` 注入は開発専用。
   embed 配信+セッション or 別配備+token のどちらにするか
