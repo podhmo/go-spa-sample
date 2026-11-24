@@ -1,6 +1,7 @@
 import { useEffect, useReducer, useRef } from 'react'
 import { RequestError, type PRCommentInput } from '../api'
 import { submitOnCtrlEnter } from '../enter-submit'
+import { fmt, useMessages } from '../i18n'
 
 // Parsed unified diff, one row per source line.
 type DiffLine = {
@@ -191,8 +192,9 @@ export function PullFiles({
     // `files` reparses every render; diff + openAt are the triggers.
     // oxlint-disable-next-line react/exhaustive-deps
   }, [diff, ui.openAt])
+  const m = useMessages()
   if (files.length === 0) {
-    return <p className="muted">No changes.</p>
+    return <p className="muted">{m.pulls.noChanges}</p>
   }
   return (
     <div className="diff-files">
@@ -250,6 +252,7 @@ function DiffRow({
   onSubmit: (body: string) => Promise<void> | void
 }) {
   const [postError, setPostError] = useReducer((_: string | null, v: string | null) => v, null)
+  const m = useMessages()
   // The disabled button only blocks clicks: Ctrl+Enter (requestSubmit)
   // still fires, so the send itself must be re-entrant-safe.
   const sending = useRef(false)
@@ -273,7 +276,11 @@ function DiffRow({
               className="diff-add-comment"
               onClick={onToggle}
               aria-expanded={formOpen}
-              aria-label={`Comment on ${line.path} line ${line.line} (${line.side} side)`}
+              aria-label={fmt(m.pulls.commentOnLine, {
+                path: line.path ?? '',
+                line: line.line ?? 0,
+                side: line.side ?? '',
+              })}
             >
               +
             </button>
@@ -291,7 +298,10 @@ function DiffRow({
           <td />
           <td colSpan={2}>
             <form
-              aria-label={`comment on ${line.path} line ${line.line}`}
+              aria-label={fmt(m.pulls.commentOnLineAria, {
+                path: line.path ?? '',
+                line: line.line ?? 0,
+              })}
               onSubmit={(e) => {
                 e.preventDefault()
                 if (sending.current) return
@@ -312,7 +322,7 @@ function DiffRow({
                         ? Object.values(fields).join(' ')
                         : err instanceof Error
                           ? err.message
-                          : 'Comment failed.',
+                          : m.pulls.commentFailed,
                     )
                   } finally {
                     sending.current = false
@@ -325,7 +335,7 @@ function DiffRow({
                   htmlFor={`dc-${line.path}-${line.side}-${line.line}`}
                   className="visually-hidden"
                 >
-                  comment
+                  {m.pulls.comment}
                 </label>
                 <textarea
                   id={`dc-${line.path}-${line.side}-${line.line}`}
@@ -334,19 +344,19 @@ function DiffRow({
                   required
                   onKeyDown={submitOnCtrlEnter}
                   data-error={`dc-${line.path}-${line.line}-error`}
-                  placeholder="Leave a review comment…"
+                  placeholder={m.pulls.reviewCommentPh}
                 />
                 <span id={`dc-${line.path}-${line.line}-error`} className="error-msg">
-                  Body is required.
+                  {m.form.bodyRequired}
                 </span>
                 {postError && <em role="alert">{postError}</em>}
               </div>
               <div className="form-actions">
                 <button type="button" className="btn btn-quiet" onClick={onToggle}>
-                  Cancel
+                  {m.copy.cancel}
                 </button>
                 <button type="submit" className="btn btn-primary" disabled={pending}>
-                  Comment
+                  {m.pulls.commentSubmit}
                 </button>
               </div>
             </form>

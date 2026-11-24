@@ -1,9 +1,12 @@
 import { Link } from '@tanstack/react-router'
 import type { PullRequest } from '../api'
-import { fmtTime } from '../format'
+import { fmt, useFmtTime, useMessages } from '../i18n'
 
 export function PullStatusBadge({ status }: { status: PullRequest['status'] }) {
-  return <span className={`badge badge-pr-${status}`}>{status}</span>
+  const m = useMessages()
+  const text =
+    status === 'open' ? m.filter.open : status === 'closed' ? m.filter.closed : m.filter.merged
+  return <span className={`badge badge-pr-${status}`}>{text}</span>
 }
 
 const shortRef = (ref: string) => ref.replace(/^refs\/(heads|remotes|tags)\//, '')
@@ -15,23 +18,25 @@ export function PullList({
   pulls: PullRequest[]
   filtered?: boolean | undefined
 }) {
+  const m = useMessages()
+  const fmtTime = useFmtTime()
   if (pulls.length === 0) {
     if (filtered) {
       return (
         <div className="empty-state">
-          <p className="empty-lead">No pull requests match the current filters.</p>
+          <p className="empty-lead">{m.pulls.filteredEmpty}</p>
           <p>
-            Try a different keyword or <Link to="/pulls">clear the filters</Link>.
+            {m.issues.tryOther} <Link to="/pulls">{m.issues.clearFilters}</Link>.
           </p>
         </div>
       )
     }
     return (
       <div className="empty-state">
-        <p className="empty-lead">No pull requests here yet.</p>
+        <p className="empty-lead">{m.pulls.blankEmpty}</p>
         <p>
           <Link className="btn btn-primary" to="/pulls/new">
-            Open the first pull request
+            {m.pulls.openFirst}
           </Link>
         </p>
       </div>
@@ -50,8 +55,8 @@ export function PullList({
           </div>
           <p className="issue-row-meta">
             <code className="pr-ref">{shortRef(p.head)}</code> →{' '}
-            <code className="pr-ref">{shortRef(p.base)}</code> · opened by{' '}
-            {p.author?.name ?? 'anonymous'}{' '}
+            <code className="pr-ref">{shortRef(p.base)}</code> ·{' '}
+            {fmt(m.pulls.openedBy, { name: p.author?.name ?? m.comments.anonymous })}{' '}
             <time dateTime={p.created_at}>{fmtTime(p.created_at)}</time>
           </p>
         </li>

@@ -1,9 +1,11 @@
 import { Link } from '@tanstack/react-router'
 import type { Discussion } from '../api'
-import { fmtTime, labelStyle } from '../format'
+import { labelStyle } from '../format'
+import { fmt, useFmtTime, useMessages } from '../i18n'
 
 export function AnsweredBadge() {
-  return <span className="badge badge-answered">Answered</span>
+  const m = useMessages()
+  return <span className="badge badge-answered">{m.discussions.answered}</span>
 }
 
 export function CategoryBadge({ name }: { name: string }) {
@@ -22,15 +24,17 @@ export function DiscussionList({
   // state over the blank-slate one.
   filtered?: boolean | undefined
 }) {
+  const m = useMessages()
+  const fmtTime = useFmtTime()
   if (discussions.length === 0) {
     if (filtered) {
       return (
         <div className="empty-state">
-          <p className="empty-lead">No discussions match the current filters.</p>
+          <p className="empty-lead">{m.discussions.filteredEmpty}</p>
           <p>
-            Try a different keyword or{' '}
+            {m.issues.tryOther}{' '}
             <Link to="/w/$ws/discussions" params={{ ws }}>
-              clear the filters
+              {m.issues.clearFilters}
             </Link>
             .
           </p>
@@ -39,10 +43,10 @@ export function DiscussionList({
     }
     return (
       <div className="empty-state">
-        <p className="empty-lead">No discussions here yet.</p>
+        <p className="empty-lead">{m.discussions.blankEmpty}</p>
         <p>
           <Link className="btn btn-primary" to="/w/$ws/discussions/new" params={{ ws }}>
-            Start the first discussion
+            {m.discussions.createFirst}
           </Link>
         </p>
       </div>
@@ -71,7 +75,7 @@ export function DiscussionList({
               </span>
             ))}
             <time className="issue-time" dateTime={d.created_at}>
-              opened {fmtTime(d.created_at)}
+              {fmt(m.issues.openedAt, { time: fmtTime(d.created_at) })}
             </time>
           </div>
         </li>

@@ -9,6 +9,7 @@ import type {
   WorkspaceInput,
 } from '../api'
 import { submitOnCtrlEnter } from '../enter-submit'
+import { useMessages } from '../i18n'
 import { LabelBadge } from './IssueList'
 
 type IssueFormState = { title: string; body: string; label_ids: number[] }
@@ -36,7 +37,7 @@ export function IssueForm({
   errors,
   initial,
   labels,
-  submitLabel = 'Create issue',
+  submitLabel,
   cancelLink,
 }: {
   onSubmit: (input: IssueInput) => void
@@ -56,21 +57,22 @@ export function IssueForm({
     body: initial?.body ?? '',
     label_ids: initial?.label_ids ?? [],
   })
+  const m = useMessages()
   return (
     <form
       className="card issue-form"
-      aria-label={initial ? 'edit issue' : 'new issue'}
+      aria-label={initial ? m.issues.editAria : m.issues.newAria}
       onSubmit={(e) => {
         e.preventDefault()
         onSubmit(state)
       }}
     >
       <p className="form-note">
-        Fields marked <span className="req">*</span> are required.
+        {m.form.requiredPre} <span className="req">*</span> {m.form.requiredPost}
       </p>
       <div className="field">
         <label htmlFor="issue-title">
-          Title{' '}
+          {m.form.title}{' '}
           <span className="req" aria-hidden="true">
             *
           </span>
@@ -87,7 +89,7 @@ export function IssueForm({
           aria-describedby={errors?.title ? 'issue-title-api-error' : undefined}
         />
         <span id="issue-title-error" className="error-msg">
-          Title is required.
+          {m.form.titleRequired}
         </span>
         {errors?.title && (
           <em id="issue-title-api-error" role="alert">
@@ -96,7 +98,7 @@ export function IssueForm({
         )}
       </div>
       <div className="field">
-        <label htmlFor="issue-body">Body</label>
+        <label htmlFor="issue-body">{m.form.body}</label>
         <textarea
           id="issue-body"
           name="body"
@@ -115,13 +117,12 @@ export function IssueForm({
           </em>
         )}
         <p className="field-hint" id="issue-body-hint">
-          Markdown (GFM) supported. Raw HTML is not rendered; line breaks are preserved. Ctrl+Enter
-          (Cmd+Enter on macOS) submits.
+          {m.form.bodyHint}
         </p>
       </div>
       {labels && labels.length > 0 && (
         <fieldset className="field label-picker">
-          <legend>Labels</legend>
+          <legend>{m.form.labels}</legend>
           {labels.map((l) => (
             <label className="label-option" key={l.id} htmlFor={`label-${l.id}`}>
               <input
@@ -145,11 +146,11 @@ export function IssueForm({
       <div className="form-actions">
         {cancelLink ?? (
           <Link className="btn btn-quiet" to="/issues">
-            Cancel
+            {m.copy.cancel}
           </Link>
         )}
         <button type="submit" className="btn btn-primary" disabled={submitting}>
-          {submitting ? 'Saving…' : submitLabel}
+          {submitting ? m.form.saving : (submitLabel ?? m.issues.create)}
         </button>
       </div>
     </form>
@@ -181,21 +182,22 @@ export function WorkspaceForm({
     name: '',
     description: '',
   })
+  const m = useMessages()
   return (
     <form
       className="card issue-form"
-      aria-label="new workspace"
+      aria-label={m.workspaces.formAria}
       onSubmit={(e) => {
         e.preventDefault()
         onSubmit(state)
       }}
     >
       <p className="form-note">
-        Fields marked <span className="req">*</span> are required.
+        {m.form.requiredPre} <span className="req">*</span> {m.form.requiredPost}
       </p>
       <div className="field">
         <label htmlFor="workspace-slug">
-          Slug{' '}
+          {m.workspaces.slug}{' '}
           <span className="req" aria-hidden="true">
             *
           </span>
@@ -217,8 +219,7 @@ export function WorkspaceForm({
           }
         />
         <span id="workspace-slug-error" className="error-msg">
-          Lowercase letters, digits, &quot;-&quot; and &quot;_&quot;, starting with a letter or
-          digit.
+          {m.workspaces.slugPattern}
         </span>
         {errors?.slug && (
           <em id="workspace-slug-api-error" role="alert">
@@ -226,12 +227,11 @@ export function WorkspaceForm({
           </em>
         )}
         <p className="field-hint" id="workspace-slug-hint">
-          Lowercase letters, digits, &quot;-&quot; and &quot;_&quot;. Used in URLs:
-          /w/&lt;slug&gt;/issues.
+          {m.workspaces.slugHint}
         </p>
       </div>
       <div className="field">
-        <label htmlFor="workspace-name">Name</label>
+        <label htmlFor="workspace-name">{m.workspaces.name}</label>
         <input
           type="text"
           id="workspace-name"
@@ -249,11 +249,11 @@ export function WorkspaceForm({
           </em>
         )}
         <p className="field-hint" id="workspace-name-hint">
-          Optional display name; defaults to the slug.
+          {m.workspaces.nameHint}
         </p>
       </div>
       <div className="field">
-        <label htmlFor="workspace-description">Description</label>
+        <label htmlFor="workspace-description">{m.workspaces.description}</label>
         <textarea
           id="workspace-description"
           name="description"
@@ -271,7 +271,7 @@ export function WorkspaceForm({
       <div className="form-actions">
         {cancelLink}
         <button type="submit" className="btn btn-primary" disabled={submitting}>
-          {submitting ? 'Saving…' : 'Create workspace'}
+          {submitting ? m.form.saving : m.workspaces.create}
         </button>
       </div>
     </form>
@@ -318,7 +318,7 @@ export function DiscussionForm({
   initial,
   categories,
   labels,
-  submitLabel = 'Create discussion',
+  submitLabel,
   cancelLink,
 }: {
   onSubmit: (input: DiscussionInput) => void
@@ -341,10 +341,11 @@ export function DiscussionForm({
     category_id: initial?.category_id ?? null,
     label_ids: initial?.label_ids ?? [],
   })
+  const m = useMessages()
   return (
     <form
       className="card issue-form"
-      aria-label={initial ? 'edit discussion' : 'new discussion'}
+      aria-label={initial ? m.discussions.editAria : m.discussions.newAria}
       onSubmit={(e) => {
         e.preventDefault()
         onSubmit({
@@ -356,11 +357,11 @@ export function DiscussionForm({
       }}
     >
       <p className="form-note">
-        Fields marked <span className="req">*</span> are required.
+        {m.form.requiredPre} <span className="req">*</span> {m.form.requiredPost}
       </p>
       <div className="field">
         <label htmlFor="discussion-category">
-          Category{' '}
+          {m.discussions.category}{' '}
           <span className="req" aria-hidden="true">
             *
           </span>
@@ -376,7 +377,7 @@ export function DiscussionForm({
           aria-describedby={errors?.category ? 'discussion-category-api-error' : undefined}
         >
           <option value="" disabled>
-            Select…
+            {m.form.select}
           </option>
           {categories.map((c) => (
             <option key={c.id} value={c.id}>
@@ -385,7 +386,7 @@ export function DiscussionForm({
           ))}
         </select>
         <span id="discussion-category-error" className="error-msg">
-          A category is required.
+          {m.discussions.categoryRequired}
         </span>
         {errors?.category && (
           <em id="discussion-category-api-error" role="alert">
@@ -395,7 +396,7 @@ export function DiscussionForm({
       </div>
       <div className="field">
         <label htmlFor="discussion-title">
-          Title{' '}
+          {m.form.title}{' '}
           <span className="req" aria-hidden="true">
             *
           </span>
@@ -412,7 +413,7 @@ export function DiscussionForm({
           aria-describedby={errors?.title ? 'discussion-title-api-error' : undefined}
         />
         <span id="discussion-title-error" className="error-msg">
-          Title is required.
+          {m.form.titleRequired}
         </span>
         {errors?.title && (
           <em id="discussion-title-api-error" role="alert">
@@ -421,7 +422,7 @@ export function DiscussionForm({
         )}
       </div>
       <div className="field">
-        <label htmlFor="discussion-body">Body</label>
+        <label htmlFor="discussion-body">{m.form.body}</label>
         <textarea
           id="discussion-body"
           name="body"
@@ -440,13 +441,12 @@ export function DiscussionForm({
           </em>
         )}
         <p className="field-hint" id="discussion-body-hint">
-          Markdown (GFM) supported. Raw HTML is not rendered; line breaks are preserved. Ctrl+Enter
-          (Cmd+Enter on macOS) submits.
+          {m.form.bodyHint}
         </p>
       </div>
       {labels && labels.length > 0 && (
         <fieldset className="field label-picker">
-          <legend>Labels</legend>
+          <legend>{m.form.labels}</legend>
           {labels.map((l) => (
             <label className="label-option" key={l.id} htmlFor={`dlabel-${l.id}`}>
               <input
@@ -470,7 +470,7 @@ export function DiscussionForm({
       <div className="form-actions">
         {cancelLink}
         <button type="submit" className="btn btn-primary" disabled={submitting}>
-          {submitting ? 'Saving…' : submitLabel}
+          {submitting ? m.form.saving : (submitLabel ?? m.discussions.create)}
         </button>
       </div>
     </form>
@@ -485,10 +485,11 @@ export function CommentForm({
   submitting?: boolean
 }) {
   const [body, setBody] = useReducer((_: string, v: string) => v, '')
+  const m = useMessages()
   return (
     <form
       className="card comment-form"
-      aria-label="new comment"
+      aria-label={m.form.newCommentAria}
       onSubmit={(e) => {
         e.preventDefault()
         onSubmit(body)
@@ -497,7 +498,7 @@ export function CommentForm({
     >
       <div className="field">
         <label htmlFor="comment-body">
-          Add a comment{' '}
+          {m.form.addComment}{' '}
           <span className="req" aria-hidden="true">
             *
           </span>
@@ -515,16 +516,15 @@ export function CommentForm({
           aria-describedby="comment-body-hint"
         />
         <span id="comment-body-error" className="error-msg">
-          Body is required.
+          {m.form.bodyRequired}
         </span>
         <p className="field-hint" id="comment-body-hint">
-          Markdown (GFM) supported. Raw HTML is not rendered. Ctrl+Enter (Cmd+Enter on macOS)
-          submits.
+          {m.form.bodyHintShort}
         </p>
       </div>
       <div className="form-actions">
         <button type="submit" className="btn btn-primary" disabled={submitting}>
-          {submitting ? 'Posting…' : 'Comment'}
+          {submitting ? m.form.posting : m.pulls.commentSubmit}
         </button>
       </div>
     </form>
@@ -572,27 +572,28 @@ export function PullForm({
   // Head may be a remote-tracking ref too (createPull accepts any ref);
   // base must stay a local branch because merging advances it.
   const headRefs = (refs ?? []).filter((r) => !r.name.startsWith('refs/tags/'))
+  const m = useMessages()
   return (
     <form
       className="card issue-form"
-      aria-label={editing ? 'edit pull request' : 'new pull request'}
+      aria-label={editing ? m.pulls.editAria : m.pulls.newAria}
       onSubmit={(e) => {
         e.preventDefault()
         onSubmit(editing ? { title: state.title, body: state.body } : state)
       }}
     >
       <p className="form-note">
-        Fields marked{' '}
+        {m.form.requiredPre}{' '}
         <span className="req" aria-hidden="true">
           *
         </span>{' '}
-        are required.
+        {m.form.requiredPost}
       </p>
       {!editing && (
         <div className="pull-refs-row">
           <div className="field">
             <label htmlFor="pull-head">
-              Head{' '}
+              {m.pulls.head}{' '}
               <span className="req" aria-hidden="true">
                 *
               </span>
@@ -608,7 +609,7 @@ export function PullForm({
               aria-describedby={errors?.head ? 'pull-head-api-error' : undefined}
             >
               <option value="" disabled>
-                Compare branch…
+                {m.pulls.headPh}
               </option>
               {headRefs.map((r) => (
                 <option key={r.name} value={r.name}>
@@ -617,7 +618,7 @@ export function PullForm({
               ))}
             </select>
             <span id="pull-head-error" className="error-msg">
-              A head branch is required.
+              {m.pulls.headRequired}
             </span>
             {errors?.head && (
               <em id="pull-head-api-error" role="alert">
@@ -627,7 +628,7 @@ export function PullForm({
           </div>
           <div className="field">
             <label htmlFor="pull-base">
-              Base{' '}
+              {m.pulls.base}{' '}
               <span className="req" aria-hidden="true">
                 *
               </span>
@@ -643,7 +644,7 @@ export function PullForm({
               aria-describedby={errors?.base ? 'pull-base-api-error' : undefined}
             >
               <option value="" disabled>
-                Base branch…
+                {m.pulls.basePh}
               </option>
               {branches.map((r) => (
                 <option key={r.name} value={r.name}>
@@ -652,7 +653,7 @@ export function PullForm({
               ))}
             </select>
             <span id="pull-base-error" className="error-msg">
-              A base branch is required.
+              {m.pulls.baseRequired}
             </span>
             {errors?.base && (
               <em id="pull-base-api-error" role="alert">
@@ -664,7 +665,7 @@ export function PullForm({
       )}
       <div className="field">
         <label htmlFor="pull-title">
-          Title{' '}
+          {m.form.title}{' '}
           <span className="req" aria-hidden="true">
             *
           </span>
@@ -681,7 +682,7 @@ export function PullForm({
           aria-describedby={errors?.title ? 'pull-title-api-error' : undefined}
         />
         <span id="pull-title-error" className="error-msg">
-          Title is required.
+          {m.form.titleRequired}
         </span>
         {errors?.title && (
           <em id="pull-title-api-error" role="alert">
@@ -690,7 +691,7 @@ export function PullForm({
         )}
       </div>
       <div className="field">
-        <label htmlFor="pull-body">Body</label>
+        <label htmlFor="pull-body">{m.form.body}</label>
         <textarea
           id="pull-body"
           name="body"
@@ -711,8 +712,8 @@ export function PullForm({
         {cancelLink}
         <button type="submit" className="btn btn-primary" disabled={submitting}>
           {submitting
-            ? 'Saving…'
-            : (submitLabel ?? (editing ? 'Save changes' : 'Create pull request'))}
+            ? m.form.saving
+            : (submitLabel ?? (editing ? m.form.saveChanges : m.pulls.create))}
         </button>
       </div>
     </form>
@@ -740,21 +741,22 @@ export function AuthForm({
     { name: '', password: '' },
   )
   const id = mode === 'login' ? 'login' : 'register'
+  const m = useMessages()
   return (
     <form
       className="card issue-form"
-      aria-label={mode === 'login' ? 'log in' : 'register'}
+      aria-label={mode === 'login' ? m.auth.logInAria : m.auth.registerAria}
       onSubmit={(e) => {
         e.preventDefault()
         onSubmit(state.name, state.password)
       }}
     >
       <p className="form-note">
-        Fields marked{' '}
+        {m.form.requiredPre}{' '}
         <span className="req" aria-hidden="true">
           *
         </span>{' '}
-        are required.
+        {m.form.requiredPost}
       </p>
       {errors?.form && (
         <em className="form-error" role="alert">
@@ -763,7 +765,7 @@ export function AuthForm({
       )}
       <div className="field">
         <label htmlFor={`${id}-name`}>
-          Name{' '}
+          {m.form.name}{' '}
           <span className="req" aria-hidden="true">
             *
           </span>
@@ -786,7 +788,7 @@ export function AuthForm({
           aria-describedby={errors?.name ? `${id}-name-api-error` : undefined}
         />
         <span id={`${id}-name-error`} className="error-msg">
-          A name is required.
+          {m.form.nameRequired}
         </span>
         {errors?.name && (
           <em id={`${id}-name-api-error`} role="alert">
@@ -796,7 +798,7 @@ export function AuthForm({
       </div>
       <div className="field">
         <label htmlFor={`${id}-password`}>
-          Password{' '}
+          {m.form.password}{' '}
           <span className="req" aria-hidden="true">
             *
           </span>
@@ -815,9 +817,7 @@ export function AuthForm({
           aria-describedby={errors?.password ? `${id}-password-api-error` : undefined}
         />
         <span id={`${id}-password-error`} className="error-msg">
-          {mode === 'register'
-            ? 'A password of at least 8 characters is required.'
-            : 'A password is required.'}
+          {mode === 'register' ? m.form.passwordMin : m.form.passwordRequired}
         </span>
         {errors?.password && (
           <em id={`${id}-password-api-error`} role="alert">
@@ -827,7 +827,7 @@ export function AuthForm({
       </div>
       <div className="form-actions">
         <button type="submit" className="btn btn-primary" disabled={submitting}>
-          {submitting ? '…' : mode === 'login' ? 'Log in' : 'Register'}
+          {submitting ? '…' : mode === 'login' ? m.nav.logIn : m.nav.register}
         </button>
       </div>
     </form>

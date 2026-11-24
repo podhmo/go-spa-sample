@@ -352,6 +352,17 @@ a {
   font-weight: 500;
 }
 
+/* Language switcher: quiet inline select in the nav. */
+.site-nav .lang-switch {
+  font: inherit;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 2px 4px;
+}
+
 .main-content {
   container: main / inline-size;
   padding-top: 24px;

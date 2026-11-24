@@ -106,7 +106,7 @@ describe('route: /pulls', () => {
     renderAt('/pulls')
     await expect.element(page.getByText('feature-x')).toBeInTheDocument()
     await expect.element(page.getByText('main')).toBeInTheDocument()
-    await expect.element(page.getByText('open').first()).toBeInTheDocument()
+    expect(document.querySelector('.issue-row .badge')).toHaveTextContent('Open')
   })
 
   it('404s when the server has no git repo', async () => {

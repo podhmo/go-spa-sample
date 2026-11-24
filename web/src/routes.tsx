@@ -10,6 +10,7 @@ import {
   useNavigate,
   useParams,
   useRouter,
+  type ErrorComponentProps,
 } from '@tanstack/react-router'
 import { useReducer, useTransition } from 'react'
 import { RequestError, api, type PRCommentInput, type User } from './api'
@@ -30,6 +31,7 @@ import { PullList } from './components/PullList'
 import { PRCommentList, PullCommitList, PullDetail } from './components/PullDetail'
 import { PullFiles } from './components/PullFiles'
 import { WorkspaceList } from './components/Workspaces'
+import { fmt, getLocale, setLocale, useMessages, type Locale } from './i18n'
 
 // A scoped API call: a plain 404 becomes the router's notFound, while a
 // cross-scope 404 names the owning workspace in error.workspace — the
@@ -69,6 +71,7 @@ function SiteNav({
   user: User | null
 }) {
   const loc = useLocation()
+  const m = useMessages()
   // Returning to the current page after login — /login & /register
   // themselves bounce back to '/' instead.
   const next = loc.pathname === '/login' || loc.pathname === '/register' ? undefined : loc.href
@@ -80,11 +83,27 @@ function SiteNav({
   ) : (
     <>
       <Link to="/login" search={{ next }}>
-        Log in
+        {m.nav.logIn}
       </Link>
       <Link to="/register" search={{ next }}>
-        Register
+        {m.nav.register}
       </Link>
+    </>
+  )
+  const langSwitch = (
+    <>
+      <label className="visually-hidden" htmlFor="lang-switch">
+        {m.nav.language}
+      </label>
+      <select
+        id="lang-switch"
+        className="lang-switch"
+        value={getLocale()}
+        onChange={(e) => setLocale(e.target.value as Locale)}
+      >
+        <option value="en">English</option>
+        <option value="ja">日本語</option>
+      </select>
     </>
   )
   if (ws !== undefined) {
@@ -93,20 +112,21 @@ function SiteNav({
         <Link className="site-title" to="/w/$ws/issues" params={{ ws }}>
           zatudan
         </Link>
-        <nav className="site-nav" aria-label="Main">
+        <nav className="site-nav" aria-label={m.nav.aria}>
           <Link to="/w/$ws/issues" params={{ ws }}>
-            Issues
+            {m.nav.issues}
           </Link>
           <Link to="/w/$ws/discussions" params={{ ws }}>
-            Discussions
+            {m.nav.discussions}
           </Link>
-          {pulls && <Link to="/pulls">Pulls</Link>}
+          {pulls && <Link to="/pulls">{m.nav.pulls}</Link>}
           <Link to="/w/$ws/labels" params={{ ws }}>
-            Labels
+            {m.nav.labels}
           </Link>
-          <Link to="/workspaces">Workspaces</Link>
+          <Link to="/workspaces">{m.nav.workspaces}</Link>
+          {langSwitch}
           <Link className="btn" to="/w/$ws/issues/new" params={{ ws }}>
-            New issue
+            {m.nav.newIssue}
           </Link>
           {account}
         </nav>
@@ -118,14 +138,15 @@ function SiteNav({
       <Link className="site-title" to="/">
         zatudan
       </Link>
-      <nav className="site-nav" aria-label="Main">
-        <Link to="/issues">Issues</Link>
-        <Link to="/discussions">Discussions</Link>
-        {pulls && <Link to="/pulls">Pulls</Link>}
-        <Link to="/labels">Labels</Link>
-        <Link to="/workspaces">Workspaces</Link>
+      <nav className="site-nav" aria-label={m.nav.aria}>
+        <Link to="/issues">{m.nav.issues}</Link>
+        <Link to="/discussions">{m.nav.discussions}</Link>
+        {pulls && <Link to="/pulls">{m.nav.pulls}</Link>}
+        <Link to="/labels">{m.nav.labels}</Link>
+        <Link to="/workspaces">{m.nav.workspaces}</Link>
+        {langSwitch}
         <Link className="btn" to="/issues/new">
-          New issue
+          {m.nav.newIssue}
         </Link>
         {account}
       </nav>
@@ -141,6 +162,7 @@ function LogoutButton() {
     (_: 'idle' | 'pending' | 'failed', v: 'idle' | 'pending' | 'failed') => v,
     'idle',
   )
+  const m = useMessages()
   return (
     <>
       <button
@@ -162,9 +184,9 @@ function LogoutButton() {
           })()
         }}
       >
-        Log out
+        {m.nav.logOut}
       </button>
-      {state === 'failed' && <em role="alert">Log out failed — still signed in.</em>}
+      {state === 'failed' && <em role="alert">{m.nav.logOutFailed}</em>}
     </>
   )
 }
@@ -188,10 +210,11 @@ const rootRoute = createRootRoute({
   component: function RootLayout() {
     const { ws } = useParams({ strict: false })
     const { pulls, user } = rootRoute.useLoaderData()
+    const m = useMessages()
     return (
       <>
         <a className="skip-link" href="#main-content">
-          Skip to content
+          {m.nav.skip}
         </a>
         <header className="site-header">
           <div className="header-bar">
@@ -205,38 +228,39 @@ const rootRoute = createRootRoute({
         </main>
         <footer className="site-footer">
           <div className="container">
-            <p>
-              A single-page app port of zatudan — Go API + React, TanStack Router, minimal
-              JavaScript where it earns its place.
-            </p>
+            <p>{m.chrome.footerTagline}</p>
           </div>
         </footer>
       </>
     )
   },
-  notFoundComponent: () => (
-    <div className="error-page">
-      <p className="error-code">404</p>
-      <h1>404 — not found</h1>
-      <p>
-        The page or resource you are looking for does not exist.{' '}
-        <Link to="/issues">Back to issues</Link>
-      </p>
-    </div>
-  ),
-  errorComponent: ({ error }) => (
-    <div className="error-page">
-      <h1>Something went wrong</h1>
-      {isNotFound(error) ? (
+  notFoundComponent: function NotFoundPage() {
+    const m = useMessages()
+    return (
+      <div className="error-page">
+        <p className="error-code">404</p>
+        <h1>{m.error.notFoundTitle}</h1>
         <p>
-          The page or resource you are looking for does not exist.{' '}
-          <Link to="/issues">Back to issues</Link>
+          {m.error.notFoundBody} <Link to="/issues">{m.error.backToIssues}</Link>
         </p>
-      ) : (
-        <p role="alert">{error instanceof Error ? error.message : String(error)}</p>
-      )}
-    </div>
-  ),
+      </div>
+    )
+  },
+  errorComponent: function ErrorPage({ error }: ErrorComponentProps) {
+    const m = useMessages()
+    return (
+      <div className="error-page">
+        <h1>{m.error.somethingWrong}</h1>
+        {isNotFound(error) ? (
+          <p>
+            {m.error.notFoundBody} <Link to="/issues">{m.error.backToIssues}</Link>
+          </p>
+        ) : (
+          <p role="alert">{error instanceof Error ? error.message : String(error)}</p>
+        )}
+      </div>
+    )
+  },
 })
 
 // --- Workspace-less compatibility routes ---------------------------------
@@ -440,12 +464,13 @@ const workspacesRoute = createRoute({
         }
       })()
     }
+    const m = useMessages()
     return (
       <div>
         <div className="page-head">
-          <h1>Workspaces</h1>
+          <h1>{m.workspaces.title}</h1>
           <Link className="btn" to="/workspaces/new">
-            New workspace
+            {m.workspaces.new}
           </Link>
         </div>
         {/* em role=alert is the always-visible server-error idiom;
@@ -484,10 +509,11 @@ function AuthPage({ mode, next }: { mode: 'login' | 'register'; next: string | u
     ) => v,
     {},
   )
+  const m = useMessages()
   return (
     <div>
       <div className="page-head">
-        <h1>{mode === 'login' ? 'Log in' : 'Register'}</h1>
+        <h1>{mode === 'login' ? m.nav.logIn : m.nav.register}</h1>
       </div>
       <AuthForm
         mode={mode}
@@ -523,16 +549,16 @@ function AuthPage({ mode, next }: { mode: 'login' | 'register'; next: string | u
       <p className="muted">
         {mode === 'login' ? (
           <>
-            No account?{' '}
+            {m.auth.noAccount}{' '}
             <Link to="/register" search={{ next }}>
-              Register
+              {m.nav.register}
             </Link>
           </>
         ) : (
           <>
-            Already registered?{' '}
+            {m.auth.alreadyRegistered}{' '}
             <Link to="/login" search={{ next }}>
-              Log in
+              {m.nav.logIn}
             </Link>
           </>
         )}
@@ -578,17 +604,18 @@ const newWorkspaceRoute = createRoute({
       (_: Record<string, string>, e: Record<string, string>) => e,
       {},
     )
+    const m = useMessages()
     return (
       <div>
         <div className="page-head">
-          <h1>New workspace</h1>
+          <h1>{m.workspaces.new}</h1>
         </div>
         <WorkspaceForm
           submitting={isPending}
           errors={errors}
           cancelLink={
             <Link className="btn btn-quiet" to="/workspaces">
-              Cancel
+              {m.copy.cancel}
             </Link>
           }
           onSubmit={(input) => {
@@ -653,13 +680,15 @@ const issuesRoute = createRoute({
       (search.sort !== undefined && search.sort !== 'newest')
     const rangeStart = data.total === 0 ? 0 : (data.page - 1) * data.per_page + 1
     const rangeEnd = rangeStart + data.issues.length - 1
+    const m = useMessages()
+    const statusLabel = { open: m.filter.open, closed: m.filter.closed, all: m.filter.all }
     return (
       <div>
         <div className="page-head">
-          <h1>Issues</h1>
+          <h1>{m.issues.title}</h1>
         </div>
 
-        <nav className="tabs" aria-label="Filter by status">
+        <nav className="tabs" aria-label={m.filter.ariaByStatus}>
           {STATUS_TABS.map((s) => (
             <Link
               key={s}
@@ -669,7 +698,7 @@ const issuesRoute = createRoute({
               search={{ ...search, status: s, page: undefined }}
               aria-current={status === s ? 'page' : undefined}
             >
-              {s.charAt(0).toUpperCase() + s.slice(1)}
+              {statusLabel[s]}
             </Link>
           ))}
         </nav>
@@ -680,7 +709,7 @@ const issuesRoute = createRoute({
           <form
             key={JSON.stringify(search)}
             className="filter-bar"
-            aria-label="Filter issues"
+            aria-label={m.filter.ariaIssues}
             onSubmit={(e) => {
               e.preventDefault()
               const fd = new FormData(e.currentTarget)
@@ -698,19 +727,19 @@ const issuesRoute = createRoute({
           >
             <input type="hidden" name="status" value={status} />
             <div className="filter-field">
-              <label htmlFor="filter-q">Search</label>
+              <label htmlFor="filter-q">{m.filter.search}</label>
               <input
                 type="search"
                 id="filter-q"
                 name="q"
-                placeholder="Title or body"
+                placeholder={m.filter.searchPh}
                 defaultValue={search.q}
               />
             </div>
             <div className="filter-field">
-              <label htmlFor="filter-label">Label</label>
+              <label htmlFor="filter-label">{m.filter.label}</label>
               <select id="filter-label" name="label" defaultValue={search.label ?? ''}>
-                <option value="">All labels</option>
+                <option value="">{m.filter.allLabels}</option>
                 {labels.map((l) => (
                   <option key={l.id} value={l.name}>
                     {l.name}
@@ -719,19 +748,19 @@ const issuesRoute = createRoute({
               </select>
             </div>
             <div className="filter-field">
-              <label htmlFor="filter-sort">Sort</label>
+              <label htmlFor="filter-sort">{m.filter.sort}</label>
               <select id="filter-sort" name="sort" defaultValue={search.sort ?? 'newest'}>
-                <option value="newest">Newest first</option>
-                <option value="oldest">Oldest first</option>
+                <option value="newest">{m.filter.newest}</option>
+                <option value="oldest">{m.filter.oldest}</option>
               </select>
             </div>
             <div className="filter-actions">
               <button type="submit" className="btn">
-                Apply
+                {m.filter.apply}
               </button>
               {hasActiveFilter && (
                 <Link className="btn btn-quiet" to="/w/$ws/issues" params={{ ws }}>
-                  Clear
+                  {m.filter.clear}
                 </Link>
               )}
             </div>
@@ -740,13 +769,13 @@ const issuesRoute = createRoute({
 
         {data.issues.length > 0 && (
           <p className="result-count">
-            Showing {rangeStart}–{rangeEnd} of {data.total} issues
+            {fmt(m.pager.showingIssues, { start: rangeStart, end: rangeEnd, total: data.total })}
           </p>
         )}
         <IssueList issues={data.issues} ws={ws} filtered={hasActiveFilter} search={search} />
 
         {totalPages > 1 && (
-          <nav className="pagination" aria-label="Pagination">
+          <nav className="pagination" aria-label={m.pager.aria}>
             {data.page > 1 ? (
               <Link
                 className="btn"
@@ -754,15 +783,15 @@ const issuesRoute = createRoute({
                 params={{ ws }}
                 search={{ ...search, page: data.page - 1 }}
               >
-                Previous
+                {m.pager.prev}
               </Link>
             ) : (
               <span className="btn btn-disabled" aria-disabled="true">
-                Previous
+                {m.pager.prev}
               </span>
             )}
             <span className="page-info">
-              Page {data.page} of {totalPages}
+              {fmt(m.pager.info, { page: data.page, total: totalPages })}
             </span>
             {data.page < totalPages ? (
               <Link
@@ -771,11 +800,11 @@ const issuesRoute = createRoute({
                 params={{ ws }}
                 search={{ ...search, page: data.page + 1 }}
               >
-                Next
+                {m.pager.next}
               </Link>
             ) : (
               <span className="btn btn-disabled" aria-disabled="true">
-                Next
+                {m.pager.next}
               </span>
             )}
           </nav>
@@ -809,10 +838,11 @@ const newIssueRoute = createRoute({
       (_: Record<string, string>, e: Record<string, string>) => e,
       {},
     )
+    const m = useMessages()
     return (
       <div>
         <div className="page-head">
-          <h1>New issue</h1>
+          <h1>{m.issues.new}</h1>
         </div>
         <IssueForm
           submitting={isPending}
@@ -820,7 +850,7 @@ const newIssueRoute = createRoute({
           labels={labels}
           cancelLink={
             <Link className="btn btn-quiet" to="/w/$ws/issues" params={{ ws }}>
-              Cancel
+              {m.copy.cancel}
             </Link>
           }
           onSubmit={(input) => {
@@ -870,10 +900,11 @@ const editIssueRoute = createRoute({
       (_: Record<string, string>, e: Record<string, string>) => e,
       {},
     )
+    const m = useMessages()
     return (
       <div>
         <div className="page-head">
-          <h1>Edit issue #{issue.id}</h1>
+          <h1>{fmt(m.issues.editTitle, { id: issue.id })}</h1>
         </div>
         <IssueForm
           submitting={isPending}
@@ -884,10 +915,10 @@ const editIssueRoute = createRoute({
             body: issue.body,
             label_ids: issue.labels.map((l) => l.id),
           }}
-          submitLabel="Save changes"
+          submitLabel={m.form.saveChanges}
           cancelLink={
             <Link className="btn btn-quiet" to="/w/$ws/issues/$issueId" params={{ ws, issueId }}>
-              Cancel
+              {m.copy.cancel}
             </Link>
           }
           onSubmit={(input) => {
@@ -943,13 +974,14 @@ const issueRoute = createRoute({
         }
       })()
     }
+    const m = useMessages()
     return (
       <div>
-        <nav className="breadcrumb" aria-label="Breadcrumb">
+        <nav className="breadcrumb" aria-label={m.chrome.breadcrumb}>
           <ol>
             <li>
               <Link to="/w/$ws/issues" params={{ ws }} activeOptions={{ exact: true }}>
-                Issues
+                {m.issues.title}
               </Link>
             </li>
             <li>
@@ -981,7 +1013,7 @@ const issueRoute = createRoute({
 
         <section id="comments" className="comments">
           <h2>
-            Comments
+            {m.issues.comments}
             {comments.length > 0 && <span className="comment-count"> ({comments.length})</span>}
           </h2>
           <CommentList
@@ -998,8 +1030,8 @@ const issueRoute = createRoute({
           />
         </section>
 
-        <a className="back-to-top" href="#main-content" aria-label="Back to top">
-          ↑ Top
+        <a className="back-to-top" href="#main-content" aria-label={m.chrome.backToTopAria}>
+          {m.chrome.backToTop}
         </a>
       </div>
     )
@@ -1033,12 +1065,13 @@ const discussionsRoute = createRoute({
       (search.sort !== undefined && search.sort !== 'newest')
     const rangeStart = data.total === 0 ? 0 : (data.page - 1) * data.per_page + 1
     const rangeEnd = rangeStart + data.discussions.length - 1
+    const m = useMessages()
     return (
       <div>
         <div className="page-head">
-          <h1>Discussions</h1>
+          <h1>{m.discussions.title}</h1>
           <Link className="btn" to="/w/$ws/discussions/new" params={{ ws }}>
-            New discussion
+            {m.discussions.new}
           </Link>
         </div>
 
@@ -1047,7 +1080,7 @@ const discussionsRoute = createRoute({
           <form
             key={JSON.stringify(search)}
             className="filter-bar"
-            aria-label="Filter discussions"
+            aria-label={m.filter.ariaDiscussions}
             onSubmit={(e) => {
               e.preventDefault()
               const fd = new FormData(e.currentTarget)
@@ -1064,9 +1097,9 @@ const discussionsRoute = createRoute({
             }}
           >
             <div className="filter-field">
-              <label htmlFor="filter-category">Category</label>
+              <label htmlFor="filter-category">{m.filter.category}</label>
               <select id="filter-category" name="category" defaultValue={search.category ?? ''}>
-                <option value="">All categories</option>
+                <option value="">{m.filter.allCategories}</option>
                 {categories.map((c) => (
                   <option key={c.id} value={c.slug}>
                     {c.name}
@@ -1075,37 +1108,37 @@ const discussionsRoute = createRoute({
               </select>
             </div>
             <div className="filter-field">
-              <label htmlFor="filter-answered">Answered</label>
+              <label htmlFor="filter-answered">{m.filter.answered}</label>
               <select id="filter-answered" name="answered" defaultValue={search.answered ?? ''}>
-                <option value="">All</option>
-                <option value="yes">Answered</option>
-                <option value="no">Unanswered</option>
+                <option value="">{m.filter.all}</option>
+                <option value="yes">{m.filter.answered}</option>
+                <option value="no">{m.filter.unanswered}</option>
               </select>
             </div>
             <div className="filter-field">
-              <label htmlFor="filter-dq">Search</label>
+              <label htmlFor="filter-dq">{m.filter.search}</label>
               <input
                 type="search"
                 id="filter-dq"
                 name="q"
-                placeholder="Title or body"
+                placeholder={m.filter.searchPh}
                 defaultValue={search.q}
               />
             </div>
             <div className="filter-field">
-              <label htmlFor="filter-dsort">Sort</label>
+              <label htmlFor="filter-dsort">{m.filter.sort}</label>
               <select id="filter-dsort" name="sort" defaultValue={search.sort ?? 'newest'}>
-                <option value="newest">Newest first</option>
-                <option value="oldest">Oldest first</option>
+                <option value="newest">{m.filter.newest}</option>
+                <option value="oldest">{m.filter.oldest}</option>
               </select>
             </div>
             <div className="filter-actions">
               <button type="submit" className="btn">
-                Apply
+                {m.filter.apply}
               </button>
               {hasActiveFilter && (
                 <Link className="btn btn-quiet" to="/w/$ws/discussions" params={{ ws }}>
-                  Clear
+                  {m.filter.clear}
                 </Link>
               )}
             </div>
@@ -1114,13 +1147,17 @@ const discussionsRoute = createRoute({
 
         {data.discussions.length > 0 && (
           <p className="result-count">
-            Showing {rangeStart}–{rangeEnd} of {data.total} discussions
+            {fmt(m.pager.showingDiscussions, {
+              start: rangeStart,
+              end: rangeEnd,
+              total: data.total,
+            })}
           </p>
         )}
         <DiscussionList discussions={data.discussions} ws={ws} filtered={hasActiveFilter} />
 
         {totalPages > 1 && (
-          <nav className="pagination" aria-label="Pagination">
+          <nav className="pagination" aria-label={m.pager.aria}>
             {data.page > 1 ? (
               <Link
                 className="btn"
@@ -1128,15 +1165,15 @@ const discussionsRoute = createRoute({
                 params={{ ws }}
                 search={{ ...search, page: data.page - 1 }}
               >
-                Previous
+                {m.pager.prev}
               </Link>
             ) : (
               <span className="btn btn-disabled" aria-disabled="true">
-                Previous
+                {m.pager.prev}
               </span>
             )}
             <span className="page-info">
-              Page {data.page} of {totalPages}
+              {fmt(m.pager.info, { page: data.page, total: totalPages })}
             </span>
             {data.page < totalPages ? (
               <Link
@@ -1145,11 +1182,11 @@ const discussionsRoute = createRoute({
                 params={{ ws }}
                 search={{ ...search, page: data.page + 1 }}
               >
-                Next
+                {m.pager.next}
               </Link>
             ) : (
               <span className="btn btn-disabled" aria-disabled="true">
-                Next
+                {m.pager.next}
               </span>
             )}
           </nav>
@@ -1183,10 +1220,11 @@ const newDiscussionRoute = createRoute({
       (_: Record<string, string>, e: Record<string, string>) => e,
       {},
     )
+    const m = useMessages()
     return (
       <div>
         <div className="page-head">
-          <h1>New discussion</h1>
+          <h1>{m.discussions.new}</h1>
         </div>
         <DiscussionForm
           submitting={isPending}
@@ -1195,7 +1233,7 @@ const newDiscussionRoute = createRoute({
           labels={labels}
           cancelLink={
             <Link className="btn btn-quiet" to="/w/$ws/discussions" params={{ ws }}>
-              Cancel
+              {m.copy.cancel}
             </Link>
           }
           onSubmit={(input) => {
@@ -1245,10 +1283,11 @@ const editDiscussionRoute = createRoute({
       (_: Record<string, string>, e: Record<string, string>) => e,
       {},
     )
+    const m = useMessages()
     return (
       <div>
         <div className="page-head">
-          <h1>Edit discussion #{discussion.id}</h1>
+          <h1>{fmt(m.discussions.editTitle, { id: discussion.id })}</h1>
         </div>
         <DiscussionForm
           submitting={isPending}
@@ -1261,14 +1300,14 @@ const editDiscussionRoute = createRoute({
             category_id: discussion.category.id,
             label_ids: discussion.labels.map((l) => l.id),
           }}
-          submitLabel="Save changes"
+          submitLabel={m.form.saveChanges}
           cancelLink={
             <Link
               className="btn btn-quiet"
               to="/w/$ws/discussions/$discussionId"
               params={{ ws, discussionId }}
             >
-              Cancel
+              {m.copy.cancel}
             </Link>
           }
           onSubmit={(input) => {
@@ -1347,13 +1386,14 @@ const discussionRoute = createRoute({
       })()
     }
     const answerable = discussion.category.format === 'qa'
+    const m = useMessages()
     return (
       <div>
-        <nav className="breadcrumb" aria-label="Breadcrumb">
+        <nav className="breadcrumb" aria-label={m.chrome.breadcrumb}>
           <ol>
             <li>
               <Link to="/w/$ws/discussions" params={{ ws }} activeOptions={{ exact: true }}>
-                Discussions
+                {m.discussions.title}
               </Link>
             </li>
             <li>
@@ -1384,7 +1424,7 @@ const discussionRoute = createRoute({
 
         <section id="comments" className="comments">
           <h2>
-            Comments
+            {m.issues.comments}
             {threads.length > 0 && <span className="comment-count"> ({threads.length})</span>}
           </h2>
           <ThreadList
@@ -1425,8 +1465,8 @@ const discussionRoute = createRoute({
           />
         </section>
 
-        <a className="back-to-top" href="#main-content" aria-label="Back to top">
-          ↑ Top
+        <a className="back-to-top" href="#main-content" aria-label={m.chrome.backToTopAria}>
+          {m.chrome.backToTop}
         </a>
       </div>
     )
@@ -1477,12 +1517,13 @@ const pullsRoute = createRoute({
       (search.sort !== undefined && search.sort !== 'newest')
     const rangeStart = data.total === 0 ? 0 : (data.page - 1) * data.per_page + 1
     const rangeEnd = rangeStart + data.pulls.length - 1
+    const m = useMessages()
     return (
       <div>
         <div className="page-head">
-          <h1>Pull requests</h1>
+          <h1>{m.pulls.title}</h1>
           <Link className="btn" to="/pulls/new">
-            New pull request
+            {m.pulls.new}
           </Link>
         </div>
 
@@ -1491,7 +1532,7 @@ const pullsRoute = createRoute({
           <form
             key={JSON.stringify(search)}
             className="filter-bar"
-            aria-label="Filter pull requests"
+            aria-label={m.filter.ariaPulls}
             onSubmit={(e) => {
               e.preventDefault()
               const fd = new FormData(e.currentTarget)
@@ -1506,38 +1547,38 @@ const pullsRoute = createRoute({
             }}
           >
             <div className="filter-field">
-              <label htmlFor="filter-pstatus">Status</label>
+              <label htmlFor="filter-pstatus">{m.filter.status}</label>
               <select id="filter-pstatus" name="status" defaultValue={search.status ?? 'open'}>
-                <option value="open">Open</option>
-                <option value="closed">Closed</option>
-                <option value="merged">Merged</option>
-                <option value="all">All</option>
+                <option value="open">{m.filter.open}</option>
+                <option value="closed">{m.filter.closed}</option>
+                <option value="merged">{m.filter.merged}</option>
+                <option value="all">{m.filter.all}</option>
               </select>
             </div>
             <div className="filter-field">
-              <label htmlFor="filter-pq">Search</label>
+              <label htmlFor="filter-pq">{m.filter.search}</label>
               <input
                 type="search"
                 id="filter-pq"
                 name="q"
-                placeholder="Title or body"
+                placeholder={m.filter.searchPh}
                 defaultValue={search.q}
               />
             </div>
             <div className="filter-field">
-              <label htmlFor="filter-psort">Sort</label>
+              <label htmlFor="filter-psort">{m.filter.sort}</label>
               <select id="filter-psort" name="sort" defaultValue={search.sort ?? 'newest'}>
-                <option value="newest">Newest first</option>
-                <option value="oldest">Oldest first</option>
+                <option value="newest">{m.filter.newest}</option>
+                <option value="oldest">{m.filter.oldest}</option>
               </select>
             </div>
             <div className="filter-actions">
               <button type="submit" className="btn">
-                Apply
+                {m.filter.apply}
               </button>
               {hasActiveFilter && (
                 <Link className="btn btn-quiet" to="/pulls">
-                  Clear
+                  {m.filter.clear}
                 </Link>
               )}
             </div>
@@ -1546,32 +1587,32 @@ const pullsRoute = createRoute({
 
         {data.pulls.length > 0 && (
           <p className="result-count">
-            Showing {rangeStart}–{rangeEnd} of {data.total} pull requests
+            {fmt(m.pager.showingPulls, { start: rangeStart, end: rangeEnd, total: data.total })}
           </p>
         )}
         <PullList pulls={data.pulls} filtered={hasActiveFilter} />
 
         {totalPages > 1 && (
-          <nav className="pagination" aria-label="Pagination">
+          <nav className="pagination" aria-label={m.pager.aria}>
             {data.page > 1 ? (
               <Link className="btn" to="/pulls" search={{ ...search, page: data.page - 1 }}>
-                Previous
+                {m.pager.prev}
               </Link>
             ) : (
               <span className="btn btn-disabled" aria-disabled="true">
-                Previous
+                {m.pager.prev}
               </span>
             )}
             <span className="page-info">
-              Page {data.page} of {totalPages}
+              {fmt(m.pager.info, { page: data.page, total: totalPages })}
             </span>
             {data.page < totalPages ? (
               <Link className="btn" to="/pulls" search={{ ...search, page: data.page + 1 }}>
-                Next
+                {m.pager.next}
               </Link>
             ) : (
               <span className="btn btn-disabled" aria-disabled="true">
-                Next
+                {m.pager.next}
               </span>
             )}
           </nav>
@@ -1593,10 +1634,11 @@ const newPullRoute = createRoute({
       (_: Record<string, string>, e: Record<string, string>) => e,
       {},
     )
+    const m = useMessages()
     return (
       <div>
         <div className="page-head">
-          <h1>New pull request</h1>
+          <h1>{m.pulls.new}</h1>
         </div>
         <PullForm
           submitting={isPending}
@@ -1604,7 +1646,7 @@ const newPullRoute = createRoute({
           refs={refs}
           cancelLink={
             <Link className="btn btn-quiet" to="/pulls">
-              Cancel
+              {m.copy.cancel}
             </Link>
           }
           onSubmit={(input) => {
@@ -1644,19 +1686,20 @@ const editPullRoute = createRoute({
       (_: Record<string, string>, e: Record<string, string>) => e,
       {},
     )
+    const m = useMessages()
     return (
       <div>
         <div className="page-head">
-          <h1>Edit pull request #{pull_request.id}</h1>
+          <h1>{fmt(m.pulls.editTitle, { id: pull_request.id })}</h1>
         </div>
         <PullForm
           submitting={isPending}
           errors={errors}
           initial={{ title: pull_request.title, body: pull_request.body }}
-          submitLabel="Save changes"
+          submitLabel={m.form.saveChanges}
           cancelLink={
             <Link className="btn btn-quiet" to="/pulls/$pullId" params={{ pullId }}>
-              Cancel
+              {m.copy.cancel}
             </Link>
           }
           onSubmit={(input) => {
@@ -1695,13 +1738,14 @@ const pullFilesRoute = createRoute({
     const router = useRouter()
     const navigate = useNavigate()
     const [isPending, setPending] = useReducer((_: boolean, v: boolean) => v, false)
+    const m = useMessages()
     return (
       <div>
-        <nav className="breadcrumb" aria-label="Breadcrumb">
+        <nav className="breadcrumb" aria-label={m.chrome.breadcrumb}>
           <ol>
             <li>
               <Link to="/pulls" activeOptions={{ exact: true }}>
-                Pull requests
+                {m.pulls.title}
               </Link>
             </li>
             <li>
@@ -1711,7 +1755,7 @@ const pullFilesRoute = createRoute({
             </li>
             <li>
               <a href="#" aria-current="page">
-                Files
+                {m.pulls.files}
               </a>
             </li>
           </ol>
@@ -1722,13 +1766,13 @@ const pullFilesRoute = createRoute({
             {pull_request.title} <span className="issue-num">#{pull_request.id}</span>
           </h1>
           <Link className="btn" to="/pulls/$pullId" params={{ pullId }}>
-            Conversation
+            {m.pulls.conversation}
           </Link>
         </div>
 
         {truncated && (
           <p className="notice" role="status">
-            This diff is too large and was truncated — not all changes are shown.
+            {m.pulls.truncated}
           </p>
         )}
         <PullFiles
@@ -1783,20 +1827,21 @@ const pullRoute = createRoute({
         } catch (err) {
           // A failed merge changes nothing on refetch, so surface the
           // rejection (e.g. a dirty worktree) instead of staying silent.
-          setActionError(err instanceof RequestError ? err.message : 'Request failed.')
+          setActionError(err instanceof RequestError ? err.message : m.error.requestFailed)
         } finally {
           setPending(false)
           void router.invalidate()
         }
       })()
     }
+    const m = useMessages()
     return (
       <div>
-        <nav className="breadcrumb" aria-label="Breadcrumb">
+        <nav className="breadcrumb" aria-label={m.chrome.breadcrumb}>
           <ol>
             <li>
               <Link to="/pulls" activeOptions={{ exact: true }}>
-                Pull requests
+                {m.pulls.title}
               </Link>
             </li>
             <li>
@@ -1834,7 +1879,7 @@ const pullRoute = createRoute({
 
         <section id="comments" className="comments">
           <h2>
-            Comments
+            {m.issues.comments}
             {comments.length > 0 && <span className="comment-count"> ({comments.length})</span>}
           </h2>
           <PRCommentList
@@ -1851,8 +1896,8 @@ const pullRoute = createRoute({
           />
         </section>
 
-        <a className="back-to-top" href="#main-content" aria-label="Back to top">
-          ↑ Top
+        <a className="back-to-top" href="#main-content" aria-label={m.chrome.backToTopAria}>
+          {m.chrome.backToTop}
         </a>
       </div>
     )

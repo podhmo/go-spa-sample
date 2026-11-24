@@ -1,4 +1,5 @@
 import { useId } from 'react'
+import { useMessages } from '../i18n'
 
 // Native <dialog> confirmation, styled like the MPA's .confirm-dialog.
 // The trigger opens it declaratively via Invoker Commands
@@ -9,7 +10,7 @@ export function ConfirmDialog({
   label,
   title,
   description,
-  confirmLabel = 'Confirm',
+  confirmLabel,
   triggerClass = 'btn btn-danger',
   pending,
   onConfirm,
@@ -24,6 +25,7 @@ export function ConfirmDialog({
   pending?: boolean | undefined
   onConfirm: () => void
 }) {
+  const m = useMessages()
   const id = useId().replace(/[^a-zA-Z0-9_-]/g, '')
   const dialogId = `confirm-${id}`
   return (
@@ -55,10 +57,10 @@ export function ConfirmDialog({
         <form method="dialog" className="form-actions">
           {/* safe action first: it also receives initial focus */}
           <button type="submit" className="btn" value="cancel" autoFocus>
-            Cancel
+            {m.copy.cancel}
           </button>
           <button type="submit" className="btn btn-danger" value="confirm">
-            {confirmLabel}
+            {confirmLabel ?? m.copy.confirm}
           </button>
         </form>
       </dialog>

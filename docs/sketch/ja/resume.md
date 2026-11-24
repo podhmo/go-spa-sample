@@ -54,8 +54,12 @@ API サーバー部分を移植し、フロントを **SPA として作り直す
   (`ZATUDAN_SERVER`+`ZATUDAN_TOKEN`→`/api/v1`) 両バックエンド。SPA 側の
   wire 差異のみ調整: 返信作成の応答キーは `comment` ではなく `reply`、
   返信 DTO は `api.DiscussionReply` (thread_id 付き)
-- **次の一手**: i18n 方針 (TODO.md 順序の先頭。URL/localStorage/
-  Accept-Language のどれで持つかから。author 表示は残課題)
+- **i18n 完了**: `web/src/i18n.tsx` — localStorage('lang') >
+  navigator.language > 'en'。辞書は `i18n/en.ts` が正 (`Messages` 型)
+  で `ja: typeof en` が欠キーをコンパイル時に弾く。`{name}` プレース
+  ホルダは `fmt()`、時刻は `fmtTimeFor(locale)` (ja は `YYYY年M月D日
+  HH:MM`)。nav に言語スイッチ (`lang-switch`)。`document.lang` 同期済
+- **次の一手**: `cmd/fakeapi` 撤去 → 本番構成 (TODO.md 順序)
 
 ## 残りタスク (`TODO.md` が正)
 
@@ -63,7 +67,7 @@ API サーバー部分を移植し、フロントを **SPA として作り直す
 | --- | --- |
 | discussions/pulls の移植判断 | spec: `docs/ja/features.md` 3.5/3.6。store には残存。API routes は削除済み |
 | `cmd/fakeapi` 撤去 | 疎通スパイク用の残骸 |
-| i18n | 元は en/ja 2ロケール (features.md 3.10)。SPA 側方針未定 |
+| i18n | 完了: localStorage+navigator 解決、`docs/sketch/ja/i18n.md` |
 | 本番構成 | dev proxy の `Bearer dev-token` 注入は開発専用。embed 配信+認証 or 別配備+token |
 | (保留) TanStack Query | 評価済み・見送り。再検討条件は `docs/sketch/ja/tanstack-query.md` |
 

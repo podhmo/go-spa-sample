@@ -4,7 +4,7 @@ import type { PRComment, PRCommit, PullMergeable, PullRequest } from '../api'
 import { ConfirmDialog } from './ConfirmDialog'
 import { CopyButton } from './CopyButton'
 import { submitOnCtrlEnter } from '../enter-submit'
-import { fmtTime } from '../format'
+import { fmt, useFmtTime, useMessages } from '../i18n'
 import { HideDialog } from './DiscussionDetail'
 import { Markdown } from './Markdown'
 import { PullStatusBadge } from './PullList'
@@ -13,18 +13,21 @@ const shortRef = (ref: string) => ref.replace(/^refs\/(heads|remotes|tags)\//, '
 
 // Merge-ability probe result, rendered like the MPA's merge box.
 export function MergeableBadge({ mergeable }: { mergeable: PullMergeable }) {
+  const m = useMessages()
   if (!mergeable) return null
   if (mergeable.status === 'clean') {
-    return <span className="badge badge-pr-open">mergeable</span>
+    return <span className="badge badge-pr-open">{m.pulls.mergeable}</span>
   }
   if (mergeable.status === 'conflicting') {
     return (
       <span className="badge badge-pr-conflict" title={mergeable.files?.join(', ')}>
-        conflicts{mergeable.files?.length ? ` in ${mergeable.files.length} file(s)` : ''}
+        {mergeable.files?.length
+          ? fmt(m.pulls.conflicting, { n: mergeable.files.length })
+          : m.pulls.conflictNoFiles}
       </span>
     )
   }
-  return <span className="badge">mergeability unknown</span>
+  return <span className="badge">{m.pulls.mergeUnknown}</span>
 }
 
 // The merge dialog: method radio (merge/squash/rebase) + optional
@@ -43,6 +46,7 @@ export function MergeDialog({
   // Rebase replays each commit's own message — a custom message would
   // be silently discarded, so the field hides for that method.
   const [method, setMethod] = useReducer((_: string, v: string) => v, 'merge')
+  const mm = useMessages()
   return (
     <>
       <button
@@ -51,7 +55,7 @@ export function MergeDialog({
         {...({ commandfor: dialogId, command: 'show-modal' } as Record<string, string>)}
         disabled={pending}
       >
-        Merge
+        {mm.pulls.merge}
       </button>
       <dialog
         id={dialogId}
@@ -72,9 +76,9 @@ export function MergeDialog({
           d.returnValue = ''
         }}
       >
-        <h2 id={`${dialogId}-title`}>Merge pull request #{pullId}?</h2>
+        <h2 id={`${dialogId}-title`}>{fmt(mm.pulls.mergeTitle, { id: pullId })}</h2>
         <form method="dialog">
-          <div className="field" role="radiogroup" aria-label="Merge method">
+          <div className="field" role="radiogroup" aria-label={mm.pulls.mergeMethod}>
             {(['merge', 'squash', 'rebase'] as const).map((m) => (
               <label key={m} className="merge-method">
                 <input
@@ -85,30 +89,30 @@ export function MergeDialog({
                   onChange={() => setMethod(m)}
                 />{' '}
                 {m === 'merge'
-                  ? 'Create a merge commit'
+                  ? mm.pulls.mergeCommit
                   : m === 'squash'
-                    ? 'Squash and merge'
-                    : 'Rebase and merge'}
+                    ? mm.pulls.mergeSquash
+                    : mm.pulls.mergeRebase}
               </label>
             ))}
           </div>
           {method !== 'rebase' && (
             <div className="field">
-              <label htmlFor={`${dialogId}-message`}>Commit message (optional)</label>
+              <label htmlFor={`${dialogId}-message`}>{mm.pulls.commitMessage}</label>
               <textarea
                 id={`${dialogId}-message`}
                 name="message"
                 rows={3}
-                placeholder="Leave empty for the default message"
+                placeholder={mm.pulls.commitMessagePh}
               />
             </div>
           )}
           <div className="form-actions">
             <button type="submit" className="btn" value="cancel" formNoValidate autoFocus>
-              Cancel
+              {mm.copy.cancel}
             </button>
             <button type="submit" className="btn btn-primary" value="merge">
-              Merge pull request
+              {mm.pulls.mergeConfirm}
             </button>
           </div>
         </form>
@@ -138,6 +142,8 @@ export function PullDetail({
   pending?: boolean
 }) {
   const p = pull
+  const m = useMessages()
+  const fmtTime = useFmtTime()
   return (
     <article className="card issue-detail" id="pull-article">
       <header className="issue-detail-head">
@@ -149,19 +155,16 @@ export function PullDetail({
         </div>
         <p className="issue-meta">
           <code className="pr-ref">{shortRef(p.head)}</code> →{' '}
-          <code className="pr-ref">{shortRef(p.base)}</code> · Opened by{' '}
-          {p.author?.name ?? 'anonymous'}{' '}
+          <code className="pr-ref">{shortRef(p.base)}</code> ·{' '}
+          {fmt(m.pulls.openedBy, { name: p.author?.name ?? m.comments.anonymous })}{' '}
           <time dateTime={p.created_at}>{fmtTime(p.created_at)}</time>
           {p.status === 'merged' && p.merge_method && (
-            <>
-              {' '}
-              · merged via <code>{p.merge_method}</code>
-            </>
+            <> · {fmt(m.pulls.mergedVia, { method: p.merge_method })}</>
           )}
           {p.closed_at && p.status !== 'merged' && (
             <>
               {' '}
-              · closed <time dateTime={p.closed_at}>{fmtTime(p.closed_at)}</time>
+              · {m.pulls.closedAt} <time dateTime={p.closed_at}>{fmtTime(p.closed_at)}</time>
             </>
           )}
         </p>
@@ -174,7 +177,7 @@ export function PullDetail({
         </div>
       ) : (
         <div className="issue-body issue-body-empty">
-          <em>No description provided.</em>
+          <em>{m.pulls.noDescription}</em>
         </div>
       )}
 
@@ -189,7 +192,7 @@ export function PullDetail({
             disabled={pending}
             onClick={() => onSetStatus('closed')}
           >
-            Close
+            {m.pulls.close}
           </button>
         )}
         {onSetStatus && p.status === 'closed' && (
@@ -199,24 +202,24 @@ export function PullDetail({
             disabled={pending}
             onClick={() => onSetStatus('open')}
           >
-            Reopen
+            {m.pulls.reopen}
           </button>
         )}
         <Link className="btn" to="/pulls/$pullId/files" params={{ pullId: String(p.id) }}>
-          Files
+          {m.pulls.files}
         </Link>
         <Link className="btn" to="/pulls/$pullId/edit" params={{ pullId: String(p.id) }}>
-          Edit
+          {m.comments.edit}
         </Link>
         {onCopyMarkdown && (
-          <CopyButton label="Copy as markdown" getText={onCopyMarkdown} pending={pending} />
+          <CopyButton label={m.copy.asMarkdown} getText={onCopyMarkdown} pending={pending} />
         )}
         {onDelete && (
           <ConfirmDialog
-            label="Delete"
-            title={`Delete pull request #${p.id}?`}
-            description={`This permanently removes ${p.title} and all of its comments. This action cannot be undone.`}
-            confirmLabel="Delete pull request"
+            label={m.pulls.delete}
+            title={fmt(m.pulls.deleteTitle, { id: p.id })}
+            description={fmt(m.pulls.deleteBody, { title: p.title })}
+            confirmLabel={m.pulls.deleteConfirm}
             pending={pending}
             onConfirm={onDelete}
           />
@@ -232,10 +235,12 @@ export function PullDetail({
 }
 
 export function PullCommitList({ commits }: { commits: PRCommit[] }) {
+  const m = useMessages()
+  const fmtTime = useFmtTime()
   if (commits.length === 0) return null
   return (
     <section className="pull-commits">
-      <h2>Commits ({commits.length})</h2>
+      <h2>{fmt(m.pulls.commits, { n: commits.length })}</h2>
       <ol className="comment-list" role="list">
         {commits.map((c) => (
           <li className="card comment" key={c.sha}>
@@ -243,7 +248,8 @@ export function PullCommitList({ commits }: { commits: PRCommit[] }) {
               <code className="pr-sha">{c.sha.slice(0, 10)}</code>{' '}
               <span className="comment-author">{c.subject}</span>{' '}
               <span className="muted">
-                by {c.author} <time dateTime={c.date}>{fmtTime(c.date)}</time>
+                {fmt(m.pulls.by, { author: c.author })}{' '}
+                <time dateTime={c.date}>{fmtTime(c.date)}</time>
               </span>
             </header>
           </li>
@@ -271,14 +277,19 @@ export function PRCommentItem({
   onUnhide?: (cid: number) => void
 }) {
   const [editing, setEditing] = useReducer((s: boolean) => !s, false)
+  const m = useMessages()
+  const fmtTime = useFmtTime()
   const id = `comment-${c.id}`
   return (
     <li className={`card comment${c.hidden ? ' comment-hidden' : ''}`} id={id}>
       <header className="comment-meta">
-        <span className="comment-author">{c.author?.name ?? 'anonymous'} commented</span>{' '}
+        <span className="comment-author">
+          {fmt(m.comments.commented, { name: c.author?.name ?? m.comments.anonymous })}
+        </span>{' '}
         {c.path && (
           <>
-            on{' '}
+            {' '}
+            {m.pulls.onFile}{' '}
             <code className="pr-ref">
               {c.path}:{c.line}
             </code>{' '}
@@ -290,22 +301,25 @@ export function PRCommentItem({
         {c.edited_at && (
           <>
             {' '}
-            · <span className="comment-edited">edited</span>
+            · <span className="comment-edited">{m.comments.edited}</span>
           </>
         )}
       </header>
       {c.diff_snippet && !c.hidden && (
-        <pre className="diff-snippet" aria-label="Diff context">
+        <pre className="diff-snippet" aria-label={m.pulls.diffContext}>
           <code>{c.diff_snippet}</code>
         </pre>
       )}
       {c.hidden ? (
         <>
           <p className="comment-hidden-note">
-            This comment was marked as {c.hidden_reason ?? 'hidden'}.
+            {fmt(m.comments.markedAs, {
+              noun: m.comments.nounComment,
+              reason: c.hidden_reason ?? 'hidden',
+            })}
           </p>
           <details className="comment-hidden-body">
-            <summary>show comment</summary>
+            <summary>{fmt(m.comments.show, { noun: m.comments.nounComment })}</summary>
             <div className="comment-body">
               <Markdown text={c.body} />
             </div>
@@ -313,7 +327,7 @@ export function PRCommentItem({
         </>
       ) : editing ? (
         <form
-          aria-label={`edit comment ${c.id}`}
+          aria-label={fmt(m.comments.editFormAria, { noun: m.comments.nounComment, id: c.id })}
           onSubmit={(e) => {
             e.preventDefault()
             const body = String(new FormData(e.currentTarget).get('body') ?? '')
@@ -323,7 +337,7 @@ export function PRCommentItem({
         >
           <div className="field">
             <label htmlFor={`edit-${c.id}`} className="visually-hidden">
-              body
+              {m.comments.bodyLabel}
             </label>
             <textarea
               id={`edit-${c.id}`}
@@ -335,15 +349,15 @@ export function PRCommentItem({
               data-error={`edit-${c.id}-error`}
             />
             <span id={`edit-${c.id}-error`} className="error-msg">
-              Body is required.
+              {m.form.bodyRequired}
             </span>
           </div>
           <div className="form-actions">
             <button type="button" className="btn btn-quiet" onClick={() => setEditing()}>
-              Cancel
+              {m.copy.cancel}
             </button>
             <button type="submit" className="btn btn-primary" disabled={pending}>
-              Save changes
+              {m.form.saveChanges}
             </button>
           </div>
         </form>
@@ -359,9 +373,9 @@ export function PRCommentItem({
               type="button"
               className="comment-action"
               onClick={() => setEditing()}
-              aria-label={`Edit comment ${c.id}`}
+              aria-label={fmt(m.comments.ariaEdit, { noun: m.comments.nounComment, id: c.id })}
             >
-              Edit
+              {m.comments.edit}
             </button>
           )}
           {c.hidden
@@ -371,14 +385,17 @@ export function PRCommentItem({
                   className="comment-action"
                   disabled={pending}
                   onClick={() => onUnhide(c.id)}
-                  aria-label={`Unhide comment ${c.id}`}
+                  aria-label={fmt(m.comments.ariaUnhide, {
+                    noun: m.comments.nounComment,
+                    id: c.id,
+                  })}
                 >
-                  Unhide
+                  {m.comments.unhide}
                 </button>
               )
             : onHide && (
                 <HideDialog
-                  noun="comment"
+                  noun={m.comments.nounComment}
                   itemId={c.id}
                   pending={pending}
                   onHide={(r) => onHide(c.id, r)}
@@ -386,10 +403,10 @@ export function PRCommentItem({
               )}
           {onDelete && (
             <ConfirmDialog
-              label="Delete"
-              title={`Delete comment #${c.id}?`}
-              description="This permanently removes the comment. This action cannot be undone."
-              confirmLabel="Delete comment"
+              label={m.comments.delete}
+              title={fmt(m.comments.deleteTitle, { noun: m.comments.nounComment, id: c.id })}
+              description={m.comments.deleteCommentBody}
+              confirmLabel={fmt(m.comments.deleteConfirm, { noun: m.comments.nounComment })}
               triggerClass="comment-action comment-action-danger"
               pending={pending}
               onConfirm={() => onDelete(c.id)}
@@ -412,8 +429,9 @@ export function PRCommentList({
   onHide?: (cid: number, reason: string) => void
   onUnhide?: (cid: number) => void
 }) {
+  const m = useMessages()
   if (comments.length === 0) {
-    return <p className="muted">No comments yet.</p>
+    return <p className="muted">{m.comments.empty}</p>
   }
   return (
     <ol className="comment-list" role="list">

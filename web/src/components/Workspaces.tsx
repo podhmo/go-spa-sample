@@ -1,5 +1,6 @@
 import { Link } from '@tanstack/react-router'
 import type { Workspace } from '../api'
+import { fmt, useMessages } from '../i18n'
 import { ConfirmDialog } from './ConfirmDialog'
 
 // The MPA's /workspaces index: one row per workspace — slug link, name
@@ -13,8 +14,9 @@ export function WorkspaceList({
   pending?: boolean | undefined
   onDelete: (slug: string) => void
 }) {
+  const m = useMessages()
   if (workspaces.length === 0) {
-    return <p className="empty-state">No workspaces yet.</p>
+    return <p className="empty-state">{m.workspaces.empty}</p>
   }
   const isLast = workspaces.length <= 1
   return (
@@ -29,16 +31,20 @@ export function WorkspaceList({
             {w.description !== '' && <p className="workspace-desc">{w.description}</p>}
           </div>
           <div className="workspace-meta">
-            <span>{w.issue_count} issues</span>
-            <span>{w.discussion_count} discussions</span>
+            <span>{fmt(m.workspaces.issuesCount, { n: w.issue_count })}</span>
+            <span>{fmt(m.workspaces.discussionsCount, { n: w.discussion_count })}</span>
             {isLast ? (
-              <span className="muted">The last remaining workspace cannot be deleted.</span>
+              <span className="muted">{m.workspaces.lastUndeletable}</span>
             ) : (
               <ConfirmDialog
-                label="Delete"
-                title={`Delete workspace ${w.slug}?`}
-                description={`This deletes the workspace w/${w.slug} and everything in it — ${w.issue_count} issues and ${w.discussion_count} discussions. This cannot be undone.`}
-                confirmLabel="Delete workspace"
+                label={m.workspaces.delete}
+                title={fmt(m.workspaces.deleteTitle, { slug: w.slug })}
+                description={fmt(m.workspaces.deleteBody, {
+                  slug: w.slug,
+                  issues: w.issue_count,
+                  discussions: w.discussion_count,
+                })}
+                confirmLabel={m.workspaces.deleteConfirm}
                 pending={pending}
                 onConfirm={() => onDelete(w.slug)}
               />
