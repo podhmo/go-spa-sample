@@ -50,7 +50,28 @@ export type IssueInput = { title: string; body: string; label_ids?: number[] }
 
 export type LabelInput = { name: string; color: string; kind: string; shared: boolean }
 
-export type ApiError = { error: { message: string; fields?: Record<string, string> } }
+export type Workspace = {
+  id: number
+  slug: string
+  name: string
+  description: string
+  issue_count: number
+  discussion_count: number
+  created_at: string
+}
+
+export type WorkspaceInput = { slug: string; name?: string; description?: string }
+
+export type ApiError = {
+  error: {
+    message: string
+    fields?: Record<string, string>
+    // On a cross-scope GET 404 the API names the workspace that actually
+    // owns the resource, so the client can rebase onto /w/{slug}/...
+    // itself (the in-band counterpart of the MPA's 302).
+    workspace?: string
+  }
+}
 
 export class RequestError extends Error {
   status: number
@@ -175,6 +196,14 @@ export const api = {
   // name/kind/scope (the store revives the archived row, updating color).
   archiveLabel: (ws: string, id: number) =>
     fetchJSON<void>(`/api/v1/w/${ws}/labels/${id}`, { method: 'DELETE' }),
+  listWorkspaces: () => fetchJSON<{ workspaces: Workspace[] }>('/api/v1/workspaces'),
+  createWorkspace: (input: WorkspaceInput) =>
+    fetchJSON<{ workspace: Workspace }>('/api/v1/workspaces', {
+      method: 'POST',
+      ...json(input),
+    }),
+  deleteWorkspace: (slug: string) =>
+    fetchJSON<void>(`/api/v1/workspaces/${slug}`, { method: 'DELETE' }),
 }
 
 // The fixed set of valid hide reasons (internal/store/moderation.go).
@@ -187,7 +216,3 @@ export const HIDE_REASONS = [
   'resolved',
   'low-quality',
 ] as const
-
-// Single-workspace shortcut for now — the seeded "default" workspace.
-// Multi-workspace routing (/w/$ws/...) is a later decision.
-export const WS = 'default'
