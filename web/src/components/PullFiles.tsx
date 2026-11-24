@@ -1,5 +1,5 @@
-import { useReducer } from 'react'
-import type { PRCommentInput } from '../api'
+import { useEffect, useReducer, useRef } from 'react'
+import { RequestError, type PRCommentInput } from '../api'
 import { submitOnCtrlEnter } from '../enter-submit'
 
 // Parsed unified diff, one row per source line.
@@ -58,13 +58,14 @@ function unquoteGitPath(p: string): string {
 }
 
 // diffSide reads a `--- a/x` / `+++ b/x` operand, quoted or not.
-// Unquoted operands may end with a separator tab (worktree diffs add a
-// timestamp after it) or a marker space for names ending in blanks.
+// Unquoted operands end at the first tab: git appends one after names
+// that end in a blank (and GNU diff before a timestamp), while names
+// with real tabs are quoted — so spaces are kept, tabs are cut.
 function diffSide(rest: string): string | undefined {
   if (rest === '/dev/null') return undefined
   const q = /^"[ab]\/(?:\\.|[^"])*"$/.exec(rest)
   if (q) return unquoteGitPath(q[0]).slice(2)
-  const u = /^[ab]\/(.+?)\s*$/.exec(rest)
+  const u = /^[ab]\/([^\t]*)/.exec(rest)
   return u?.[1]
 }
 
@@ -80,13 +81,9 @@ function parseDiff(text: string): DiffFile[] {
   // must still consume both counters.
   for (const raw of text.replace(/\n$/, '').split('\n')) {
     if (raw.startsWith('diff --git ')) {
-      const m = /^diff --git ("a\/(?:\\.|[^"])*"|a\/.+) ("b\/(?:\\.|[^"])*"|b\/.+)$/.exec(raw)
+      const m = /^diff --git ("a\/(?:\\.|[^"])*"|a\/.+) ("b\/(?:\\.|[^"])*"|b\/[^\t]+)$/.exec(raw)
       const b = m?.[2]
-      path = b
-        ? b.startsWith('"')
-          ? unquoteGitPath(b).slice(2)
-          : b.slice(2).replace(/\s+$/, '')
-        : ''
+      path = b ? (b.startsWith('"') ? unquoteGitPath(b).slice(2) : b.slice(2)) : ''
       cur = { path, lines: [] }
       files.push(cur)
       inHunk = false
@@ -171,6 +168,12 @@ export function PullFiles({
     (s: FormUI, a: FormAction): FormUI => ({ openAt: s.openAt === a.key ? null : a.key }),
     { openAt: null },
   )
+  // A different diff (force-push, new commits) means an open draft no
+  // longer points at the code it was written against — close it rather
+  // than let a retry attach the old text to whatever now sits there.
+  useEffect(() => {
+    dispatch({ type: 'toggle', key: null })
+  }, [diff])
   const files = parseDiff(diff)
   if (files.length === 0) {
     return <p className="muted">No changes.</p>
@@ -229,6 +232,9 @@ function DiffRow({
   onSubmit: (body: string) => Promise<void> | void
 }) {
   const [postError, setPostError] = useReducer((_: string | null, v: string | null) => v, null)
+  // The disabled button only blocks clicks: Ctrl+Enter (requestSubmit)
+  // still fires, so the send itself must be re-entrant-safe.
+  const sending = useRef(false)
   if (line.kind === 'meta') {
     return (
       <tr className="diff-line diff-meta">
@@ -270,6 +276,8 @@ function DiffRow({
               aria-label={`comment on ${line.path} line ${line.line}`}
               onSubmit={(e) => {
                 e.preventDefault()
+                if (sending.current) return
+                sending.current = true
                 const body = String(new FormData(e.currentTarget).get('body') ?? '')
                 setPostError(null)
                 void (async () => {
@@ -277,7 +285,19 @@ function DiffRow({
                     await onSubmit(body)
                     onToggle()
                   } catch (err) {
-                    setPostError(err instanceof Error ? err.message : 'Comment failed.')
+                    // Field errors name the actual rejection reason
+                    // (e.g. a stale anchor); a bare message just says
+                    // "Validation failed.".
+                    const fields = err instanceof RequestError ? err.apiError?.fields : undefined
+                    setPostError(
+                      fields
+                        ? Object.values(fields).join(' ')
+                        : err instanceof Error
+                          ? err.message
+                          : 'Comment failed.',
+                    )
+                  } finally {
+                    sending.current = false
                   }
                 })()
               }}

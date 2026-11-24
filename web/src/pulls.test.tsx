@@ -272,8 +272,50 @@ describe('route: /pulls/{id}/files', () => {
     await page.getByRole('button', { name: 'Comment on a.txt line 2 (right side)' }).click()
     await page.getByLabelText('comment').fill('draft survives')
     await page.getByRole('button', { name: 'Comment', exact: true }).click()
-    await expect.element(page.getByRole('alert')).toBeInTheDocument()
+    // The field error's reason, not the generic "Validation failed.".
+    await expect
+      .element(page.getByText('Anchor must be a commit on the head branch.'))
+      .toBeInTheDocument()
     expect(page.getByLabelText('comment')).toHaveValue('draft survives')
+  })
+
+  it('anchors deleted lines to the old path of a whitespace rename', async () => {
+    // Renaming "a.txt " to "a.txt": the old operand ends in a space plus
+    // git's tab marker; left-side comments must keep the real old name.
+    const RENAME_DIFF = [
+      'diff --git a/a.txt  b/a.txt',
+      'similarity index 50%',
+      'rename from a.txt ',
+      'rename to a.txt',
+      'index 111..222 100644',
+      '--- a/a.txt \t',
+      '+++ b/a.txt',
+      '@@ -1,2 +1,2 @@',
+      ' one',
+      '-old',
+      '+new',
+    ].join('\n')
+    const requests: { url: string; init?: RequestInit | undefined }[] = []
+    stubAPI((url, init) => {
+      requests.push({ url, init })
+      if (url.endsWith('/diff')) return { body: RENAME_DIFF }
+      if (url.endsWith('/comments') && init?.method === 'POST') {
+        return { body: { comment: prComment({ id: 9 }) } }
+      }
+      return { body: { pull_request: pull(), comments: [], commits: [] } }
+    })
+    renderAt('/pulls/1/files')
+    await page.getByRole('button', { name: 'Comment on a.txt  line 2 (left side)' }).click()
+    await page.getByLabelText('comment').fill('was the old name')
+    await page.getByRole('button', { name: 'Comment', exact: true }).click()
+    await expect
+      .poll(() => requests.find((r) => r.url.endsWith('/comments') && r.init?.method === 'POST'))
+      .toBeTruthy()
+    const post = requests.find((r) => r.url.endsWith('/comments') && r.init?.method === 'POST')
+    expect(JSON.parse(String(post?.init?.body))).toMatchObject({
+      path: 'a.txt ',
+      side: 'left',
+    })
   })
 })
 
