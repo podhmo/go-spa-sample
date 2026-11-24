@@ -250,7 +250,12 @@ function ReplyItem({
   onHide,
   onUnhide,
 }: { reply: DiscussionReply; threadId: number } & ReplyHandlers) {
-  const [ui, dispatch] = useReducer(editReducer, { editing: false, replying: false, draft: '', replyDraft: '' })
+  const [ui, dispatch] = useReducer(editReducer, {
+    editing: false,
+    replying: false,
+    draft: '',
+    replyDraft: '',
+  })
   const m = useMessages()
   const fmtTime = useFmtTime()
   const noun = m.comments.nounReply
@@ -351,7 +356,12 @@ function ThreadItem({
 }: { thread: DiscussionThread } & ThreadHandlers & {
     replyHandlers: ReplyHandlers
   }) {
-  const [ui, dispatch] = useReducer(editReducer, { editing: false, replying: false, draft: '', replyDraft: '' })
+  const [ui, dispatch] = useReducer(editReducer, {
+    editing: false,
+    replying: false,
+    draft: '',
+    replyDraft: '',
+  })
   const m = useMessages()
   const fmtTime = useFmtTime()
   const noun = m.comments.nounThread
