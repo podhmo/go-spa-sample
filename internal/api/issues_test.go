@@ -153,6 +153,33 @@ func TestIssueMarkdown(t *testing.T) {
 	}
 }
 
+func TestCrossWorkspaceScopeHint(t *testing.T) {
+	srv, _ := newServer(t)
+
+	_, out := do(t, srv, "POST", "/api/v1/w/default/issues", `{"title":"x"}`)
+	id := int64(out["issue"].(map[string]any)["id"].(float64))
+	do(t, srv, "POST", "/api/v1/workspaces", `{"slug":"other"}`)
+
+	// GET on the wrong workspace: the 404 names the real slug so a
+	// client can rebase onto /w/{slug}/... itself.
+	code, out := do(t, srv, "GET", fmt.Sprintf("/api/v1/w/other/issues/%d", id), "")
+	if code != http.StatusNotFound {
+		t.Fatalf("cross-ws GET = %d, want 404", code)
+	}
+	if got := out["error"].(map[string]any)["workspace"]; got != "default" {
+		t.Fatalf("cross-ws GET error.workspace = %v, want %q", got, "default")
+	}
+
+	// Mutations stay a bare 404 — no hint inviting a replay elsewhere.
+	code, out = do(t, srv, "PATCH", fmt.Sprintf("/api/v1/w/other/issues/%d", id), `{"title":"y"}`)
+	if code != http.StatusNotFound {
+		t.Fatalf("cross-ws PATCH = %d, want 404", code)
+	}
+	if _, ok := out["error"].(map[string]any)["workspace"]; ok {
+		t.Fatalf("cross-ws PATCH must not carry error.workspace: %v", out)
+	}
+}
+
 func TestIssueValidation(t *testing.T) {
 	srv, _ := newServer(t)
 

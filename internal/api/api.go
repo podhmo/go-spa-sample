@@ -61,6 +61,7 @@ type Store interface {
 	ListDiscussionCategories(ctx context.Context) ([]*store.DiscussionCategory, error)
 	ListWorkspaces(ctx context.Context) ([]*store.Workspace, error)
 	WorkspaceBySlug(ctx context.Context, slug string) (*store.Workspace, error)
+	WorkspaceByID(ctx context.Context, id int64) (*store.Workspace, error)
 	CreateWorkspace(ctx context.Context, in store.WorkspaceInput) (int64, error)
 	DeleteWorkspace(ctx context.Context, slug string) error
 	APITokenUser(ctx context.Context, token string) (*store.User, error)
@@ -308,12 +309,22 @@ func (h *handler) scoped(fn func(http.ResponseWriter, *http.Request, *store.Work
 
 // requireScope replies 404 when the resource belongs to another
 // workspace — the API's slug-mismatch contract (no redirect like HTML).
-func (h *handler) requireScope(w http.ResponseWriter, ws *store.Workspace, realWSID int64) bool {
-	if realWSID != ws.ID {
-		writeError(w, http.StatusNotFound, "Not found.", nil)
-		return false
+// For GET/HEAD the error body carries the real workspace's slug in
+// "workspace" so a client can rebase onto the canonical /w/{slug}/...
+// URL itself (the in-band counterpart of the MPA's 302). Mutations get
+// no hint — a rejected write must not invite a replay elsewhere.
+func (h *handler) requireScope(w http.ResponseWriter, r *http.Request, ws *store.Workspace, realWSID int64) bool {
+	if realWSID == ws.ID {
+		return true
 	}
-	return true
+	e := map[string]any{"message": "Not found."}
+	if r.Method == http.MethodGet || r.Method == http.MethodHead {
+		if real, err := h.store.WorkspaceByID(r.Context(), realWSID); err == nil {
+			e["workspace"] = real.Slug
+		}
+	}
+	writeJSON(w, http.StatusNotFound, map[string]any{"error": e})
+	return false
 }
 
 // storeError maps store sentinel errors to HTTP statuses.

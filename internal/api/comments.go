@@ -70,7 +70,7 @@ func (h *handler) requireIssueComment(w http.ResponseWriter, r *http.Request, ws
 		h.storeError(w, err)
 		return nil, false
 	}
-	if !h.requireScope(w, ws, issue.WorkspaceID) {
+	if !h.requireScope(w, r, ws, issue.WorkspaceID) {
 		return nil, false
 	}
 	c := h.findIssueComment(r, id, cid)
