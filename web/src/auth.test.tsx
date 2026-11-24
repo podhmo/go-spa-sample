@@ -47,8 +47,11 @@ function stubAuth(
       if (url.endsWith('/api/v1/auth/logout') && init?.method === 'POST') {
         // The real endpoint's CSRF gate rejects non-JSON posts — enforce
         // it here so the button can't silently drop the header.
-        const ct = String(new Headers(init.headers).get('content-type') ?? '')
-        if (!ct.toLowerCase().startsWith('application/json')) {
+        // Mirror requireJSON exactly: only `application/json` (or
+        // `application/json;…`), case-insensitive — `application/jsonp`
+        // is rejected server-side too.
+        const ct = String(new Headers(init.headers).get('content-type') ?? '').toLowerCase()
+        if (ct !== 'application/json' && !ct.startsWith('application/json;')) {
           return {
             status: 415,
             body: { error: { message: 'Content-Type must be application/json.' } },
