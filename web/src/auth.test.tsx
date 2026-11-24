@@ -45,6 +45,15 @@ function stubAuth(
         return { status: 422, body: { error: { message: 'Invalid name or password.' } } }
       }
       if (url.endsWith('/api/v1/auth/logout') && init?.method === 'POST') {
+        // The real endpoint's CSRF gate rejects non-JSON posts — enforce
+        // it here so the button can't silently drop the header.
+        const ct = String(new Headers(init.headers).get('content-type') ?? '')
+        if (!ct.toLowerCase().startsWith('application/json')) {
+          return {
+            status: 415,
+            body: { error: { message: 'Content-Type must be application/json.' } },
+          }
+        }
         state.loggedIn = false
         return { status: 204 }
       }
