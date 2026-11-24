@@ -8,6 +8,8 @@ as-is; the frontend is a fresh SPA. See `README.md` for layout.
 
 - `docs/ja/features.md` — full feature spec/acceptance checklist of the
   source app; the porting target reference.
+- `docs/ja/ui-rules.md` — UI conventions consolidated (SPA adaptation of the
+  MPA's rules). Read before touching UI; new UI work must follow it.
 - `docs/sketch/ja/` — decision notes: `environment.md` (setup),
   `dev-workflow.md` (component-first + verification loop),
   `libraries.md` (library usage table + applied modern-web-guidance
