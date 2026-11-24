@@ -2,7 +2,10 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { RouterProvider, createRouter } from '@tanstack/react-router'
 import './index.css'
+import { setupFieldErrorSync } from './a11y'
 import { routeTree } from './routes.tsx'
+
+setupFieldErrorSync()
 
 const router = createRouter({ routeTree })
 

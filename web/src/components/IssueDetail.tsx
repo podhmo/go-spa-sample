@@ -1,4 +1,5 @@
 import type { Comment, Issue } from '../api'
+import { ConfirmDialog } from './ConfirmDialog'
 import { LabelBadge, StatusBadge } from './IssueList'
 
 export function CommentList({ comments }: { comments: Comment[] }) {
@@ -55,9 +56,13 @@ export function IssueDetail({
           </button>
         )}{' '}
         {onDelete && (
-          <button onClick={onDelete} disabled={pending}>
-            delete
-          </button>
+          <ConfirmDialog
+            label="delete"
+            title={`Delete issue #${issue.id}?`}
+            confirmLabel="delete"
+            pending={pending}
+            onConfirm={onDelete}
+          />
         )}
       </header>
       <section>

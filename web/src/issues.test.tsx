@@ -42,7 +42,7 @@ describe('component: IssueForm', () => {
   it('submits entered values', async () => {
     const onSubmit = vi.fn()
     render(<IssueForm onSubmit={onSubmit} />)
-    await page.getByLabelText('Title').fill('hello from test')
+    await page.getByLabelText(/Title/).fill('hello from test')
     await page.getByRole('button', { name: 'create issue' }).click()
     expect(onSubmit).toHaveBeenCalledWith({ title: 'hello from test', body: '' })
   })

@@ -14,8 +14,8 @@
 
 1. **環境セットアップ** (done): context7 MCP / `.agents/skills/` (modern-web-guidance,
    playwright-cli, todo-md) / `@playwright/cli`。詳細は `docs/sketch/ja/environment.md`
-2. **開発前準備** ← いまここ
-3. **開発開始**
+2. **開発前準備** (done)
+3. **開発開始** ← いまここ
 
 ## To Be Implemented
 
@@ -46,8 +46,15 @@ useReducer / Vitest / playwright-cli) を使った試行錯誤が完全に行え
 
 ### 開発 (far goal)
 
-- [ ] **zatudan API サーバーの移植 (issues のみ)**: go-classic-mpa-sample の
-  SQLite store + `/api/v1` 相当ハンドラをこのリポジトリへコピー。
-  まず issue tracker の機能だけから始める (discussions/pulls は後回し)
-- [ ] **SPA 実装 (issues)**: TanStack Router + React。ローカル状態は useReducer
-  (useState 禁止)。サーバー状態の扱い (loader のみ vs TanStack Query) は要決定
+- [x] **zatudan API サーバーの移植 (issues のみ)**: `cmd/zatudan` +
+  `internal/{store,auth,events,export,api}` を移植。MPA向け機能
+  (SSE live updates, `X-Partial` fragments) は移植せず JSON API のみ
+- [x] **SPA 実装 (issues)**: 一覧/詳細/作成/コメント/状態変更/削除を実装・
+  playwright-cli で実サーバー疎通確認済み。modern-web-guidance を適用
+  (ネイティブ `<dialog>` の削除確認、`:user-invalid` + aria 同期、`<search>`)
+- [ ] **discussions/pulls の移植判断**: store には残存。機能 spec は
+  `docs/ja/features.md` 参照
+- [ ] **`cmd/fakeapi` の撤去**: スパイク用コードの整理
+- [ ] **サーバー状態管理の再検討**: loader + `router.invalidate()` 継続か
+  TanStack Query 導入か
+- [ ] **i18n**: UI 文言の日本語化方針

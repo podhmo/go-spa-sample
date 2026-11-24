@@ -52,27 +52,42 @@ const issuesRoute = createRoute({
     return (
       <div>
         <h2>Issues</h2>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault()
-            const fd = new FormData(e.currentTarget)
-            void navigate({
-              to: '/issues',
-              search: {
-                status: String(fd.get('status') ?? ''),
-                q: String(fd.get('q') ?? ''),
-              },
-            })
-          }}
-        >
-          <select name="status" defaultValue={search.status}>
-            <option value="">all</option>
-            <option value="open">open</option>
-            <option value="closed">closed</option>
-          </select>{' '}
-          <input name="q" placeholder="search" defaultValue={search.q} />{' '}
-          <button type="submit">filter</button>
-        </form>
+        <search>
+          <form
+            aria-label="filter issues"
+            onSubmit={(e) => {
+              e.preventDefault()
+              const fd = new FormData(e.currentTarget)
+              void navigate({
+                to: '/issues',
+                search: {
+                  status: String(fd.get('status') ?? ''),
+                  q: String(fd.get('q') ?? ''),
+                },
+              })
+            }}
+          >
+            <label htmlFor="filter-status" className="visually-hidden">
+              Status
+            </label>
+            <select id="filter-status" name="status" defaultValue={search.status}>
+              <option value="">all</option>
+              <option value="open">open</option>
+              <option value="closed">closed</option>
+            </select>{' '}
+            <label htmlFor="filter-q" className="visually-hidden">
+              Search
+            </label>
+            <input
+              id="filter-q"
+              type="search"
+              name="q"
+              placeholder="search"
+              defaultValue={search.q}
+            />{' '}
+            <button type="submit">filter</button>
+          </form>
+        </search>
         <IssueList issues={data.issues} />
         <p>
           {data.total} issues (page {data.page})
@@ -146,7 +161,6 @@ const issueRoute = createRoute({
             })
           }}
           onDelete={() => {
-            if (!window.confirm(`Delete issue #${issue.id}?`)) return
             startTransition(async () => {
               await api.deleteIssue(WS, Number(issueId))
               await navigate({ to: '/issues' })

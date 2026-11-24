@@ -104,3 +104,30 @@ issue tracker のSPA実装で使うライブラリ・スキルの使いどころ
 | CSS | CSS Modules + app.css (`docs/sketch/ja/css.md`) | Panda CSS (将来) |
 | Web標準の実装指針 | modern-web-guidance | — |
 | ライブラリ仕様の確認 | context7 | 公式docs直接 |
+
+## modern-web-guidance 適用パターン (実装済み)
+
+`npx -y modern-web-guidance@latest search/retrieve` で取得したガイドを
+SPA に適用したもの:
+
+- **削除確認はネイティブ `<dialog>`** — `components/ConfirmDialog.tsx`。
+  `commandfor` + `command="show-modal"` の宣言的オープン (Invoker Commands;
+  React の型にまだないので attribute spread で渡す)、閉じる側は
+  `<form method="dialog">` + `returnValue` で判定。安全側の cancel を先に
+  置き初期フォーカスを受けさせる。`closedby="any"` は ref 経由で付与
+  (未対応ブラウザでも Esc/ジェスチャで閉じるため graceful)
+- **フォームエラーの aria 同期** — `src/a11y.ts`。
+  `:user-invalid` の視覚状態と `aria-invalid`/`aria-describedby` を
+  document 直下の delegated listener (blur/input/change/invalid/reset) で
+  同期。エラー表示はフィールド横の `.error-msg` (`data-error` で id 参照、
+  CSS の `:user-invalid ~ .error-msg` で表示制御) + ページ単位の
+  `aria-live="polite"` announcer。サーバー由来のエラーは React 側が
+  `aria-invalid="true"` + `aria-describedby` を直接出す (script は触らない)
+- **`<search>` で絞り込みフォームを囲む**、`type="search"`、
+  visually-hidden label で全コントロールに名前を持たせる
+- **フォーム群に `aria-label`** — ページに複数フォームがあるため
+- **required は `required` 属性 + ラベルの `*` (aria-hidden)**、
+  select の auto-submit はしない (Apply ボタン明示)
+- **CSS**: `font: inherit`/`font-size: max(1rem,1em)`、タップターゲット
+  `min-height: 2.5rem`、`dialog:modal`/`::backdrop` の
+  `overscroll-behavior: contain` (scroll chaining 防止、未対応は無害)
