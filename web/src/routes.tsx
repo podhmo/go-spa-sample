@@ -198,11 +198,16 @@ const newIssueRedirectRoute = createRoute({
 const issueRedirectRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/issues/$issueId',
-  beforeLoad: async ({ params }) => {
+  beforeLoad: async ({ params, location }) => {
     const ws = await homeSlug()
+    // location.hash keeps a #comment-N permalink across the redirect.
     throw redirect(
       ws
-        ? { to: '/w/$ws/issues/$issueId', params: { ws, issueId: params.issueId } }
+        ? {
+            to: '/w/$ws/issues/$issueId',
+            params: { ws, issueId: params.issueId },
+            hash: location.hash,
+          }
         : { to: '/workspaces' },
     )
   },
@@ -263,11 +268,9 @@ const workspacesRoute = createRoute({
             New workspace
           </Link>
         </div>
-        {error && (
-          <p role="alert" className="error-msg">
-            {error}
-          </p>
-        )}
+        {/* em role=alert is the always-visible server-error idiom;
+            .error-msg alone stays hidden (field-sibling reveal only) */}
+        {error && <em role="alert">{error}</em>}
         <WorkspaceList
           workspaces={workspaces}
           pending={isPending}
@@ -283,6 +286,7 @@ const newWorkspaceRoute = createRoute({
   path: '/workspaces/new',
   component: function NewWorkspacePage() {
     const navigate = useNavigate()
+    const router = useRouter()
     const [isPending, startTransition] = useTransition()
     const [errors, setErrors] = useReducer(
       (_: Record<string, string>, e: Record<string, string>) => e,
@@ -305,6 +309,7 @@ const newWorkspaceRoute = createRoute({
             startTransition(async () => {
               try {
                 const { workspace } = await api.createWorkspace(input)
+                void router.invalidate()
                 await navigate({ to: '/w/$ws/issues', params: { ws: workspace.slug } })
               } catch (err) {
                 setErrors(apiFieldErrors(err, 'slug'))
@@ -621,11 +626,12 @@ const editIssueRoute = createRoute({
 const issueRoute = createRoute({
   getParentRoute: () => wsRoute,
   path: '/issues/$issueId',
-  loader: ({ params }) =>
+  loader: ({ params, location }) =>
     scoped(api.getIssue(params.ws, Number(params.issueId)), (real) => {
       throw redirect({
         to: '/w/$ws/issues/$issueId',
         params: { ws: real, issueId: params.issueId },
+        hash: location.hash,
       })
     }),
   component: function IssuePage() {
