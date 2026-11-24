@@ -746,10 +746,17 @@ func labelDelete(ctx context.Context, o Options, args []string) error {
 // openPage builds the web page URL for a resource and opens it in the
 // browser. It needs the server base URL, so remote mode is required.
 func (o Options) openPage(bf *backendFlags, prefix string, id int64) error {
-	if bf.server == "" {
+	// In the split SPA+API deployment the server origin only answers
+	// /api/v1 — ZATUDAN_WEB/--web names the UI origin; --server stays
+	// the fallback for a combined deployment.
+	base := bf.webURL
+	if base == "" {
+		base = bf.server
+	}
+	if base == "" {
 		return usageError{msg: "-w/--web requires --server (or ZATUDAN_SERVER)"}
 	}
-	return o.OpenBrowser(strings.TrimSuffix(bf.server, "/") + prefix + fmt.Sprint(id))
+	return o.OpenBrowser(strings.TrimSuffix(base, "/") + prefix + fmt.Sprint(id))
 }
 
 // validateIssueInput applies the shared validation rules (the same

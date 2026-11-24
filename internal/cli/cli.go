@@ -223,6 +223,13 @@ func (o Options) withDefaults() Options {
 			if err != nil {
 				return nil, nil, err
 			}
+			// Match the server's startup: ensure master data (default
+			// workspace, discussion categories) so a fresh database is
+			// usable without going through the server first.
+			if err := st.SeedMasterData(ctx); err != nil {
+				st.Close()
+				return nil, nil, err
+			}
 			be, err := st.In(ctx, ws)
 			if err != nil {
 				st.Close()
@@ -302,6 +309,7 @@ type backendFlags struct {
 	db     string
 	server string
 	token  string
+	webURL string
 	ws     string
 }
 
@@ -310,6 +318,11 @@ func (o Options) addBackendFlags(fs *flag.FlagSet) *backendFlags {
 	fs.StringVar(&b.db, "db", o.Getenv("ZATUDAN_DB"), "SQLite database file for local mode (env ZATUDAN_DB, default zatudan.db)")
 	fs.StringVar(&b.server, "server", o.Getenv("ZATUDAN_SERVER"), "server base URL for remote mode (env ZATUDAN_SERVER)")
 	fs.StringVar(&b.token, "token", o.Getenv("ZATUDAN_TOKEN"), "Bearer token for remote mode (env ZATUDAN_TOKEN)")
+	// --help prints every flag's default; the token is a credential, so
+	// blank the recorded default — the flag keeps its value, the help
+	// text keeps the env name as the discoverable way to set it.
+	fs.Lookup("token").DefValue = ""
+	fs.StringVar(&b.webURL, "web-url", o.Getenv("ZATUDAN_WEB"), "web UI base URL for -w/--web links (env ZATUDAN_WEB, default --server)")
 	fs.StringVar(&b.ws, "workspace", o.Getenv("ZATUDAN_WORKSPACE"), `workspace slug for issue/discussion commands (env ZATUDAN_WORKSPACE, default "default")`)
 	return b
 }
@@ -336,7 +349,25 @@ func (b *backendFlags) dbPath() string {
 // selects remote mode, anything else opens the local database. The
 // returned io.Closer is nil for remote backends.
 func (o Options) backend(ctx context.Context, b *backendFlags) (Backend, io.Closer, error) {
-	return o.backendIn(ctx, b, b.wsSlug())
+	ws := b.wsSlug()
+	if b.server == "" && b.ws == "" {
+		// "default" may have been deleted or the database may not have
+		// it yet — fall back to the first workspace, like the SPA's
+		// homeSlug rule. An explicit --workspace still fails loudly.
+		if ub, ucloser, err := o.backendIn(ctx, b, ""); err == nil {
+			if wss, err := ub.ListWorkspaces(ctx); err == nil && len(wss) > 0 {
+				ws = wss[0].Slug
+				for _, w := range wss {
+					if w.Slug == store.DefaultWorkspaceSlug {
+						ws = w.Slug
+						break
+					}
+				}
+			}
+			closeQuietly(ucloser)
+		}
+	}
+	return o.backendIn(ctx, b, ws)
 }
 
 // backendIn opens the Backend scoped to an explicit workspace slug; ws==""
