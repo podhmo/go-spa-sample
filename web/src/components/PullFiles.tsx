@@ -168,13 +168,20 @@ export function PullFiles({
     (s: FormUI, a: FormAction): FormUI => ({ openAt: s.openAt === a.key ? null : a.key }),
     { openAt: null },
   )
-  // A different diff (force-push, new commits) means an open draft no
-  // longer points at the code it was written against — close it rather
-  // than let a retry attach the old text to whatever now sits there.
-  useEffect(() => {
-    dispatch({ type: 'toggle', key: null })
-  }, [diff])
   const files = parseDiff(diff)
+  // A different diff (force-push, new commits) can shift every row. An
+  // open draft whose anchor row disappeared no longer points at real
+  // code — close it rather than let a retry attach the old text to
+  // whatever now sits there. The same anchor row keeps the draft.
+  useEffect(() => {
+    if (ui.openAt === null) return
+    const alive = files.some((f) =>
+      f.lines.some((l, i) => `${f.path}:${l.side}:${l.line ?? i}` === ui.openAt),
+    )
+    if (!alive) dispatch({ type: 'toggle', key: null })
+    // `files` reparses every render; diff + openAt are the triggers.
+    // oxlint-disable-next-line react/exhaustive-deps
+  }, [diff, ui.openAt])
   if (files.length === 0) {
     return <p className="muted">No changes.</p>
   }

@@ -279,6 +279,38 @@ describe('route: /pulls/{id}/files', () => {
     expect(page.getByLabelText('comment')).toHaveValue('draft survives')
   })
 
+  it('ignores a second Ctrl+Enter while the first comment is in flight', async () => {
+    let posts = 0
+    let release: (() => void) | undefined
+    const gate = new Promise<void>((r) => {
+      release = r
+    })
+    stubAPI((url, init) => {
+      if (url.endsWith('/diff')) return { body: DIFF }
+      if (url.endsWith('/comments') && init?.method === 'POST') {
+        posts++
+        return gate.then(() => ({ body: { comment: prComment({ id: 9 }) } }))
+      }
+      return { body: { pull_request: pull(), comments: [], commits: [] } }
+    })
+    renderAt('/pulls/1/files')
+    await page.getByRole('button', { name: 'Comment on a.txt line 2 (right side)' }).click()
+    const ta = page.getByLabelText('comment')
+    await ta.fill('one shot')
+    // The disabled Comment button does not stop requestSubmit: two real
+    // keydowns while the first POST is still pending must post once.
+    const ctrlEnter = () =>
+      ta
+        .element()
+        .dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', ctrlKey: true, bubbles: true }))
+    ctrlEnter()
+    ctrlEnter()
+    await expect.poll(() => posts).toBe(1)
+    release?.()
+    await expect.poll(() => page.getByLabelText('comment').elements().length).toBe(0)
+    expect(posts).toBe(1)
+  })
+
   it('anchors deleted lines to the old path of a whitespace rename', async () => {
     // Renaming "a.txt " to "a.txt": the old operand ends in a space plus
     // git's tab marker; left-side comments must keep the real old name.
