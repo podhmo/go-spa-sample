@@ -1,7 +1,7 @@
 import { page } from 'vitest/browser'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { render } from 'vitest-browser-react'
-import type { Comment, Issue } from './api'
+import type { Comment, Issue, Label } from './api'
 import { IssueForm } from './components/forms'
 import { IssueList } from './components/IssueList'
 import { renderAt, stubAPI } from './test-utils'
@@ -24,6 +24,16 @@ const comment = (over: Partial<Comment> = {}): Comment => ({
   author: null,
   created_at: '2026-01-01T00:00:00Z',
   hidden: false,
+  ...over,
+})
+
+const label = (over: Partial<Label> = {}): Label => ({
+  id: 1,
+  name: 'Bug',
+  color: '#d73a4a',
+  kind: 'issue',
+  workspace_id: null,
+  archived: false,
   ...over,
 })
 
@@ -51,6 +61,8 @@ describe('component: IssueForm', () => {
 describe('route: /issues', () => {
   it('shows issues fetched through the loader', async () => {
     stubAPI((url) => {
+      if (url.includes('/labels'))
+        return { body: { labels: [label({ name: 'Bug' }), label({ id: 2, name: 'Feature' })] } }
       expect(url).toContain('/api/v1/w/default/issues')
       return {
         body: {
@@ -64,12 +76,13 @@ describe('route: /issues', () => {
     renderAt('/issues')
     await expect.element(page.getByText(/from api/)).toBeInTheDocument()
     await expect.element(page.getByText(/second/)).toBeInTheDocument()
-    await expect.element(page.getByText('2 issues (page 1)')).toBeInTheDocument()
+    await expect.element(page.getByText('2 issues (page 1 / 1)')).toBeInTheDocument()
   })
 
   it('passes search params to the API', async () => {
     const calls: string[] = []
     stubAPI((url) => {
+      if (url.includes('/labels')) return { body: { labels: [] } }
       calls.push(url)
       return { body: { issues: [], total: 0, page: 1, per_page: 20 } }
     })
@@ -77,6 +90,48 @@ describe('route: /issues', () => {
     await expect.element(page.getByText('No issues.')).toBeInTheDocument()
     expect(calls[0]).toContain('status=closed')
     expect(calls[0]).toContain('q=bug')
+  })
+
+  it('puts label/sort/page filters in the URL and sends them to the API', async () => {
+    const calls: string[] = []
+    stubAPI((url) => {
+      if (url.includes('/labels'))
+        return { body: { labels: [label({ name: 'Bug' }), label({ id: 2, name: 'Feature' })] } }
+      calls.push(url)
+      return {
+        body: {
+          issues: [issue({ title: 'filtered' })],
+          total: 25,
+          page: 2,
+          per_page: 20,
+        },
+      }
+    })
+    renderAt('/issues?label=Bug&sort=oldest&page=2')
+    await expect.element(page.getByText(/filtered/)).toBeInTheDocument()
+    expect(calls[0]).toContain('label=Bug')
+    expect(calls[0]).toContain('sort=oldest')
+    expect(calls[0]).toContain('page=2')
+    // label select is populated from the labels endpoint
+    await expect.element(page.getByRole('option', { name: 'Feature' })).toBeInTheDocument()
+    // page 2 of 2 shows a prev link back to page 1
+    await expect.element(page.getByRole('link', { name: 'prev' })).toBeInTheDocument()
+  })
+
+  it('navigates to the next page via the pagination link', async () => {
+    const calls: string[] = []
+    stubAPI((url) => {
+      if (url.includes('/labels')) return { body: { labels: [] } }
+      calls.push(url)
+      return {
+        body: { issues: [issue({ title: 'row' })], total: 25, page: 1, per_page: 20 },
+      }
+    })
+    renderAt('/issues')
+    await page.getByRole('link', { name: 'next' }).click()
+    // the page=2 request proves the link drove a URL-driven loader refetch
+    await expect.poll(() => calls.some((u) => u.includes('page=2'))).toBe(true)
+    await expect.element(page.getByText(/25 issues \(page 1 \/ 2\)/)).toBeInTheDocument()
   })
 })
 
