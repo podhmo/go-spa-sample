@@ -1,42 +1,86 @@
 import { Link } from '@tanstack/react-router'
-import type { Issue, Label } from '../api'
+import type { Issue, IssueListFilter, Label } from '../api'
+import { fmtTime, labelStyle } from '../format'
 
 export function StatusBadge({ status }: { status: Issue['status'] }) {
-  return <span data-status={status}>{status}</span>
+  return <span className={`badge badge-${status}`}>{status === 'open' ? 'Open' : 'Closed'}</span>
 }
 
 export function LabelBadge({ label }: { label: Label }) {
   return (
-    <span
-      style={{
-        backgroundColor: label.color,
-        color: 'black',
-        borderRadius: '0.25rem',
-        padding: '0 0.4em',
-        fontSize: '0.85em',
-      }}
-    >
+    <span className="label-badge" style={labelStyle(label)}>
       {label.name}
     </span>
   )
 }
 
-export function IssueList({ issues }: { issues: Issue[] }) {
+export function IssueList({
+  issues,
+  filtered,
+  search,
+}: {
+  issues: Issue[]
+  // Whether a filter (other than the status tabs) is active — picks the
+  // MPA's filtered empty state ("No issues match the current filters.")
+  // over the blank-slate one.
+  filtered?: boolean | undefined
+  // Current URL filters — label badges re-filter the list through them,
+  // like the MPA's labelURL. Optional for standalone component tests.
+  search?: IssueListFilter | undefined
+}) {
   if (issues.length === 0) {
-    return <p>No issues.</p>
+    if (filtered) {
+      return (
+        <div className="empty-state">
+          <p className="empty-lead">No issues match the current filters.</p>
+          <p>
+            Try a different keyword or <Link to="/issues">clear the filters</Link>.
+          </p>
+        </div>
+      )
+    }
+    return (
+      <div className="empty-state">
+        <p className="empty-lead">No issues here yet.</p>
+        <p>
+          <Link className="btn btn-primary" to="/issues/new">
+            Create the first issue
+          </Link>
+        </p>
+      </div>
+    )
   }
   return (
-    <ul>
+    <ul className="issue-list" role="list">
       {issues.map((issue) => (
-        <li key={issue.id}>
-          <Link to="/issues/$issueId" params={{ issueId: String(issue.id) }}>
-            #{issue.id} {issue.title}
-          </Link>{' '}
-          <StatusBadge status={issue.status} />{' '}
-          {issue.labels.map((l) => (
-            <LabelBadge key={l.id} label={l} />
-          ))}{' '}
-          {issue.author ? `by ${issue.author.name}` : ''}
+        <li className="issue-row" key={issue.id}>
+          <div className="issue-row-main">
+            <Link
+              className="issue-title"
+              to="/issues/$issueId"
+              params={{ issueId: String(issue.id) }}
+            >
+              {issue.title}
+            </Link>
+            <span className="issue-num">#{issue.id}</span>
+          </div>
+          <div className="issue-row-meta">
+            <StatusBadge status={issue.status} />
+            {issue.labels.map((l) => (
+              <Link
+                className="label-badge"
+                style={labelStyle(l)}
+                key={l.id}
+                to="/issues"
+                search={{ ...search, label: l.name, page: undefined }}
+              >
+                {l.name}
+              </Link>
+            ))}
+            <time className="issue-time" dateTime={issue.created_at}>
+              opened {fmtTime(issue.created_at)}
+            </time>
+          </div>
         </li>
       ))}
     </ul>
