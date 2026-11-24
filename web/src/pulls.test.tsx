@@ -332,7 +332,9 @@ describe('route: /pulls/{id}/files', () => {
     await page.getByLabelText('comment').fill('keep me')
     await page.getByRole('button', { name: 'Comment', exact: true }).click()
     await expect.element(page.getByRole('alert')).toBeInTheDocument()
-    diff = DIFF.replace('+added line', ' added line')
+    // The add turns into context: the hunk keeps its rows, so both
+    // counters grow to match what git would actually emit.
+    diff = DIFF.replace('@@ -1,2 +1,3 @@', '@@ -1,3 +1,3 @@').replace('+added line', ' added line')
     await router.invalidate()
     expect(page.getByLabelText('comment')).toHaveValue('keep me')
   })
