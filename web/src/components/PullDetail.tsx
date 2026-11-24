@@ -205,7 +205,12 @@ export function PullDetail({
             {m.pulls.reopen}
           </button>
         )}
-        <Link className="btn" to="/pulls/$pullId/files" params={{ pullId: String(p.id) }}>
+        <Link
+          preload={false}
+          className="btn"
+          to="/pulls/$pullId/files"
+          params={{ pullId: String(p.id) }}
+        >
           {m.pulls.files}
         </Link>
         <Link className="btn" to="/pulls/$pullId/edit" params={{ pullId: String(p.id) }}>

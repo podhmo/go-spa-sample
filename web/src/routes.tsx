@@ -1704,7 +1704,7 @@ const editPullRoute = createRoute({
           initial={{ title: pull_request.title, body: pull_request.body }}
           submitLabel={m.form.saveChanges}
           cancelLink={
-            <Link className="btn btn-quiet" to="/pulls/$pullId" params={{ pullId }}>
+            <Link preload={false} className="btn btn-quiet" to="/pulls/$pullId" params={{ pullId }}>
               {m.copy.cancel}
             </Link>
           }
@@ -1755,7 +1755,7 @@ const pullFilesRoute = createRoute({
               </Link>
             </li>
             <li>
-              <Link to="/pulls/$pullId" params={{ pullId }}>
+              <Link preload={false} to="/pulls/$pullId" params={{ pullId }}>
                 #{pull_request.id}
               </Link>
             </li>
@@ -1771,7 +1771,7 @@ const pullFilesRoute = createRoute({
           <h1>
             {pull_request.title} <span className="issue-num">#{pull_request.id}</span>
           </h1>
-          <Link className="btn" to="/pulls/$pullId" params={{ pullId }}>
+          <Link preload={false} className="btn" to="/pulls/$pullId" params={{ pullId }}>
             {m.pulls.conversation}
           </Link>
         </div>

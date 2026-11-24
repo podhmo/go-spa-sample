@@ -47,7 +47,12 @@ export function PullList({
       {pulls.map((p) => (
         <li className="issue-row" key={p.id}>
           <div className="issue-row-main">
-            <Link className="issue-title" to="/pulls/$pullId" params={{ pullId: String(p.id) }}>
+            <Link
+              preload={false}
+              className="issue-title"
+              to="/pulls/$pullId"
+              params={{ pullId: String(p.id) }}
+            >
               {p.title}
             </Link>
             <span className="issue-num">#{p.id}</span>
