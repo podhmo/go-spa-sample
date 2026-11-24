@@ -1,6 +1,6 @@
 import { page } from 'vitest/browser'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import type { Comment, Issue, Label, LabelInput } from './api'
+import type { Comment, Issue, Label, LabelInput, Workspace } from './api'
 import { IssueForm } from './components/forms'
 import { IssueList } from './components/IssueList'
 import { renderAt, renderWithRouter, stubAPI } from './test-utils'
@@ -41,9 +41,20 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
+const workspace = (over: Partial<Workspace> = {}): Workspace => ({
+  id: 1,
+  slug: 'default',
+  name: 'default',
+  description: '',
+  issue_count: 0,
+  discussion_count: 0,
+  created_at: '2026-01-01T00:00:00Z',
+  ...over,
+})
+
 describe('component: IssueList', () => {
   it('renders issues and an empty state', async () => {
-    renderWithRouter(<IssueList issues={[]} />)
+    renderWithRouter(<IssueList issues={[]} ws="default" />)
     await expect.element(page.getByText('No issues here yet.')).toBeInTheDocument()
   })
 })
@@ -73,7 +84,7 @@ describe('route: /issues', () => {
         },
       }
     })
-    renderAt('/issues')
+    renderAt('/w/default/issues')
     await expect.element(page.getByText(/from api/)).toBeInTheDocument()
     await expect.element(page.getByText(/second/)).toBeInTheDocument()
     await expect.element(page.getByText('Showing 1–2 of 2 issues')).toBeInTheDocument()
@@ -86,7 +97,7 @@ describe('route: /issues', () => {
       calls.push(url)
       return { body: { issues: [], total: 0, page: 1, per_page: 20 } }
     })
-    renderAt('/issues?status=closed&q=bug')
+    renderAt('/w/default/issues?status=closed&q=bug')
     await expect.element(page.getByText('No issues match the current filters.')).toBeInTheDocument()
     expect(calls[0]).toContain('status=closed')
     expect(calls[0]).toContain('q=bug')
@@ -107,7 +118,7 @@ describe('route: /issues', () => {
         },
       }
     })
-    renderAt('/issues?label=Bug&sort=oldest&page=2')
+    renderAt('/w/default/issues?label=Bug&sort=oldest&page=2')
     await expect.element(page.getByText(/filtered/)).toBeInTheDocument()
     expect(calls[0]).toContain('label=Bug')
     expect(calls[0]).toContain('sort=oldest')
@@ -127,7 +138,7 @@ describe('route: /issues', () => {
         body: { issues: [issue({ title: 'row' })], total: 25, page: 1, per_page: 20 },
       }
     })
-    renderAt('/issues')
+    renderAt('/w/default/issues')
     await page.getByRole('link', { name: 'Next' }).click()
     // the page=2 request proves the link drove a URL-driven loader refetch
     await expect.poll(() => calls.some((u) => u.includes('page=2'))).toBe(true)
@@ -145,7 +156,7 @@ describe('route: /issues/$issueId/edit', () => {
       if (init?.method === 'PATCH') return { body: { issue: issue({ title: 'renamed' }) } }
       return { body: { issue: issue(), comments: [] } }
     })
-    renderAt('/issues/1/edit')
+    renderAt('/w/default/issues/1/edit')
     const title = page.getByLabelText(/Title/)
     await expect.element(title).toHaveValue('first issue')
     await title.fill('renamed')
@@ -181,7 +192,7 @@ describe('route: /issues/$issueId', () => {
         },
       }
     })
-    renderAt('/issues/1')
+    renderAt('/w/default/issues/1')
     // the delete dialog's description also contains the title — match the
     // heading only
     await expect.element(page.getByRole('heading', { name: /detail page/ })).toBeInTheDocument()
@@ -196,7 +207,7 @@ describe('route: /issues/$issueId', () => {
 
   it('each comment has a #comment-N anchor and a permalink button', async () => {
     stubAPI(() => ({ body: { issue: issue(), comments: [comment()] } }))
-    renderAt('/issues/1')
+    renderAt('/w/default/issues/1')
     await expect.element(page.getByText('a comment')).toBeInTheDocument()
     expect(document.getElementById('comment-1')).not.toBeNull()
     await expect.element(page.getByRole('button', { name: 'copy link' })).toBeInTheDocument()
@@ -222,7 +233,7 @@ describe('route: /issues/$issueId', () => {
         },
       }
     })
-    renderAt('/issues/1')
+    renderAt('/w/default/issues/1')
     await expect.element(page.getByText('a comment')).toBeInTheDocument()
     await page.getByRole('button', { name: 'Edit comment 1' }).click()
     await page.getByLabelText('comment body').fill('edited body')
@@ -240,7 +251,7 @@ describe('route: /issues/$issueId', () => {
       requests.push({ url, init })
       return { body: { issue: issue(), comments: [comment()] } }
     })
-    renderAt('/issues/1')
+    renderAt('/w/default/issues/1')
     await expect.element(page.getByText('a comment')).toBeInTheDocument()
     // the comment's delete trigger lives inside its <li> (the issue's
     // own delete button is in the header)
@@ -270,7 +281,7 @@ describe('route: /issues/$issueId', () => {
         },
       }
     })
-    renderAt('/issues/1')
+    renderAt('/w/default/issues/1')
     await expect.element(page.getByText('a comment')).toBeInTheDocument()
 
     // hide via the reason dialog
@@ -296,7 +307,7 @@ describe('route: /issues/$issueId', () => {
         comments: [comment({ body: '- [x] done' })],
       },
     }))
-    renderAt('/issues/1')
+    renderAt('/w/default/issues/1')
     await expect.element(page.getByText('bold')).toBeInTheDocument()
     expect(document.querySelector('article strong')?.textContent).toBe('bold')
     // raw HTML is escaped, unsafe hrefs stripped; task list rendered
@@ -315,7 +326,7 @@ describe('route: /issues/$issueId', () => {
       return { body: { issue: issue(), comments: [] } }
     })
     const writeText = vi.spyOn(navigator.clipboard, 'writeText').mockResolvedValue(undefined)
-    renderAt('/issues/1')
+    renderAt('/w/default/issues/1')
     await page.getByRole('button', { name: 'Copy as markdown' }).click()
     await expect.element(page.getByText('copied')).toBeInTheDocument()
     expect(calls.some((u) => u.endsWith('/issues/1/markdown'))).toBe(true)
@@ -352,7 +363,7 @@ describe('route: /labels', () => {
       }
       return { body: { labels: active } }
     })
-    renderAt('/labels')
+    renderAt('/w/default/labels')
     // grouped by kind
     await expect.element(page.getByText('Issue labels')).toBeInTheDocument()
     await expect.element(page.getByText('Bug')).toBeInTheDocument()
@@ -389,10 +400,112 @@ describe('route: /labels', () => {
   })
 })
 
+describe('workspace routing', () => {
+  it('redirects workspace-less URLs to the default workspace', async () => {
+    const calls: string[] = []
+    stubAPI((url) => {
+      calls.push(url)
+      if (url.endsWith('/api/v1/workspaces')) return { body: { workspaces: [workspace()] } }
+      if (url.includes('/labels')) return { body: { labels: [] } }
+      return { body: { issues: [issue({ title: 'landed' })], total: 1, page: 1, per_page: 20 } }
+    })
+    renderAt('/issues?q=hi')
+    await expect.element(page.getByText(/landed/)).toBeInTheDocument()
+    // resolved to /w/default/issues and the search params survived
+    const listCall = calls.find((u) => u.includes('/w/default/issues'))
+    expect(listCall).toContain('q=hi')
+  })
+
+  it('rebases a cross-workspace GET onto the owning workspace', async () => {
+    const calls: string[] = []
+    stubAPI((url) => {
+      calls.push(url)
+      if (url.includes('/w/other/')) {
+        return { status: 404, body: { error: { message: 'Not found.', workspace: 'default' } } }
+      }
+      return { body: { issue: issue({ title: 'real home' }), comments: [] } }
+    })
+    renderAt('/w/other/issues/1')
+    await expect.element(page.getByRole('heading', { name: /real home/ })).toBeInTheDocument()
+    expect(calls.some((u) => u.includes('/w/default/issues/1'))).toBe(true)
+  })
+
+  it('shows the not-found page for an unknown workspace slug', async () => {
+    stubAPI(() => ({ status: 404, body: { error: { message: 'Not found.' } } }))
+    renderAt('/w/nope/issues')
+    await expect.element(page.getByText('404 — not found')).toBeInTheDocument()
+  })
+})
+
+describe('route: /workspaces', () => {
+  it('lists workspaces and deletes one through the confirm dialog', async () => {
+    const requests: { url: string; init?: RequestInit | undefined }[] = []
+    const wss = [
+      workspace(),
+      workspace({ id: 2, slug: 'sandbox', name: 'Sandbox', issue_count: 3 }),
+    ]
+    stubAPI((url, init) => {
+      requests.push({ url, init })
+      if (init?.method === 'DELETE') {
+        wss.splice(1, 1)
+        return { status: 204 }
+      }
+      return { body: { workspaces: wss } }
+    })
+    renderAt('/workspaces')
+    await expect.element(page.getByText('w/default')).toBeInTheDocument()
+    await expect.element(page.getByText('Sandbox')).toBeInTheDocument()
+    await expect.element(page.getByText('3 issues')).toBeInTheDocument()
+
+    await page
+      .getByRole('listitem')
+      .filter({ hasText: 'w/sandbox' })
+      .getByRole('button', { name: 'Delete' })
+      .click()
+    await page.getByRole('dialog').getByRole('button', { name: 'Delete workspace' }).click()
+    await expect
+      .poll(() => requests.find((r) => r.init?.method === 'DELETE')?.url)
+      .toContain('/api/v1/workspaces/sandbox')
+    await expect.element(page.getByText('w/sandbox')).not.toBeInTheDocument()
+  })
+
+  it('disables deletion of the last remaining workspace', async () => {
+    stubAPI(() => ({ body: { workspaces: [workspace()] } }))
+    renderAt('/workspaces')
+    await expect
+      .element(page.getByText('The last remaining workspace cannot be deleted.'))
+      .toBeInTheDocument()
+    expect(page.getByRole('button', { name: 'Delete' }).query()).toBeNull()
+  })
+
+  it('creates a workspace and enters it', async () => {
+    const requests: { url: string; init?: RequestInit | undefined }[] = []
+    stubAPI((url, init) => {
+      requests.push({ url, init })
+      if (init?.method === 'POST' && url.endsWith('/api/v1/workspaces')) {
+        return { status: 201, body: { workspace: workspace({ id: 2, slug: 'newws' }) } }
+      }
+      if (url.includes('/labels')) return { body: { labels: [] } }
+      return { body: { issues: [], total: 0, page: 1, per_page: 20 } }
+    })
+    renderAt('/workspaces/new')
+    await page.getByLabelText(/Slug/).fill('newws')
+    await page.getByRole('button', { name: 'Create workspace' }).click()
+    // lands inside the new workspace's issue list
+    await expect.poll(() => requests.some((r) => r.url.includes('/w/newws/issues'))).toBe(true)
+    const post = requests.find((r) => r.init?.method === 'POST')
+    expect(JSON.parse(String(post?.init?.body))).toEqual({
+      slug: 'newws',
+      name: '',
+      description: '',
+    })
+  })
+})
+
 describe('404 handling', () => {
   it('shows the not-found page for a missing issue', async () => {
     stubAPI(() => ({ status: 404, body: { error: { message: 'Not found.' } } }))
-    renderAt('/issues/999')
+    renderAt('/w/default/issues/999')
     await expect.element(page.getByText('404 — not found')).toBeInTheDocument()
   })
 
