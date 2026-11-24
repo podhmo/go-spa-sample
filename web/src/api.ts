@@ -106,7 +106,10 @@ export const api = {
   createIssue: (ws: string, input: IssueInput) =>
     fetchJSON<{ issue: Issue }>(`/api/v1/w/${ws}/issues`, { method: 'POST', ...json(input) }),
   updateIssue: (ws: string, id: number, input: Partial<IssueInput>) =>
-    fetchJSON<{ issue: Issue }>(`/api/v1/w/${ws}/issues/${id}`, { method: 'PATCH', ...json(input) }),
+    fetchJSON<{ issue: Issue }>(`/api/v1/w/${ws}/issues/${id}`, {
+      method: 'PATCH',
+      ...json(input),
+    }),
   setIssueStatus: (ws: string, id: number, status: 'open' | 'closed') =>
     fetchJSON<{ issue: Issue }>(`/api/v1/w/${ws}/issues/${id}/status`, {
       method: 'POST',

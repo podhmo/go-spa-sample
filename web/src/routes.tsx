@@ -124,7 +124,8 @@ const newIssueRoute = createRoute({
               } catch (err) {
                 setErrors(
                   err instanceof Error && 'apiError' in err
-                    ? ((err as { apiError: { fields?: Record<string, string> } }).apiError?.fields ?? {
+                    ? ((err as { apiError: { fields?: Record<string, string> } }).apiError
+                        ?.fields ?? {
                         title: err.message,
                       })
                     : { title: String(err) },
@@ -181,9 +182,4 @@ const issueRoute = createRoute({
   },
 })
 
-export const routeTree = rootRoute.addChildren([
-  indexRoute,
-  issuesRoute,
-  newIssueRoute,
-  issueRoute,
-])
+export const routeTree = rootRoute.addChildren([indexRoute, issuesRoute, newIssueRoute, issueRoute])

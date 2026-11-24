@@ -1,14 +1,16 @@
 {
   "name": "web",
-  "private": true,
   "version": "0.0.0",
+  "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
     "test": "vitest run",
     "lint": "oxlint",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "format": "oxfmt",
+    "format:check": "oxfmt --check"
   },
   "dependencies": {
     "@tanstack/react-router": "^1.170.46",
@@ -24,6 +26,7 @@
     "@vitejs/plugin-react": "^6.1.2",
     "@vitest/browser-playwright": "^5.1.1",
     "jsdom": "^31.0.1",
+    "oxfmt": "^0.79.0",
     "oxlint": "^1.90.0",
     "playwright": "^1.65.1",
     "typescript": "~7.0.2",
