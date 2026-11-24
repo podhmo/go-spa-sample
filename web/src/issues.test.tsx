@@ -54,7 +54,7 @@ describe('component: IssueForm', () => {
     render(<IssueForm onSubmit={onSubmit} />)
     await page.getByLabelText(/Title/).fill('hello from test')
     await page.getByRole('button', { name: 'create issue' }).click()
-    expect(onSubmit).toHaveBeenCalledWith({ title: 'hello from test', body: '' })
+    expect(onSubmit).toHaveBeenCalledWith({ title: 'hello from test', body: '', label_ids: [] })
   })
 })
 
@@ -132,6 +132,35 @@ describe('route: /issues', () => {
     // the page=2 request proves the link drove a URL-driven loader refetch
     await expect.poll(() => calls.some((u) => u.includes('page=2'))).toBe(true)
     await expect.element(page.getByText(/25 issues \(page 1 \/ 2\)/)).toBeInTheDocument()
+  })
+})
+
+describe('route: /issues/$issueId/edit', () => {
+  it('loads current values and PATCHes title/body/label_ids', async () => {
+    const requests: { url: string; init?: RequestInit }[] = []
+    stubAPI((url, init) => {
+      requests.push({ url, init })
+      if (url.includes('/labels'))
+        return { body: { labels: [label({ name: 'Bug' }), label({ id: 2, name: 'Feature' })] } }
+      if (init?.method === 'PATCH') return { body: { issue: issue({ title: 'renamed' }) } }
+      return { body: { issue: issue(), comments: [] } }
+    })
+    renderAt('/issues/1/edit')
+    const title = page.getByLabelText(/Title/)
+    await expect.element(title).toHaveValue('first issue')
+    await title.fill('renamed')
+    await page.getByRole('checkbox', { name: 'Feature' }).click()
+    await page.getByRole('button', { name: 'save' }).click()
+
+    // navigated back to the detail page — proves the PATCH ran first
+    await expect.element(page.getByRole('heading', { name: /#1/ })).toBeInTheDocument()
+    const patch = requests.find((r) => r.init?.method === 'PATCH')
+    expect(patch?.url).toContain('/api/v1/w/default/issues/1')
+    expect(JSON.parse(String(patch?.init?.body))).toEqual({
+      title: 'renamed',
+      body: 'body text',
+      label_ids: [2],
+    })
   })
 })
 

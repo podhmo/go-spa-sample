@@ -8,7 +8,7 @@ import {
   useRouter,
 } from '@tanstack/react-router'
 import { useReducer, useTransition } from 'react'
-import { WS, api } from './api'
+import { RequestError, WS, api } from './api'
 import { CommentForm, IssueForm } from './components/forms'
 import { IssueDetail } from './components/IssueDetail'
 import { IssueList } from './components/IssueList'
@@ -148,10 +148,19 @@ const issuesRoute = createRoute({
   },
 })
 
+// Maps a failed mutation to the per-field error map the API returns for
+// 422 ({"error":{"fields":{...}}}), falling back to a generic title error.
+const apiFieldErrors = (err: unknown): Record<string, string> =>
+  err instanceof RequestError && err.apiError?.fields
+    ? err.apiError.fields
+    : { title: err instanceof Error ? err.message : String(err) }
+
 const newIssueRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/issues/new',
+  loader: () => api.listLabels(WS, { kind: 'issue' }),
   component: function NewIssuePage() {
+    const { labels } = newIssueRoute.useLoaderData()
     const navigate = useNavigate()
     const [isPending, startTransition] = useTransition()
     const [errors, setErrors] = useReducer(
@@ -164,6 +173,7 @@ const newIssueRoute = createRoute({
         <IssueForm
           submitting={isPending}
           errors={errors}
+          labels={labels}
           onSubmit={(input) => {
             startTransition(async () => {
               try {
@@ -173,14 +183,58 @@ const newIssueRoute = createRoute({
                   params: { issueId: String(issue.id) },
                 })
               } catch (err) {
-                setErrors(
-                  err instanceof Error && 'apiError' in err
-                    ? ((err as { apiError: { fields?: Record<string, string> } }).apiError
-                        ?.fields ?? {
-                        title: err.message,
-                      })
-                    : { title: String(err) },
-                )
+                setErrors(apiFieldErrors(err))
+              }
+            })
+          }}
+        />
+      </div>
+    )
+  },
+})
+
+const editIssueRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/issues/$issueId/edit',
+  loader: async ({ params }) => {
+    const [detail, labels] = await Promise.all([
+      api.getIssue(WS, Number(params.issueId)),
+      api.listLabels(WS, { kind: 'issue' }),
+    ])
+    return { ...detail, labels: labels.labels }
+  },
+  component: function EditIssuePage() {
+    const { issue, labels } = editIssueRoute.useLoaderData()
+    const { issueId } = editIssueRoute.useParams()
+    const navigate = useNavigate()
+    const [isPending, startTransition] = useTransition()
+    const [errors, setErrors] = useReducer(
+      (_: Record<string, string>, e: Record<string, string>) => e,
+      {},
+    )
+    return (
+      <div>
+        <h2>Edit issue #{issue.id}</h2>
+        <IssueForm
+          submitting={isPending}
+          errors={errors}
+          labels={labels}
+          initial={{
+            title: issue.title,
+            body: issue.body,
+            label_ids: issue.labels.map((l) => l.id),
+          }}
+          submitLabel="save"
+          onSubmit={(input) => {
+            startTransition(async () => {
+              try {
+                await api.updateIssue(WS, Number(issueId), input)
+                await navigate({
+                  to: '/issues/$issueId',
+                  params: { issueId },
+                })
+              } catch (err) {
+                setErrors(apiFieldErrors(err))
               }
             })
           }}
@@ -233,4 +287,10 @@ const issueRoute = createRoute({
   },
 })
 
-export const routeTree = rootRoute.addChildren([indexRoute, issuesRoute, newIssueRoute, issueRoute])
+export const routeTree = rootRoute.addChildren([
+  indexRoute,
+  issuesRoute,
+  newIssueRoute,
+  issueRoute,
+  editIssueRoute,
+])

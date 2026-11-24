@@ -9,7 +9,7 @@ export function LabelBadge({ label }: { label: Label }) {
   return (
     <span
       style={{
-        backgroundColor: `#${label.color}`,
+        backgroundColor: label.color,
         color: 'black',
         borderRadius: '0.25rem',
         padding: '0 0.4em',

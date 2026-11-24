@@ -1,3 +1,4 @@
+import { Link } from '@tanstack/react-router'
 import type { Comment, Issue } from '../api'
 import { ConfirmDialog } from './ConfirmDialog'
 import { LabelBadge, StatusBadge } from './IssueList'
@@ -55,6 +56,9 @@ export function IssueDetail({
             {pending ? '…' : `mark ${next}`}
           </button>
         )}{' '}
+        <Link to="/issues/$issueId/edit" params={{ issueId: String(issue.id) }}>
+          edit
+        </Link>{' '}
         {onDelete && (
           <ConfirmDialog
             label="delete"
