@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router'
 import { useReducer, type ReactNode } from 'react'
-import type { IssueInput, Label, WorkspaceInput } from '../api'
+import type { DiscussionCategory, DiscussionInput, IssueInput, Label, WorkspaceInput } from '../api'
 import { submitOnCtrlEnter } from '../enter-submit'
 import { LabelBadge } from './IssueList'
 
@@ -265,6 +265,205 @@ export function WorkspaceForm({
         {cancelLink}
         <button type="submit" className="btn btn-primary" disabled={submitting}>
           {submitting ? 'Saving…' : 'Create workspace'}
+        </button>
+      </div>
+    </form>
+  )
+}
+
+type DiscussionFormState = {
+  title: string
+  body: string
+  category_id: number | null
+  label_ids: number[]
+}
+type DiscussionFormAction =
+  | { type: 'field'; field: 'title' | 'body'; value: string }
+  | { type: 'category'; id: number }
+  | { type: 'toggle-label'; id: number }
+
+const discussionFormReducer = (
+  s: DiscussionFormState,
+  a: DiscussionFormAction,
+): DiscussionFormState => {
+  switch (a.type) {
+    case 'field':
+      return { ...s, [a.field]: a.value }
+    case 'category':
+      return { ...s, category_id: a.id }
+    case 'toggle-label':
+      return {
+        ...s,
+        label_ids: s.label_ids.includes(a.id)
+          ? s.label_ids.filter((id) => id !== a.id)
+          : [...s.label_ids, a.id],
+      }
+  }
+}
+
+// New/edit discussion — like IssueForm plus a required category select
+// (the MPA's category_id). The qa vs open format only affects the
+// comment surface afterwards, not this form.
+export function DiscussionForm({
+  onSubmit,
+  submitting,
+  errors,
+  initial,
+  categories,
+  labels,
+  submitLabel = 'Create discussion',
+  cancelLink,
+}: {
+  onSubmit: (input: DiscussionInput) => void
+  submitting?: boolean
+  errors?: Record<string, string>
+  initial?: {
+    title: string
+    body: string
+    category_id?: number | undefined
+    label_ids?: number[] | undefined
+  }
+  categories: DiscussionCategory[]
+  labels?: Label[]
+  submitLabel?: string
+  cancelLink?: ReactNode
+}) {
+  const [state, dispatch] = useReducer(discussionFormReducer, {
+    title: initial?.title ?? '',
+    body: initial?.body ?? '',
+    category_id: initial?.category_id ?? null,
+    label_ids: initial?.label_ids ?? [],
+  })
+  return (
+    <form
+      className="card issue-form"
+      aria-label={initial ? 'edit discussion' : 'new discussion'}
+      onSubmit={(e) => {
+        e.preventDefault()
+        onSubmit({
+          title: state.title,
+          body: state.body,
+          category_id: state.category_id ?? undefined,
+          label_ids: state.label_ids,
+        })
+      }}
+    >
+      <p className="form-note">
+        Fields marked <span className="req">*</span> are required.
+      </p>
+      <div className="field">
+        <label htmlFor="discussion-category">
+          Category{' '}
+          <span className="req" aria-hidden="true">
+            *
+          </span>
+        </label>
+        <select
+          id="discussion-category"
+          name="category_id"
+          value={state.category_id ?? ''}
+          onChange={(e) => dispatch({ type: 'category', id: Number(e.target.value) })}
+          required
+          data-error="discussion-category-error"
+          aria-invalid={errors?.category ? 'true' : 'false'}
+          aria-describedby={errors?.category ? 'discussion-category-api-error' : undefined}
+        >
+          <option value="" disabled>
+            Select…
+          </option>
+          {categories.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+        <span id="discussion-category-error" className="error-msg">
+          A category is required.
+        </span>
+        {errors?.category && (
+          <em id="discussion-category-api-error" role="alert">
+            {errors.category}
+          </em>
+        )}
+      </div>
+      <div className="field">
+        <label htmlFor="discussion-title">
+          Title{' '}
+          <span className="req" aria-hidden="true">
+            *
+          </span>
+        </label>
+        <input
+          type="text"
+          id="discussion-title"
+          name="title"
+          value={state.title}
+          onChange={(e) => dispatch({ type: 'field', field: 'title', value: e.target.value })}
+          required
+          data-error="discussion-title-error"
+          aria-invalid={errors?.title ? 'true' : 'false'}
+          aria-describedby={errors?.title ? 'discussion-title-api-error' : undefined}
+        />
+        <span id="discussion-title-error" className="error-msg">
+          Title is required.
+        </span>
+        {errors?.title && (
+          <em id="discussion-title-api-error" role="alert">
+            {errors.title}
+          </em>
+        )}
+      </div>
+      <div className="field">
+        <label htmlFor="discussion-body">Body</label>
+        <textarea
+          id="discussion-body"
+          name="body"
+          value={state.body}
+          onChange={(e) => dispatch({ type: 'field', field: 'body', value: e.target.value })}
+          onKeyDown={submitOnCtrlEnter}
+          rows={10}
+          aria-invalid={errors?.body ? 'true' : 'false'}
+          aria-describedby={
+            errors?.body ? 'discussion-body-api-error discussion-body-hint' : 'discussion-body-hint'
+          }
+        />
+        {errors?.body && (
+          <em id="discussion-body-api-error" role="alert">
+            {errors.body}
+          </em>
+        )}
+        <p className="field-hint" id="discussion-body-hint">
+          Markdown (GFM) supported. Raw HTML is not rendered; line breaks are preserved. Ctrl+Enter
+          (Cmd+Enter on macOS) submits.
+        </p>
+      </div>
+      {labels && labels.length > 0 && (
+        <fieldset className="field label-picker">
+          <legend>Labels</legend>
+          {labels.map((l) => (
+            <label className="label-option" key={l.id} htmlFor={`dlabel-${l.id}`}>
+              <input
+                type="checkbox"
+                id={`dlabel-${l.id}`}
+                name="label_ids"
+                value={l.id}
+                checked={state.label_ids.includes(l.id)}
+                onChange={() => dispatch({ type: 'toggle-label', id: l.id })}
+              />
+              <LabelBadge label={l} />
+            </label>
+          ))}
+          {errors?.labels && (
+            <em id="discussion-labels-api-error" role="alert">
+              {errors.labels}
+            </em>
+          )}
+        </fieldset>
+      )}
+      <div className="form-actions">
+        {cancelLink}
+        <button type="submit" className="btn btn-primary" disabled={submitting}>
+          {submitting ? 'Saving…' : submitLabel}
         </button>
       </div>
     </form>
