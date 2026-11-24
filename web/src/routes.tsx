@@ -11,13 +11,16 @@ import {
   useRouter,
 } from '@tanstack/react-router'
 import { useReducer, useTransition } from 'react'
-import { RequestError, api } from './api'
-import { CommentForm, DiscussionForm, IssueForm, WorkspaceForm } from './components/forms'
+import { RequestError, api, type PRCommentInput } from './api'
+import { CommentForm, DiscussionForm, IssueForm, PullForm, WorkspaceForm } from './components/forms'
 import { CommentList, IssueDetail } from './components/IssueDetail'
 import { IssueList } from './components/IssueList'
 import { DiscussionList } from './components/DiscussionList'
 import { DiscussionDetail, ThreadList } from './components/DiscussionDetail'
 import { LabelsAdmin } from './components/LabelsAdmin'
+import { PullList } from './components/PullList'
+import { PRCommentList, PullCommitList, PullDetail } from './components/PullDetail'
+import { PullFiles } from './components/PullFiles'
 import { WorkspaceList } from './components/Workspaces'
 
 // A scoped API call: a plain 404 becomes the router's notFound, while a
@@ -48,7 +51,7 @@ const homeSlug = async (): Promise<string | null> => {
 // header (site title + nav + primary action), main landmark, footer.
 // Inside a workspace the nav points at that workspace's pages; outside
 // one it uses the bare paths, which resolve to the home workspace.
-function SiteNav({ ws }: { ws: string | undefined }) {
+function SiteNav({ ws, pulls }: { ws: string | undefined; pulls: boolean }) {
   if (ws !== undefined) {
     return (
       <>
@@ -62,6 +65,7 @@ function SiteNav({ ws }: { ws: string | undefined }) {
           <Link to="/w/$ws/discussions" params={{ ws }}>
             Discussions
           </Link>
+          {pulls && <Link to="/pulls">Pulls</Link>}
           <Link to="/w/$ws/labels" params={{ ws }}>
             Labels
           </Link>
@@ -81,6 +85,7 @@ function SiteNav({ ws }: { ws: string | undefined }) {
       <nav className="site-nav" aria-label="Main">
         <Link to="/issues">Issues</Link>
         <Link to="/discussions">Discussions</Link>
+        {pulls && <Link to="/pulls">Pulls</Link>}
         <Link to="/labels">Labels</Link>
         <Link to="/workspaces">Workspaces</Link>
         <Link className="btn" to="/issues/new">
@@ -92,8 +97,12 @@ function SiteNav({ ws }: { ws: string | undefined }) {
 }
 
 const rootRoute = createRootRoute({
+  // Probes whether the server resolved a git repo; pulls routes 404
+  // without one, so the nav link only renders when the API answers.
+  loader: () => api.pullsAvailable(),
   component: function RootLayout() {
     const { ws } = useParams({ strict: false })
+    const pulls = rootRoute.useLoaderData()
     return (
       <>
         <a className="skip-link" href="#main-content">
@@ -102,7 +111,7 @@ const rootRoute = createRootRoute({
         <header className="site-header">
           <div className="header-bar">
             <div className="container header-inner">
-              <SiteNav ws={ws} />
+              <SiteNav ws={ws} pulls={pulls} />
             </div>
           </div>
         </header>
@@ -1233,6 +1242,421 @@ const discussionRoute = createRoute({
   },
 })
 
+// --- Pull requests (workspace-independent) ---------------------------------
+// Mount only when the server resolved a git repo; a 404 on /api/v1/pulls
+// means the feature is off, so loaders surface it as a plain notFound.
+
+type PullSearch = {
+  status?: string | undefined
+  q?: string | undefined
+  sort?: string | undefined
+  page?: number | undefined
+}
+
+const pullSearch = (search: Record<string, unknown>): PullSearch => ({
+  status: str(search.status),
+  q: str(search.q),
+  sort: str(search.sort),
+  page: num(search.page),
+})
+
+const pullOrNotFound = async <T,>(p: Promise<T>): Promise<T> => {
+  try {
+    return await p
+  } catch (err) {
+    if (err instanceof RequestError && err.status === 404) throw notFound()
+    throw err
+  }
+}
+
+const pullsRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/pulls',
+  validateSearch: pullSearch,
+  loaderDeps: ({ search }) => search,
+  loader: ({ deps }) => pullOrNotFound(api.listPulls(deps)),
+  component: function PullsPage() {
+    const data = pullsRoute.useLoaderData()
+    const search = pullsRoute.useSearch()
+    const navigate = useNavigate()
+    const totalPages = Math.max(1, Math.ceil(data.total / data.per_page))
+    const hasActiveFilter =
+      (search.status !== undefined && search.status !== 'open') ||
+      search.q !== undefined ||
+      (search.sort !== undefined && search.sort !== 'newest')
+    const rangeStart = data.total === 0 ? 0 : (data.page - 1) * data.per_page + 1
+    const rangeEnd = rangeStart + data.pulls.length - 1
+    return (
+      <div>
+        <div className="page-head">
+          <h1>Pull requests</h1>
+          <Link className="btn" to="/pulls/new">
+            New pull request
+          </Link>
+        </div>
+
+        <search>
+          {/* key remounts the uncontrolled inputs when the URL filters change */}
+          <form
+            key={JSON.stringify(search)}
+            className="filter-bar"
+            aria-label="Filter pull requests"
+            onSubmit={(e) => {
+              e.preventDefault()
+              const fd = new FormData(e.currentTarget)
+              void navigate({
+                to: '/pulls',
+                search: {
+                  status: str(fd.get('status')),
+                  q: str(fd.get('q')),
+                  sort: str(fd.get('sort')),
+                },
+              })
+            }}
+          >
+            <div className="filter-field">
+              <label htmlFor="filter-pstatus">Status</label>
+              <select id="filter-pstatus" name="status" defaultValue={search.status ?? 'open'}>
+                <option value="open">Open</option>
+                <option value="closed">Closed</option>
+                <option value="merged">Merged</option>
+                <option value="all">All</option>
+              </select>
+            </div>
+            <div className="filter-field">
+              <label htmlFor="filter-pq">Search</label>
+              <input
+                type="search"
+                id="filter-pq"
+                name="q"
+                placeholder="Title or body"
+                defaultValue={search.q}
+              />
+            </div>
+            <div className="filter-field">
+              <label htmlFor="filter-psort">Sort</label>
+              <select id="filter-psort" name="sort" defaultValue={search.sort ?? 'newest'}>
+                <option value="newest">Newest first</option>
+                <option value="oldest">Oldest first</option>
+              </select>
+            </div>
+            <div className="filter-actions">
+              <button type="submit" className="btn">
+                Apply
+              </button>
+              {hasActiveFilter && (
+                <Link className="btn btn-quiet" to="/pulls">
+                  Clear
+                </Link>
+              )}
+            </div>
+          </form>
+        </search>
+
+        {data.pulls.length > 0 && (
+          <p className="result-count">
+            Showing {rangeStart}–{rangeEnd} of {data.total} pull requests
+          </p>
+        )}
+        <PullList pulls={data.pulls} filtered={hasActiveFilter} />
+
+        {totalPages > 1 && (
+          <nav className="pagination" aria-label="Pagination">
+            {data.page > 1 ? (
+              <Link className="btn" to="/pulls" search={{ ...search, page: data.page - 1 }}>
+                Previous
+              </Link>
+            ) : (
+              <span className="btn btn-disabled" aria-disabled="true">
+                Previous
+              </span>
+            )}
+            <span className="page-info">
+              Page {data.page} of {totalPages}
+            </span>
+            {data.page < totalPages ? (
+              <Link className="btn" to="/pulls" search={{ ...search, page: data.page + 1 }}>
+                Next
+              </Link>
+            ) : (
+              <span className="btn btn-disabled" aria-disabled="true">
+                Next
+              </span>
+            )}
+          </nav>
+        )}
+      </div>
+    )
+  },
+})
+
+const newPullRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/pulls/new',
+  loader: () => pullOrNotFound(api.listPullRefs()),
+  component: function NewPullPage() {
+    const { refs } = newPullRoute.useLoaderData()
+    const navigate = useNavigate()
+    const [isPending, startTransition] = useTransition()
+    const [errors, setErrors] = useReducer(
+      (_: Record<string, string>, e: Record<string, string>) => e,
+      {},
+    )
+    return (
+      <div>
+        <div className="page-head">
+          <h1>New pull request</h1>
+        </div>
+        <PullForm
+          submitting={isPending}
+          errors={errors}
+          refs={refs}
+          cancelLink={
+            <Link className="btn btn-quiet" to="/pulls">
+              Cancel
+            </Link>
+          }
+          onSubmit={(input) => {
+            startTransition(async () => {
+              try {
+                const { pull_request } = await api.createPull({
+                  title: input.title,
+                  body: input.body,
+                  base: input.base ?? '',
+                  head: input.head ?? '',
+                })
+                await navigate({
+                  to: '/pulls/$pullId',
+                  params: { pullId: String(pull_request.id) },
+                })
+              } catch (err) {
+                setErrors(apiFieldErrors(err, 'head'))
+              }
+            })
+          }}
+        />
+      </div>
+    )
+  },
+})
+
+const editPullRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/pulls/$pullId/edit',
+  loader: ({ params }) => pullOrNotFound(api.getPull(Number(params.pullId))),
+  component: function EditPullPage() {
+    const { pull_request } = editPullRoute.useLoaderData()
+    const { pullId } = editPullRoute.useParams()
+    const navigate = useNavigate()
+    const [isPending, startTransition] = useTransition()
+    const [errors, setErrors] = useReducer(
+      (_: Record<string, string>, e: Record<string, string>) => e,
+      {},
+    )
+    return (
+      <div>
+        <div className="page-head">
+          <h1>Edit pull request #{pull_request.id}</h1>
+        </div>
+        <PullForm
+          submitting={isPending}
+          errors={errors}
+          initial={{ title: pull_request.title, body: pull_request.body }}
+          submitLabel="Save changes"
+          cancelLink={
+            <Link className="btn btn-quiet" to="/pulls/$pullId" params={{ pullId }}>
+              Cancel
+            </Link>
+          }
+          onSubmit={(input) => {
+            startTransition(async () => {
+              try {
+                await api.updatePull(Number(pullId), {
+                  title: input.title,
+                  body: input.body,
+                })
+                await navigate({ to: '/pulls/$pullId', params: { pullId } })
+              } catch (err) {
+                setErrors(apiFieldErrors(err))
+              }
+            })
+          }}
+        />
+      </div>
+    )
+  },
+})
+
+const pullFilesRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/pulls/$pullId/files',
+  loader: ({ params }) =>
+    pullOrNotFound(
+      Promise.all([
+        api.getPull(Number(params.pullId)),
+        api.getPullDiff(Number(params.pullId)),
+      ]).then(([detail, diff]) => ({ ...detail, diff })),
+    ),
+  component: function PullFilesPage() {
+    const { pull_request, diff } = pullFilesRoute.useLoaderData()
+    const { pullId } = pullFilesRoute.useParams()
+    const router = useRouter()
+    const navigate = useNavigate()
+    const [isPending, setPending] = useReducer((_: boolean, v: boolean) => v, false)
+    return (
+      <div>
+        <nav className="breadcrumb" aria-label="Breadcrumb">
+          <ol>
+            <li>
+              <Link to="/pulls" activeOptions={{ exact: true }}>
+                Pull requests
+              </Link>
+            </li>
+            <li>
+              <Link to="/pulls/$pullId" params={{ pullId }}>
+                #{pull_request.id}
+              </Link>
+            </li>
+            <li>
+              <a href="#" aria-current="page">
+                Files
+              </a>
+            </li>
+          </ol>
+        </nav>
+
+        <div className="page-head">
+          <h1>
+            {pull_request.title} <span className="issue-num">#{pull_request.id}</span>
+          </h1>
+          <Link className="btn" to="/pulls/$pullId" params={{ pullId }}>
+            Conversation
+          </Link>
+        </div>
+
+        <PullFiles
+          diff={diff}
+          pending={isPending}
+          {...(pull_request.status === 'open'
+            ? {
+                onComment: (input: PRCommentInput) => {
+                  setPending(true)
+                  void (async () => {
+                    try {
+                      const { comment } = await api.createPRComment(Number(pullId), input)
+                      await navigate({
+                        to: '/pulls/$pullId',
+                        params: { pullId },
+                        hash: `comment-${comment.id}`,
+                      })
+                    } finally {
+                      setPending(false)
+                      void router.invalidate()
+                    }
+                  })()
+                },
+              }
+            : {})}
+        />
+      </div>
+    )
+  },
+})
+
+const pullRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/pulls/$pullId',
+  loader: ({ params }) => pullOrNotFound(api.getPull(Number(params.pullId))),
+  component: function PullPage() {
+    const { pull_request, comments, commits, mergeable } = pullRoute.useLoaderData()
+    const { pullId } = pullRoute.useParams()
+    const router = useRouter()
+    const navigate = useNavigate()
+    const [isPending, setPending] = useReducer((_: boolean, v: boolean) => v, false)
+    const pid = Number(pullId)
+    const mutate = (fn: () => Promise<unknown>) => {
+      setPending(true)
+      void (async () => {
+        try {
+          await fn()
+        } catch {
+          // mutation failures surface via the refetched state
+        } finally {
+          setPending(false)
+          void router.invalidate()
+        }
+      })()
+    }
+    return (
+      <div>
+        <nav className="breadcrumb" aria-label="Breadcrumb">
+          <ol>
+            <li>
+              <Link to="/pulls" activeOptions={{ exact: true }}>
+                Pull requests
+              </Link>
+            </li>
+            <li>
+              <a href="#" aria-current="page">
+                #{pull_request.id}
+              </a>
+            </li>
+          </ol>
+        </nav>
+
+        <PullDetail
+          pull={pull_request}
+          mergeable={mergeable}
+          pending={isPending}
+          onSetStatus={(status) => mutate(() => api.setPullStatus(pid, status))}
+          onMerge={(method, message) =>
+            mutate(() => api.mergePull(pid, method, message || undefined))
+          }
+          onDelete={() => {
+            setPending(true)
+            void (async () => {
+              try {
+                await api.deletePull(pid)
+                await navigate({ to: '/pulls' })
+              } finally {
+                setPending(false)
+              }
+            })()
+          }}
+          onCopyMarkdown={() => api.getPullMarkdown(pid)}
+        />
+
+        <PullCommitList commits={commits} />
+
+        <section id="comments" className="comments">
+          <h2>
+            Comments
+            {comments.length > 0 && <span className="comment-count"> ({comments.length})</span>}
+          </h2>
+          <PRCommentList
+            comments={comments}
+            pending={isPending}
+            onEdit={(cid, body) => mutate(() => api.updatePRComment(pid, cid, body))}
+            onDelete={(cid) => mutate(() => api.deletePRComment(pid, cid))}
+            onHide={(cid, reason) => mutate(() => api.hidePRComment(pid, cid, reason))}
+            onUnhide={(cid) => mutate(() => api.unhidePRComment(pid, cid))}
+          />
+          {pull_request.status === 'open' && (
+            <CommentForm
+              submitting={isPending}
+              onSubmit={(body) => mutate(() => api.createPRComment(pid, { body }))}
+            />
+          )}
+        </section>
+
+        <a className="back-to-top" href="#main-content" aria-label="Back to top">
+          ↑ Top
+        </a>
+      </div>
+    )
+  },
+})
+
 const labelsRoute = createRoute({
   getParentRoute: () => wsRoute,
   path: '/labels',
@@ -1305,6 +1729,11 @@ export const routeTree = rootRoute.addChildren([
   labelsRedirectRoute,
   workspacesRoute,
   newWorkspaceRoute,
+  pullsRoute,
+  newPullRoute,
+  pullRoute,
+  editPullRoute,
+  pullFilesRoute,
   wsRoute.addChildren([
     wsIndexRoute,
     issuesRoute,
