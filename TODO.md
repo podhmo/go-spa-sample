@@ -88,6 +88,10 @@ useReducer / Vitest / playwright-cli) を使った試行錯誤が完全に行え
   どれで持つか方針から
 - [ ] **markdown エクスポート拡張** (features.md 3.12): issue は済。
   discussions/PR 移植時に対応分を追加
+- [ ] **CSS を classic-mpa に揃える**: SPA の見た目を元アプリの
+  `internal/web/static/app.css` (go-classic-mpa-sample) 準拠に近付ける。
+  方針は `docs/sketch/ja/css.md` (CSS Modules + index.css、Panda は将来案)。
+  元の `docs/ja/ui-rules.md` (UI規約) も参照して component 単位で揃える
 - [ ] **`cmd/fakeapi` の撤去**: スパイク用コードの整理
 - [ ] **本番構成の決定**: dev proxy の `Bearer dev-token` 注入は開発専用。
   embed 配信+セッション or 別配備+token のどちらにするか
