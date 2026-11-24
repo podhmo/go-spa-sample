@@ -73,11 +73,12 @@ workspace → discussions → pulls → accounts へ展開する。
 - [x] **[milestone] modern-web-guidance の issues 反映を記録**:
   適用ガイド・パターンを `docs/sketch/ja/ui-parity.md` +
   `libraries.md` 追記として記録済み
-- [ ] **workspace スコープ `/w/{slug}` 対応** (features.md 3.1, §6-全体):
-  SPA は現状 `WS='default'` 固定。URL を `/w/{slug}/issues…` 構造にし、
-  workspace なしアクセスは default/先頭へ誘導、別 workspace のリソースは
-  正しいスコープへ誘導 (mutation は拒否)。workspace 一覧/作成/削除 UI も
-  (`GET/POST/DELETE /api/v1/workspaces` あり、最後の1個は削除不可)
+- [x] **workspace スコープ `/w/{slug}` 対応** (features.md 3.1, §6-全体):
+  URL を `/w/{slug}/issues…` 構造に再編 (`WS='default'` 固定を撤去)。
+  workspace なしアクセスは default/先頭へ redirect (検索クエリ保持)、
+  別 workspace のリソースへの GET/HEAD は 404 の `error.workspace` +
+  `X-Workspace-Slug` ヒントで正規スコープへ rebase (mutation はヒント無し
+  404 で拒否)。`/workspaces` 一覧/作成 UI と最後の1個の削除抑止も実装。
 - [ ] **Discussions 移植** (features.md 3.5, §6-Discussions)
   - [ ] **Go API 復元**: 移植時に外した discussions ハンドラを
     `internal/api` に再移植 (threads/replies/answer/categories ルート)

@@ -19,7 +19,12 @@ API サーバー部分を移植し、フロントを **SPA として作り直す
   MPA/SPA のスクショ比較済み (`docs/sketch/ja/ui-parity.md` + 同ディレクトリ
   の `ui-parity-*.png`、意図的な残差分も記録)
 - API: `cmd/zatudan` + `internal/` (issues/labels/comments/workspaces/
-  markdown)。17 browser-mode tests 緑、CI 有り (`.github/workflows/ci.yml`)
+  markdown)。23 browser-mode tests 緑、CI 有り (`.github/workflows/ci.yml`)
+- **workspace スコープ `/w/{slug}` 完了**: URL は `/w/{slug}/issues…` 構造。
+  workspace なし URL は default/先頭へ redirect、別 workspace の
+  リソースへの GET/HEAD は 404 `error.workspace` + `X-Workspace-Slug`
+  ヒントで正規スコープへ rebase (mutation はヒント無し 404)。
+  `/workspaces` 一覧/作成/削除 UI も実装 (最後の1個は削除抑止)
 - **スコープ外として捨てたもの**: SSE live updates、`X-Partial` 部分描画
   (SPA は JSON API のみ)、`zatu` CLI、accounts/セッション
 - **サブエージェント運用**: 大きな実装・検証はサブエージェントに任せる。
@@ -27,7 +32,7 @@ API サーバー部分を移植し、フロントを **SPA として作り直す
   (sketch/tanstack-query、sketch/react-markdown) と、master 上でそのまま
   作業させたもの (issues parity、UI parity) がある。並行稼働時は
   「触って良いファイル範囲」を指示で分離するのが重要
-- **次の一手**: workspace スコープ `/w/{slug}` 対応 (TODO.md 順序の先頭)
+- **次の一手**: Discussions 移植 (TODO.md 順序の先頭)
 
 ## 残りタスク (`TODO.md` が正)
 
@@ -36,7 +41,6 @@ API サーバー部分を移植し、フロントを **SPA として作り直す
 | discussions/pulls の移植判断 | spec: `docs/ja/features.md` 3.5/3.6。store には残存。API routes は削除済み |
 | `cmd/fakeapi` 撤去 | 疎通スパイク用の残骸 |
 | i18n | 元は en/ja 2ロケール (features.md 3.10)。SPA 側方針未定 |
-| workspace scoping `/w/{slug}` | SPA は `WS='default'` 固定。URL 構造を変える大きめの変更 |
 | 本番構成 | dev proxy の `Bearer dev-token` 注入は開発専用。embed 配信+認証 or 別配備+token |
 | (保留) TanStack Query | 評価済み・見送り。再検討条件は `docs/sketch/ja/tanstack-query.md` |
 
@@ -79,4 +83,9 @@ cd web && npm run format && npm run lint && npm run build && npm test
   → attribute spread / setAttribute で渡す (`ConfirmDialog.tsx` 参照)
 - `getByLabelText` は exact match → ラベルに `*` を足すとテストが壊れる
   → テスト側は `/Title/` のような正規表現で
+- vitest の `channel: 'chrome'` は `/opt/google/chrome/chrome` を探す。
+  無い環境では `ln -s <chrome実体> /opt/google/chrome/chrome` か
+  `npx playwright install chrome`
+- `createMemoryHistory` のテストは `window.location` を更新しない
+  → 遷移 assert は fetch 呼び出し記録で行う
 - 作業ブランチ worktree は `/tmp/gss-*`、作業後は `git worktree remove`
