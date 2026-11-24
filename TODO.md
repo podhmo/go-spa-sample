@@ -60,6 +60,18 @@ useReducer / Vitest / playwright-cli) を使った試行錯誤が完全に行え
   残りは workspace スコープ (`/w/{slug}`) と login 相当の横断項目のみ
 - [x] **サーバー状態管理の再検討**: `sketch/tanstack-query` で評価実装済み。
   判定は「現状は loader 継続」(再検討条件は `docs/sketch/ja/tanstack-query.md`)
+**順序**: まず issues tracker だけの見た目を classic-mpa に揃え
+modern-web-guidance を適用しきる (次の2項目)。それができたら
+workspace → discussions → pulls → accounts へ展開する。
+
+- [ ] **[milestone] issues の見た目を classic-mpa に揃える**: SPA の
+  issues scope を元アプリ `internal/web/static/app.css` +
+  `docs/ja/ui-rules.md` (go-classic-mpa-sample) 準拠の見た目にする。
+  方針: `docs/sketch/ja/css.md` (index.css + CSS Modules、Panda は将来案)。
+  playwright-cli で元画面との比較確認を行う
+- [ ] **[milestone] modern-web-guidance の issues 反映を記録**:
+  見た目合わせの過程で適用したガイド・パターンを
+  `docs/sketch/ja` に記録する (libraries.md 追記 or 専用ページ)
 - [ ] **workspace スコープ `/w/{slug}` 対応** (features.md 3.1, §6-全体):
   SPA は現状 `WS='default'` 固定。URL を `/w/{slug}/issues…` 構造にし、
   workspace なしアクセスは default/先頭へ誘導、別 workspace のリソースは
@@ -88,10 +100,6 @@ useReducer / Vitest / playwright-cli) を使った試行錯誤が完全に行え
   どれで持つか方針から
 - [ ] **markdown エクスポート拡張** (features.md 3.12): issue は済。
   discussions/PR 移植時に対応分を追加
-- [ ] **CSS を classic-mpa に揃える**: SPA の見た目を元アプリの
-  `internal/web/static/app.css` (go-classic-mpa-sample) 準拠に近付ける。
-  方針は `docs/sketch/ja/css.md` (CSS Modules + index.css、Panda は将来案)。
-  元の `docs/ja/ui-rules.md` (UI規約) も参照して component 単位で揃える
 - [ ] **`cmd/fakeapi` の撤去**: スパイク用コードの整理
 - [ ] **本番構成の決定**: dev proxy の `Bearer dev-token` 注入は開発専用。
   embed 配信+セッション or 別配備+token のどちらにするか
