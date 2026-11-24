@@ -479,7 +479,15 @@ func discussionPostTarget(fs *flag.FlagSet, o Options, hint string, args []strin
 	if *tidf < 1 {
 		return 0, 0, 0, nil, usageError{msg: "--thread is required"}
 	}
-	if *cidf < 0 {
+	// 0 is "no --comment" (target the thread), but an explicit
+	// `--comment 0` must not silently widen to the whole thread.
+	cidSet := false
+	fs.Visit(func(f *flag.Flag) {
+		if f.Name == "comment" {
+			cidSet = true
+		}
+	})
+	if *cidf < 0 || (cidSet && *cidf < 1) {
 		return 0, 0, 0, nil, usageError{msg: "--comment must be a positive id"}
 	}
 	return id, *tidf, *cidf, bf, nil
