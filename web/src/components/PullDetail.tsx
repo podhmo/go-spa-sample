@@ -159,10 +159,7 @@ export function PullDetail({
           {fmt(m.pulls.openedBy, { name: p.author?.name ?? m.comments.anonymous })}{' '}
           <time dateTime={p.created_at}>{fmtTime(p.created_at)}</time>
           {p.status === 'merged' && p.merge_method && (
-            <>
-              {' '}
-              · {m.pulls.mergedVia} <code>{p.merge_method}</code>
-            </>
+            <> · {fmt(m.pulls.mergedVia, { method: p.merge_method })}</>
           )}
           {p.closed_at && p.status !== 'merged' && (
             <>
@@ -432,8 +429,9 @@ export function PRCommentList({
   onHide?: (cid: number, reason: string) => void
   onUnhide?: (cid: number) => void
 }) {
+  const m = useMessages()
   if (comments.length === 0) {
-    return <p className="muted">No comments yet.</p>
+    return <p className="muted">{m.comments.empty}</p>
   }
   return (
     <ol className="comment-list" role="list">
