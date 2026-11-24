@@ -169,4 +169,39 @@ describe('route: /w/{ws}/discussions/{id}', () => {
       .toBeInTheDocument()
     expect(page.getByRole('button', { name: 'Mark as answer' }).elements()).toHaveLength(0)
   })
+
+  it('keeps a collapsed reply draft and restores it on reopen', async () => {
+    stubAPI(() => ({
+      body: { discussion: discussion(), threads: [thread()] },
+    }))
+    renderAt('/w/default/discussions/1')
+    await expect.element(page.getByText('op comment')).toBeInTheDocument()
+    const toggle = page.getByRole('button', { name: 'Reply' }).first()
+    await toggle.click()
+    const box = page.getByPlaceholder('Reply…')
+    await box.fill('half-written reply')
+    await toggle.click()
+    expect(page.getByPlaceholder('Reply…').elements()).toHaveLength(0)
+    await toggle.click()
+    await expect.element(page.getByPlaceholder('Reply…')).toHaveValue('half-written reply')
+  })
+
+  it('clears the reply draft after a successful post', async () => {
+    stubAPI((url, init) => {
+      if (init?.method === 'POST' && url.includes('/comments')) {
+        return { body: { reply: reply({ id: 9 }) } }
+      }
+      return { body: { discussion: discussion(), threads: [thread()] } }
+    })
+    renderAt('/w/default/discussions/1')
+    await expect.element(page.getByText('op comment')).toBeInTheDocument()
+    const toggle = page.getByRole('button', { name: 'Reply' }).first()
+    await toggle.click()
+    await page.getByPlaceholder('Reply…').fill('done reply')
+    await page.getByRole('button', { name: 'Reply', exact: true }).last().click()
+    await new Promise((r) => setTimeout(r, 100))
+    expect(page.getByPlaceholder('Reply…').elements()).toHaveLength(0)
+    await toggle.click()
+    await expect.element(page.getByPlaceholder('Reply…')).toHaveValue('')
+  })
 })
