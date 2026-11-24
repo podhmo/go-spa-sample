@@ -1386,9 +1386,9 @@ const discussionRoute = createRoute({
     }
     // Posting a thread or reply lands on the new entry's permalink like
     // the MPA's redirect-to-anchor flow.
-    const postAndGo = <T,>(fn: () => Promise<T>, anchor: (r: T) => string) => {
+    const postAndGo = <T,>(fn: () => Promise<T>, anchor: (r: T) => string): Promise<boolean> => {
       setPending(true)
-      void (async () => {
+      return (async () => {
         try {
           const created = await fn()
           await router.invalidate()
@@ -1399,8 +1399,10 @@ const discussionRoute = createRoute({
           requestAnimationFrame(() => {
             document.getElementById(anchor(created))?.scrollIntoView()
           })
+          return true
         } catch {
           // mutation failures surface via the refetched state
+          return false
         } finally {
           setPending(false)
         }
