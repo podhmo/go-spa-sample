@@ -79,10 +79,10 @@ workspace → discussions → pulls → accounts へ展開する。
   別 workspace のリソースへの GET/HEAD は 404 の `error.workspace` +
   `X-Workspace-Slug` ヒントで正規スコープへ rebase (mutation はヒント無し
   404 で拒否)。`/workspaces` 一覧/作成 UI と最後の1個の削除抑止も実装。
-- [ ] **Discussions 移植** (features.md 3.5, §6-Discussions)
+- [x] **Discussions 移植** (features.md 3.5, §6-Discussions)
   - [x] **Go API 復元**: 移植時に外した discussions ハンドラを
     `internal/api` に再移植 (threads/replies/answer/categories ルート)
-  - [ ] **SPA**: 一覧 (category/answered/q/sort/page)・詳細
+  - [x] **SPA**: 一覧 (category/answered/q/sort/page)・詳細
     (threads+replies 1段ネスト)・作成 (category 必須)・編集/削除・
     thread/reply モデレーション・qa カテゴリの answer マーク
 - [ ] **Pull Requests 移植** (features.md 3.6, §6-Pull Requests):
