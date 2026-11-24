@@ -150,7 +150,9 @@ func (h *handler) createIssue(w http.ResponseWriter, r *http.Request, ws *store.
 }
 
 // PATCH /api/v1/issues/{id} — only fields present in the body are updated;
-// absent fields keep their current values.
+// absent fields keep their current values. An explicitly empty
+// "labels"/"label_ids" clears the active label set (nil means absent);
+// attachments to archived labels survive (setIssueLabels).
 func (h *handler) updateIssue(w http.ResponseWriter, r *http.Request, ws *store.Workspace) {
 	id, ok := h.pathID(w, r, "id")
 	if !ok {
@@ -178,7 +180,7 @@ func (h *handler) updateIssue(w http.ResponseWriter, r *http.Request, ws *store.
 	if in.Body != nil {
 		input.Body = strings.TrimSpace(*in.Body)
 	}
-	if in.LabelIDs != nil || len(in.Labels) > 0 {
+	if in.LabelIDs != nil || in.Labels != nil {
 		labelIDs, ferr, err := h.resolveLabelIDs(r, ws, store.KindLabelIssue, in.LabelIDs, in.Labels)
 		if err != nil {
 			h.storeError(w, err)

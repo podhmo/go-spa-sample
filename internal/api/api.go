@@ -108,8 +108,9 @@ func New(st Store, envToken string) http.Handler {
 	// Workspace-scoped resources live under /w/{slug}; the workspace-less
 	// /issues path is gone (a 404, not a redirect — API callers should be
 	// updated, docs/sketch/ja/workspaces.md). Labels are workspace-scoped
-	// too (shared master rows ride along). Discussions and pull requests
-	// are not part of this port, so no such routes are registered.
+	// too (shared master rows ride along). Discussions are workspace-
+	// scoped like issues; pull requests stay workspace-independent and
+	// mount separately (docs/sketch/ja/pull-requests.md §6).
 	routes := map[string]map[string]http.HandlerFunc{
 		"/api/v1/workspaces":        {"GET": h.listWorkspaces, "POST": h.createWorkspace},
 		"/api/v1/workspaces/{slug}": {"GET": h.getWorkspace, "DELETE": h.deleteWorkspace},
@@ -127,6 +128,25 @@ func New(st Store, envToken string) http.Handler {
 		"/api/v1/w/{ws}/issues/{id}/comments/{cid}/hide":   {"POST": h.scoped(h.hideComment)},
 		"/api/v1/w/{ws}/issues/{id}/comments/{cid}/unhide": {"POST": h.scoped(h.unhideComment)},
 		"/api/v1/w/{ws}/issues/{id}/markdown":              {"GET": h.scoped(h.issueMarkdown)},
+
+		// Discussions (internal/api/discussions.go): threads are the
+		// top-level posts — only they can carry the answer mark — and
+		// comments are flat replies inside one thread. Categories are
+		// global seed data, so they stay workspace-less.
+		"/api/v1/discussion-categories": {"GET": h.listDiscussionCategories},
+
+		"/api/v1/w/{ws}/discussions":                                          {"GET": h.scoped(h.listDiscussions), "POST": h.scoped(h.createDiscussion)},
+		"/api/v1/w/{ws}/discussions/{id}":                                     {"GET": h.scoped(h.getDiscussion), "PATCH": h.scoped(h.updateDiscussion), "DELETE": h.scoped(h.deleteDiscussion)},
+		"/api/v1/w/{ws}/discussions/{id}/markdown":                            {"GET": h.scoped(h.discussionMarkdown)},
+		"/api/v1/w/{ws}/discussions/{id}/threads":                             {"POST": h.scoped(h.createDiscussionThread)},
+		"/api/v1/w/{ws}/discussions/{id}/threads/{tid}":                       {"PATCH": h.scoped(h.updateDiscussionThread), "DELETE": h.scoped(h.deleteDiscussionThread)},
+		"/api/v1/w/{ws}/discussions/{id}/threads/{tid}/answer":                {"POST": h.scoped(h.setDiscussionThreadAnswer)},
+		"/api/v1/w/{ws}/discussions/{id}/threads/{tid}/hide":                  {"POST": h.scoped(h.hideDiscussionThread)},
+		"/api/v1/w/{ws}/discussions/{id}/threads/{tid}/unhide":                {"POST": h.scoped(h.unhideDiscussionThread)},
+		"/api/v1/w/{ws}/discussions/{id}/threads/{tid}/comments":              {"POST": h.scoped(h.createDiscussionReply)},
+		"/api/v1/w/{ws}/discussions/{id}/threads/{tid}/comments/{cid}":        {"PATCH": h.scoped(h.updateDiscussionReply), "DELETE": h.scoped(h.deleteDiscussionReply)},
+		"/api/v1/w/{ws}/discussions/{id}/threads/{tid}/comments/{cid}/hide":   {"POST": h.scoped(h.hideDiscussionReply)},
+		"/api/v1/w/{ws}/discussions/{id}/threads/{tid}/comments/{cid}/unhide": {"POST": h.scoped(h.unhideDiscussionReply)},
 	}
 	for path, methods := range routes {
 		mux.HandleFunc(path, methodDispatch(methods))
