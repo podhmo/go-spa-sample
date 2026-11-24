@@ -1,10 +1,11 @@
 // Package api implements the JSON Web API under /api/v1
 // (docs/sketch/ja/cli-and-web-api.md, Phase 2). It is a thin machine-facing
 // surface over the same store the HTML app uses: DTOs are wire types kept
-// separate from the store's domain types, and authentication is Bearer
-// tokens mounted fail-closed (no usable token, no /api/v1). Two credential
-// kinds are accepted: a single shared env token (writes stay anonymous)
-// and per-user api_tokens rows (writes carry the user's author_id).
+// separate from the store's domain types, and every request must
+// authenticate (fail-closed 401s). Three credential kinds are accepted:
+// the /auth/* cookie session (browser login), a single shared env token
+// (writes stay anonymous), and per-user api_tokens rows (writes carry
+// the user's author_id).
 package api
 
 import (
@@ -68,6 +69,15 @@ type Store interface {
 	DeleteWorkspace(ctx context.Context, slug string) error
 	APITokenUser(ctx context.Context, token string) (*store.User, error)
 
+	// Accounts & cookie sessions (internal/api/auth.go).
+	CreateUser(ctx context.Context, name, passwordHash string) (int64, error)
+	UserByName(ctx context.Context, name string) (*store.User, error)
+	AuthenticateUser(ctx context.Context, name, password string) (*store.User, error)
+	UserByID(ctx context.Context, id int64) (*store.User, error)
+	CreateSession(ctx context.Context, userID int64, ttl time.Duration) (string, error)
+	SessionUser(ctx context.Context, token string, ttl time.Duration) (*store.User, error)
+	DeleteSession(ctx context.Context, token string) error
+
 	// Pull requests — workspace-independent (docs/sketch/ja/
 	// pull-requests.md §6). These mount only with a *gitrepo.Repo.
 	ListPullRequests(ctx context.Context, f store.PRListFilter) ([]*store.PullRequest, int, error)
@@ -93,11 +103,12 @@ const (
 	maxPerPage     = 100
 )
 
-// New returns the /api/v1 handler; every request must carry
-// "Authorization: Bearer <token>". envToken is the optional shared
-// credential (constant-time compared; its requests are anonymous); any
-// other token is resolved through the store's api_tokens table and its
-// requests run as that user.
+// New returns the /api/v1 handler. /api/v1/auth/* answers without a
+// credential — it is how one is obtained — and every other path needs a
+// session cookie or "Authorization: Bearer <token>". envToken is the
+// optional shared credential (constant-time compared; its requests are
+// anonymous); any other token is resolved through the store's api_tokens
+// table and its requests run as that user.
 func New(st Store, envToken string, repo *gitrepo.Repo) http.Handler {
 	h := &handler{store: st, repo: repo}
 	mux := http.NewServeMux()
@@ -136,6 +147,9 @@ func New(st Store, envToken string, repo *gitrepo.Repo) http.Handler {
 		// comments are flat replies inside one thread. Categories are
 		// global seed data, so they stay workspace-less.
 		"/api/v1/discussion-categories": {"GET": h.listDiscussionCategories},
+
+		// Inside the gate: reports the credential's user (401 anonymous).
+		"/api/v1/auth/me": {"GET": h.me},
 
 		"/api/v1/w/{ws}/discussions":                                          {"GET": h.scoped(h.listDiscussions), "POST": h.scoped(h.createDiscussion)},
 		"/api/v1/w/{ws}/discussions/{id}":                                     {"GET": h.scoped(h.getDiscussion), "PATCH": h.scoped(h.updateDiscussion), "DELETE": h.scoped(h.deleteDiscussion)},
@@ -180,7 +194,41 @@ func New(st Store, envToken string, repo *gitrepo.Repo) http.Handler {
 		writeError(w, http.StatusNotFound, "Not found.", nil)
 	})
 
-	return bearerAuth(envToken, st, mux)
+	// The auth endpoints sit on an outer mux outside the credential gate —
+	// login must be reachable before the caller holds any credential.
+	top := http.NewServeMux()
+	for path, methods := range map[string]map[string]http.HandlerFunc{
+		"/api/v1/auth/register": {"POST": requireJSON(h.register)},
+		"/api/v1/auth/login":    {"POST": requireJSON(h.login)},
+		// logout needs it too: it takes no body, but a cross-site form POST
+		// gets a 204 that still expires the browser cookie (the session
+		// survives server-side, the user is signed out anyway).
+		"/api/v1/auth/logout": {"POST": requireJSON(h.logout)},
+	} {
+		top.HandleFunc(path, methodDispatch(methods))
+	}
+	top.Handle("/api/v1/", authenticate(envToken, st, mux))
+	return top
+}
+
+// requireJSON rejects bodies that did not opt in to application/json.
+// A cross-origin browser fetch can only send a "simple" content type
+// (form or text/plain) without a CORS preflight — and this API emits no
+// CORS headers — so an application/json requirement is what stops a
+// hostile site from driving login/register as the visitor (a form post
+// or a text/plain fetch with a JSON body would otherwise reach
+// decodeBody and work).
+func requireJSON(next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// HTTP media types are case-insensitive.
+		ct := strings.ToLower(r.Header.Get("Content-Type"))
+		if ct != "application/json" && !strings.HasPrefix(ct, "application/json;") {
+			writeError(w, http.StatusUnsupportedMediaType,
+				"Content-Type must be application/json.", nil)
+			return
+		}
+		next(w, r)
+	}
 }
 
 // methodDispatch runs the handler registered for r.Method, or answers 405
@@ -213,13 +261,30 @@ func methodDispatch(methods map[string]http.HandlerFunc) http.HandlerFunc {
 	}
 }
 
-// bearerAuth rejects requests whose Authorization header is not
-// "Bearer <token>". The shared env token is compared in constant time and
-// authenticates as anonymous (actor id 0); anything else is looked up in
-// api_tokens, where the row's user becomes the request's actor. The header
-// check is case-insensitive per RFC 9110 field-name and auth-scheme rules.
-func bearerAuth(envToken string, st Store, next http.Handler) http.Handler {
+// authenticate rejects requests without a credential: either a
+// "session" cookie (register/login issue it — the browser's identity) or
+// a "Bearer <token>" Authorization header. The shared env token is
+// compared in constant time and authenticates as anonymous (actor id 0);
+// anything else is looked up in api_tokens, where the row's user becomes
+// the request's actor. The header check is case-insensitive per RFC 9110
+// field-name and auth-scheme rules. A valid session cookie wins over the
+// header: in dev the proxy injects the shared token on every request,
+// and the logged-in browser still wants its own identity.
+func authenticate(envToken string, st Store, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if c, err := r.Cookie(sessionCookieName); err == nil && c.Value != "" {
+			u, err := st.SessionUser(r.Context(), c.Value, sessionTTL)
+			switch {
+			case err == nil:
+				next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), actorKey{}, u.ID)))
+				return
+			case errors.Is(err, store.ErrNotFound):
+				// Unknown/expired session — fall through to the bearer check.
+			default:
+				writeError(w, http.StatusInternalServerError, "Internal server error.", nil)
+				return
+			}
+		}
 		got, ok := strings.CutPrefix(r.Header.Get("Authorization"), "Bearer ")
 		if !ok || got == "" {
 			writeError(w, http.StatusUnauthorized, "Unauthorized.", nil)

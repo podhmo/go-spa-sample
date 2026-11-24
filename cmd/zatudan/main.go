@@ -46,7 +46,8 @@ func main() {
 			"equivalent to the 'init' subcommand")
 	apiToken := flag.String("api-token", envOr("ZATUDAN_API_TOKEN", ""),
 		"Bearer token for the JSON API under /api/v1 (env ZATUDAN_API_TOKEN); "+
-			"empty disables the API entirely")
+			"empty adds no token — /api/v1 stays mounted and authenticates via "+
+			"session cookies and api_tokens rows only")
 	seed := flag.Bool("seed", envBool("ZATUDAN_SEED"),
 		"insert demo issues, discussions and the demo user (env ZATUDAN_SEED); "+
 			"master data (workspace, labels, categories) is ensured either way")
@@ -121,10 +122,12 @@ func main() {
 	}
 
 	mux := http.NewServeMux()
-	if *apiToken != "" || hasAPITokens {
-		mux.Handle("/api/v1/", api.New(st, *apiToken, repo))
-	} else {
-		log.Printf("no API credentials (ZATUDAN_API_TOKEN unset and no api_tokens rows): /api/v1 is not mounted")
+	// /api/v1 always mounts now that cookie sessions exist: /auth/* is how
+	// a browser obtains a credential. With no tokens configured the rest
+	// of the surface simply 401s until someone registers and logs in.
+	mux.Handle("/api/v1/", api.New(st, *apiToken, repo))
+	if *apiToken == "" && !hasAPITokens {
+		log.Printf("no API tokens configured (ZATUDAN_API_TOKEN unset, no api_tokens rows): only session logins authenticate /api/v1")
 	}
 	// A trivial liveness probe for dev checks; outside /api/v1 so it
 	// answers without a Bearer token.
