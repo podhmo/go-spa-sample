@@ -3,6 +3,8 @@ import {
   Outlet,
   createRootRoute,
   createRoute,
+  isNotFound,
+  notFound,
   redirect,
   useNavigate,
   useRouter,
@@ -12,6 +14,17 @@ import { RequestError, WS, api } from './api'
 import { CommentForm, IssueForm } from './components/forms'
 import { IssueDetail } from './components/IssueDetail'
 import { IssueList } from './components/IssueList'
+
+// Rethrows a 404 RequestError as the router's notFound() so a missing
+// resource shows the notFoundComponent instead of a generic error.
+const notFoundOn404 = async <T,>(p: Promise<T>): Promise<T> => {
+  try {
+    return await p
+  } catch (err) {
+    if (err instanceof RequestError && err.status === 404) throw notFound()
+    throw err
+  }
+}
 
 const rootRoute = createRootRoute({
   component: () => (
@@ -23,6 +36,28 @@ const rootRoute = createRootRoute({
       <hr />
       <Outlet />
     </>
+  ),
+  notFoundComponent: () => (
+    <div>
+      <h2>404 — not found</h2>
+      <p>
+        The page or resource you are looking for does not exist.{' '}
+        <Link to="/issues">Back to issues</Link>
+      </p>
+    </div>
+  ),
+  errorComponent: ({ error }) => (
+    <div>
+      <h2>Something went wrong</h2>
+      {isNotFound(error) ? (
+        <p>
+          The page or resource you are looking for does not exist.{' '}
+          <Link to="/issues">Back to issues</Link>
+        </p>
+      ) : (
+        <p role="alert">{error instanceof Error ? error.message : String(error)}</p>
+      )}
+    </div>
   ),
 })
 
@@ -197,10 +232,12 @@ const editIssueRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/issues/$issueId/edit',
   loader: async ({ params }) => {
-    const [detail, labels] = await Promise.all([
-      api.getIssue(WS, Number(params.issueId)),
-      api.listLabels(WS, { kind: 'issue' }),
-    ])
+    const [detail, labels] = await notFoundOn404(
+      Promise.all([
+        api.getIssue(WS, Number(params.issueId)),
+        api.listLabels(WS, { kind: 'issue' }),
+      ]),
+    )
     return { ...detail, labels: labels.labels }
   },
   component: function EditIssuePage() {
@@ -247,7 +284,7 @@ const editIssueRoute = createRoute({
 const issueRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/issues/$issueId',
-  loader: ({ params }) => api.getIssue(WS, Number(params.issueId)),
+  loader: ({ params }) => notFoundOn404(api.getIssue(WS, Number(params.issueId))),
   component: function IssuePage() {
     const { issue, comments } = issueRoute.useLoaderData()
     const { issueId } = issueRoute.useParams()
@@ -255,10 +292,13 @@ const issueRoute = createRoute({
     const navigate = useNavigate()
     const [isPending, startTransition] = useTransition()
     const issueID = Number(issueId)
+    // invalidate is fired without awaiting: the refetch updates the page
+    // whenever it lands, while isPending tracks just the mutation. (A
+    // stalled invalidate promise would otherwise pin isPending forever.)
     const mutate = (fn: () => Promise<unknown>) => {
       startTransition(async () => {
         await fn()
-        await router.invalidate()
+        void router.invalidate()
       })
     }
     return (
@@ -284,12 +324,7 @@ const issueRoute = createRoute({
         />
         <CommentForm
           submitting={isPending}
-          onSubmit={(body) => {
-            startTransition(async () => {
-              await api.createComment(WS, Number(issueId), body)
-              await router.invalidate()
-            })
-          }}
+          onSubmit={(body) => mutate(() => api.createComment(WS, issueID, body))}
         />
       </div>
     )

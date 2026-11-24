@@ -319,3 +319,17 @@ describe('route: /issues/$issueId', () => {
     expect(writeText).toHaveBeenCalled()
   })
 })
+
+describe('404 handling', () => {
+  it('shows the not-found page for a missing issue', async () => {
+    stubAPI(() => ({ status: 404, body: { error: { message: 'Not found.' } } }))
+    renderAt('/issues/999')
+    await expect.element(page.getByText('404 — not found')).toBeInTheDocument()
+  })
+
+  it('shows the not-found page for an unmatched route', async () => {
+    stubAPI(() => ({ status: 404, body: { error: { message: 'Not found.' } } }))
+    renderAt('/no-such-page')
+    await expect.element(page.getByText('404 — not found')).toBeInTheDocument()
+  })
+})
