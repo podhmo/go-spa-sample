@@ -10,18 +10,24 @@
 API サーバー部分を移植し、フロントを **SPA として作り直す**実験。
 元アプリの機能 spec / 受け入れチェックリストは `docs/ja/features.md`。
 
-## 現在地 (2026-11-24 時点)
+## 現在地 (2026-11-25 時点)
 
-- **issues スコープは機能パリティ達成**。SPA: 一覧(全フィルタ+page)/
-  詳細/作成/編集/削除/状態変更/コメント CRUD/hide・unhide/permalink/
-  labels管理/404/Markdown描画(GFM+alert)/markdownエクスポート。
-  API: `cmd/zatudan` + `internal/` (issues/labels/comments/workspaces/
+- **issues スコープは機能 + 見た目の両方でパリティ達成**。SPA: 一覧
+  (全フィルタ+page)/詳細/作成/編集/削除/状態変更/コメント CRUD/
+  hide・unhide/permalink/labels管理/404/Markdown描画(GFM+alert)/
+  markdownエクスポート。見た目は classic-mpa の app.css/ui-rules 準拠、
+  MPA/SPA のスクショ比較済み (`docs/sketch/ja/ui-parity.md` + 同ディレクトリ
+  の `ui-parity-*.png`、意図的な残差分も記録)
+- API: `cmd/zatudan` + `internal/` (issues/labels/comments/workspaces/
   markdown)。17 browser-mode tests 緑、CI 有り (`.github/workflows/ci.yml`)
 - **スコープ外として捨てたもの**: SSE live updates、`X-Partial` 部分描画
   (SPA は JSON API のみ)、`zatu` CLI、accounts/セッション
-- **サブエージェント運用**: 大きな実装・検証は worktree + 別ブランチで
-  サブエージェントに任せ、結果を master にマージしてきた
-  (sketch/tanstack-query、sketch/react-markdown)
+- **サブエージェント運用**: 大きな実装・検証はサブエージェントに任せる。
+  別ブランチ worktree でやって master にマージしたもの
+  (sketch/tanstack-query、sketch/react-markdown) と、master 上でそのまま
+  作業させたもの (issues parity、UI parity) がある。並行稼働時は
+  「触って良いファイル範囲」を指示で分離するのが重要
+- **次の一手**: workspace スコープ `/w/{slug}` 対応 (TODO.md 順序の先頭)
 
 ## 残りタスク (`TODO.md` が正)
 
@@ -47,7 +53,8 @@ API サーバー部分を移植し、フロントを **SPA として作り直す
   `docs/sketch/ja/libraries.md` (dialog/`commandfor`、`:user-invalid`+aria
   同期 `<search>`、copy-button の role=status bubble 等)
 - Lint = oxlint、Formatter = oxfmt (`npm run format` を編集後に必ず。
-  `format:check` は CI)。TS は `~7.0.2` (native)
+  `format:check` は CI)。TS は `~7.0.2` (native)、target/lib = ES2025
+  (TS7 既定値の実測監査: `docs/sketch/ja/tsconfig.md` 追記)
 - ライブラリ追加時は「公開から7日以上経ったバージョン」を選ぶ
 
 ## 開発ループ

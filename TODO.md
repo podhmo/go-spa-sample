@@ -64,14 +64,15 @@ useReducer / Vitest / playwright-cli) を使った試行錯誤が完全に行え
 modern-web-guidance を適用しきる (次の2項目)。それができたら
 workspace → discussions → pulls → accounts へ展開する。
 
-- [ ] **[milestone] issues の見た目を classic-mpa に揃える**: SPA の
+- [x] **[milestone] issues の見た目を classic-mpa に揃える**: SPA の
   issues scope を元アプリ `internal/web/static/app.css` +
-  `docs/ja/ui-rules.md` (go-classic-mpa-sample) 準拠の見た目にする。
-  方針: `docs/sketch/ja/css.md` (index.css + CSS Modules、Panda は将来案)。
-  playwright-cli で元画面との比較確認を行う
-- [ ] **[milestone] modern-web-guidance の issues 反映を記録**:
-  見た目合わせの過程で適用したガイド・パターンを
-  `docs/sketch/ja` に記録する (libraries.md 追記 or 専用ページ)
+  `docs/ja/ui-rules.md` (go-classic-mpa-sample) 準拠の見た目にした。
+  MPA(:8090) vs SPA(:5173) の playwright-cli スクリーンショットで
+  4画面を比較確認。記録: `docs/sketch/ja/ui-parity.md`
+  (残差分も文書化 — nav は issues 限定、label 削除は dialog 確認等)
+- [x] **[milestone] modern-web-guidance の issues 反映を記録**:
+  適用ガイド・パターンを `docs/sketch/ja/ui-parity.md` +
+  `libraries.md` 追記として記録済み
 - [ ] **workspace スコープ `/w/{slug}` 対応** (features.md 3.1, §6-全体):
   SPA は現状 `WS='default'` 固定。URL を `/w/{slug}/issues…` 構造にし、
   workspace なしアクセスは default/先頭へ誘導、別 workspace のリソースは
