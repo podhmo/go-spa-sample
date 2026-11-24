@@ -8,16 +8,22 @@ type CopyUIState = { state: CopyState; timer?: ReturnType<typeof setTimeout> | u
 // Clipboard copy button with transient feedback. getText may fetch the
 // payload lazily (e.g. the markdown export endpoint) so it is only
 // requested when the user actually copies.
-// Feedback lives in a role="status" bubble *outside* the button — a live
-// region inside a button is not reliably announced.
+// Feedback lives in a role="status" bubble *outside* the button — a
+// live region inside a button is not reliably announced. The state is
+// also mirrored on the button as data-copy-state for the MPA's
+// copied/failed border colors.
 export function CopyButton({
   label,
   getText,
   pending,
+  className = 'btn',
 }: {
   label: string
   getText: () => string | Promise<string>
   pending?: boolean | undefined
+  // '.btn' for action rows (Copy as markdown), '.copy-btn' for the
+  // quiet hover-revealed button on comment headers (copy link).
+  className?: string
 }) {
   const [s, dispatch] = useReducer(
     (s: CopyUIState, a: CopyUIState) => {
@@ -27,9 +33,11 @@ export function CopyButton({
     { state: 'idle' } as CopyUIState,
   )
   return (
-    <span className="copy">
+    <span className="copy-wrap">
       <button
         type="button"
+        className={className}
+        data-copy-state={s.state === 'idle' ? undefined : s.state}
         disabled={pending}
         onClick={() => {
           void (async () => {
