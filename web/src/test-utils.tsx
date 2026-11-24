@@ -11,12 +11,13 @@ import { routeTree } from './routes'
 
 // renderAt mounts the real route tree on an in-memory history — component
 // checks run inside the actual router so Link/loader/useSearch all work.
+// The router rides along so tests can assert the landed location.
 export function renderAt(initialPath: string) {
   const router = createRouter({
     routeTree,
     history: createMemoryHistory({ initialEntries: [initialPath] }),
   })
-  return render(<RouterProvider router={router} />)
+  return { router, ...render(<RouterProvider router={router} />) }
 }
 
 // renderWithRouter wraps a lone component in a minimal router so

@@ -430,6 +430,33 @@ describe('workspace routing', () => {
     expect(calls.some((u) => u.includes('/w/default/issues/1'))).toBe(true)
   })
 
+  it('keeps a #comment-N permalink through both redirects', async () => {
+    stubAPI((url) => {
+      if (url.endsWith('/api/v1/workspaces')) return { body: { workspaces: [workspace()] } }
+      if (url.includes('/w/other/')) {
+        return { status: 404, body: { error: { message: 'Not found.', workspace: 'default' } } }
+      }
+      return { body: { issue: issue(), comments: [comment({ id: 2 })] } }
+    })
+    const { router } = renderAt('/issues/1#comment-2')
+    await expect.element(page.getByRole('heading', { name: /first issue/ })).toBeInTheDocument()
+    expect(router.state.location.pathname).toBe('/w/default/issues/1')
+    expect(router.state.location.hash).toBe('comment-2')
+  })
+
+  it('keeps a #comment-N permalink across a cross-workspace rebase', async () => {
+    stubAPI((url) => {
+      if (url.includes('/w/other/')) {
+        return { status: 404, body: { error: { message: 'Not found.', workspace: 'default' } } }
+      }
+      return { body: { issue: issue(), comments: [comment({ id: 2 })] } }
+    })
+    const { router } = renderAt('/w/other/issues/1#comment-2')
+    await expect.element(page.getByRole('heading', { name: /first issue/ })).toBeInTheDocument()
+    expect(router.state.location.pathname).toBe('/w/default/issues/1')
+    expect(router.state.location.hash).toBe('comment-2')
+  })
+
   it('shows the not-found page for an unknown workspace slug', async () => {
     stubAPI(() => ({ status: 404, body: { error: { message: 'Not found.' } } }))
     renderAt('/w/nope/issues')
