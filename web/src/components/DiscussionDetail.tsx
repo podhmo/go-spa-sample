@@ -12,7 +12,7 @@ import { Markdown } from './Markdown'
 
 type EditUI = { editing: boolean; replying: boolean; draft: string; replyDraft: string }
 type EditAction =
-  | { type: 'start-edit'; body: string }
+  | { type: 'start-edit' }
   | { type: 'cancel' }
   | { type: 'submitted' }
   | { type: 'draft'; value: string }
@@ -22,7 +22,9 @@ type EditAction =
 const editReducer = (s: EditUI, a: EditAction): EditUI => {
   switch (a.type) {
     case 'start-edit':
-      return { ...s, editing: true, draft: a.body }
+      // draft belongs to the reply box only — the edit form keeps its own
+      // (InlineEditForm), so opening an edit must not touch it.
+      return { ...s, editing: true }
     case 'cancel':
       // Close but keep the draft: a cancelled reply restores on reopen.
       return { ...s, editing: false, replying: false }
@@ -301,7 +303,7 @@ function ReplyItem({
             <button
               type="button"
               className="comment-action"
-              onClick={() => dispatch({ type: 'start-edit', body: c.body })}
+              onClick={() => dispatch({ type: 'start-edit' })}
               aria-label={fmt(m.comments.ariaEdit, { noun, id: c.id })}
             >
               {m.comments.edit}
@@ -419,7 +421,7 @@ function ThreadItem({
             <button
               type="button"
               className="comment-action"
-              onClick={() => dispatch({ type: 'start-edit', body: t.body })}
+              onClick={() => dispatch({ type: 'start-edit' })}
               aria-label={fmt(m.comments.ariaEdit, { noun, id: t.id })}
             >
               {m.comments.edit}

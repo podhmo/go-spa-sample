@@ -260,6 +260,15 @@ function DiffRow({
   // The disabled button only blocks clicks: Ctrl+Enter (requestSubmit)
   // still fires, so the send itself must be re-entrant-safe.
   const sending = useRef(false)
+  // The textarea is uncontrolled, so closing the form discards the DOM
+  // draft: every toggle must reset the flags or a reopen shows an empty
+  // box with Comment enabled / a phantom dirty guard.
+  const toggle = () => {
+    setDirty(false)
+    setBlank(true)
+    setPostError(null)
+    onToggle()
+  }
   if (line.kind === 'meta') {
     return (
       <tr className="diff-line diff-meta">
@@ -278,7 +287,7 @@ function DiffRow({
             <button
               type="button"
               className="diff-add-comment"
-              onClick={onToggle}
+              onClick={toggle}
               aria-expanded={formOpen}
               aria-label={fmt(m.pulls.commentOnLine, {
                 path: line.path ?? '',
@@ -319,8 +328,7 @@ function DiffRow({
                 void (async () => {
                   try {
                     await onSubmit(body)
-                    setBlank(true)
-                    onToggle()
+                    toggle()
                   } catch (err) {
                     // The draft is still in the textarea — re-arm.
                     setDirty(true)
@@ -367,7 +375,7 @@ function DiffRow({
                 {postError && <em role="alert">{postError}</em>}
               </div>
               <div className="form-actions">
-                <button type="button" className="btn btn-quiet" onClick={onToggle}>
+                <button type="button" className="btn btn-quiet" onClick={toggle}>
                   {m.copy.cancel}
                 </button>
                 <button type="submit" className="btn btn-primary" disabled={pending || blank}>

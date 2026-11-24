@@ -287,6 +287,14 @@ export function PRCommentItem({
   const [blank, setBlank] = useReducer((_: boolean, v: boolean) => v, false)
   const m = useMessages()
   useLeaveGuard(editing && dirty, m.form.unsavedChanges)
+  // The textarea is uncontrolled, so every open/cancel/save restores
+  // c.body in the DOM — the flags must be reset to match or a stale
+  // dirty/blank survives into the next session (Save stuck disabled).
+  const toggleEditing = () => {
+    setDirty(false)
+    setBlank(false)
+    setEditing()
+  }
   const fmtTime = useFmtTime()
   const id = `comment-${c.id}`
   return (
@@ -341,7 +349,7 @@ export function PRCommentItem({
             e.preventDefault()
             const body = String(new FormData(e.currentTarget).get('body') ?? '')
             onEdit?.(c.id, body)
-            setEditing()
+            toggleEditing()
           }}
         >
           <div className="field">
@@ -366,7 +374,7 @@ export function PRCommentItem({
             </span>
           </div>
           <div className="form-actions">
-            <button type="button" className="btn btn-quiet" onClick={() => setEditing()}>
+            <button type="button" className="btn btn-quiet" onClick={toggleEditing}>
               {m.copy.cancel}
             </button>
             <button type="submit" className="btn btn-primary" disabled={pending || blank}>
@@ -385,7 +393,7 @@ export function PRCommentItem({
             <button
               type="button"
               className="comment-action"
-              onClick={() => setEditing()}
+              onClick={toggleEditing}
               aria-label={fmt(m.comments.ariaEdit, { noun: m.comments.nounComment, id: c.id })}
             >
               {m.comments.edit}
