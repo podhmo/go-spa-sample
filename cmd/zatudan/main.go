@@ -32,6 +32,7 @@ import (
 	"time"
 
 	"github.com/podhmo/go-spa-sample/internal/api"
+	"github.com/podhmo/go-spa-sample/internal/events"
 	"github.com/podhmo/go-spa-sample/internal/gitrepo"
 	"github.com/podhmo/go-spa-sample/internal/store"
 )
@@ -121,11 +122,30 @@ func main() {
 		log.Printf("git repository: %s (git %s)", repo.Dir, repo.Version)
 	}
 
+	// Live updates: every mutator records its hints in the changes table
+	// inside the mutation's own tx, and WatchChanges re-publishes new rows
+	// to the hub — so writes from other processes (the local CLI) reach
+	// the SSE endpoint too. Each change goes out under its own topic and
+	// under the fan-in AllTopic the SPA subscribes to. The watermark is
+	// sampled synchronously so a commit cannot slip between goroutine
+	// start and its first read.
+	hub := events.NewHub()
+	watermark, err := st.LatestChangeSeq(ctx)
+	if err != nil {
+		log.Fatalf("read changes watermark: %v", err)
+	}
+	go st.WatchChanges(ctx, watermark, func(c events.Change) {
+		hub.Publish(c)
+		all := c
+		all.Topic = events.AllTopic
+		hub.Publish(all)
+	})
+
 	mux := http.NewServeMux()
 	// /api/v1 always mounts now that cookie sessions exist: /auth/* is how
 	// a browser obtains a credential. With no tokens configured the rest
 	// of the surface simply 401s until someone registers and logs in.
-	mux.Handle("/api/v1/", api.New(st, *apiToken, repo))
+	mux.Handle("/api/v1/", api.New(st, *apiToken, repo, hub))
 	if *apiToken == "" && !hasAPITokens {
 		log.Printf("no API tokens configured (ZATUDAN_API_TOKEN unset, no api_tokens rows): only session logins authenticate /api/v1")
 	}

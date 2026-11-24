@@ -4,6 +4,7 @@ import { RouterProvider, createRouter } from '@tanstack/react-router'
 import './index.css'
 import { setupFieldErrorSync } from './a11y'
 import { watchLeaveGuardReset } from './leave-guard'
+import { watchLiveUpdates } from './live-updates'
 import { routeTree } from './routes.tsx'
 
 setupFieldErrorSync()
@@ -16,6 +17,11 @@ const router = createRouter({
   scrollRestoration: true,
   defaultPreload: 'intent',
 })
+
+// Live updates: writes from anywhere — including the local CLI in
+// another process — land in the changes table, stream out of
+// /api/v1/events, and invalidate the active loaders (live-updates.ts).
+watchLiveUpdates(router)
 
 // Full-page loads move focus to the top of the new document; a
 // client-side nav does not, so move it to the main landmark when the

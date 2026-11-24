@@ -36,6 +36,11 @@ const (
 	IssuesTopic      = "issues"
 	DiscussionsTopic = "discussions"
 	PullsTopic       = "pulls"
+	// AllTopic is the fan-in channel carrying every change regardless of
+	// resource. The SPA server streams it on /api/v1/events: the client
+	// invalidates its loaders on any hint, so per-resource topics are
+	// not needed there (main.go re-publishes each change under both).
+	AllTopic = "all"
 )
 
 // IssueTopic is the per-issue channel ("issue:5").

@@ -22,6 +22,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/podhmo/go-spa-sample/internal/events"
 	"github.com/podhmo/go-spa-sample/internal/gitrepo"
 	"github.com/podhmo/go-spa-sample/internal/store"
 )
@@ -109,8 +110,8 @@ const (
 // optional shared credential (constant-time compared; its requests are
 // anonymous); any other token is resolved through the store's api_tokens
 // table and its requests run as that user.
-func New(st Store, envToken string, repo *gitrepo.Repo) http.Handler {
-	h := &handler{store: st, repo: repo}
+func New(st Store, envToken string, repo *gitrepo.Repo, hub *events.Hub) http.Handler {
+	h := &handler{store: st, repo: repo, hub: hub}
 	mux := http.NewServeMux()
 
 	// Routes are registered methodless per path and dispatched on
@@ -150,6 +151,10 @@ func New(st Store, envToken string, repo *gitrepo.Repo) http.Handler {
 
 		// Inside the gate: reports the credential's user (401 anonymous).
 		"/api/v1/auth/me": {"GET": h.me},
+
+		// Live updates: one SSE stream of every recorded change (hint-only,
+		// client re-fetches). Unmounted (404) when the hub is nil.
+		"/api/v1/events": {"GET": h.streamEvents},
 
 		"/api/v1/w/{ws}/discussions":                                          {"GET": h.scoped(h.listDiscussions), "POST": h.scoped(h.createDiscussion)},
 		"/api/v1/w/{ws}/discussions/{id}":                                     {"GET": h.scoped(h.getDiscussion), "PATCH": h.scoped(h.updateDiscussion), "DELETE": h.scoped(h.deleteDiscussion)},
@@ -323,6 +328,7 @@ func actorID(r *http.Request) int64 {
 type handler struct {
 	store Store
 	repo  *gitrepo.Repo // nil → /api/v1/pulls* unmounted
+	hub   *events.Hub   // nil → /api/v1/events unmounted
 	// pullsMu serializes PR status transitions against merges: a close
 	// racing an in-flight merge must not let the merge land unrecorded.
 	pullsMu sync.Mutex

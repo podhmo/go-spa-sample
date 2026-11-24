@@ -158,7 +158,7 @@ func TestTokenlessStartup(t *testing.T) {
 		t.Fatalf("store.Open: %v", err)
 	}
 	t.Cleanup(func() { st.Close() })
-	srv := httptest.NewServer(New(st, "", nil))
+	srv := httptest.NewServer(New(st, "", nil, nil))
 	t.Cleanup(srv.Close)
 
 	// Anonymous calls are rejected — there is no shared token to borrow.
