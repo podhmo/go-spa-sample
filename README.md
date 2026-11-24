@@ -4,37 +4,60 @@ An experiment in rebuilding [go-classic-mpa-sample](https://github.com/podhmo/go
 ("zatudan" — an issue tracker + discussions + git-backed pull requests)
 as a **single-page application**.
 
-## Context
-
 The source project is a deliberately *classic* web app: server-rendered
 HTML, plain HTML forms, and POST → Redirect → GET everywhere, backed by
 SQLite — plus a `/api/v1` JSON surface that mirrors the web app.
 
-The far goal here:
+This repo ports the API-server side (SQLite store + `/api/v1` JSON
+handlers) and re-implements the frontend as an SPA on top of it. The
+MPA-era client features (SSE live updates, `X-Partial` fragments) are
+dropped — the SPA talks JSON only.
 
-1. Copy the API-server side of go-classic-mpa-sample (SQLite store +
-   `internal/api`-style JSON handlers) into this repo.
-2. Re-implement the whole frontend as an SPA on top of that API.
+## Layout
 
-Before any porting, this repo first establishes the *toolchain*:
+```
+cmd/zatudan/    API-only server (issues scope; -seed, -db, -api-token flags)
+cmd/fakeapi/    throwaway connectivity-spike server (slated for removal)
+internal/       store / api / auth / events / export (ported from the MPA)
+web/            the SPA — Vite + React 19 + TS 7 (@next) + TanStack Router
+docs/ja/        porting reference (full feature spec of the source app)
+docs/sketch/ja/ decision notes: environment, dev-workflow, libraries, css
+```
 
-- **Go** — the API server (`net/http`, `http.ServeMux`).
-- **Vite + React + TypeScript** — the SPA, developed against the Go
-  server through a dev-server proxy (same-origin `/api`, no CORS).
-- **TanStack Router** — routing/data loading; `useReducer` for local
-  state (`useState` is banned by convention).
-- **Vitest** — unit tests.
-- **playwright-cli** — browser-level verification.
-- **context7 MCP** / **modern-web-guidance** — docs lookup for the agent
-  (setup notes: `docs/sketch/ja/environment.md`).
-
-## Current state: connectivity spike
-
-A throwaway prototype to prove the Go ↔ SPA path works end to end.
-The fake API is intentionally *unrelated* to zatudan — its signatures
-are ad-hoc and will be discarded.
+## Develop
 
 ```sh
-go run ./cmd/fakeapi            # fake API on 127.0.0.1:8080
-npm --prefix web run dev        # Vite dev server on :5173, /api proxied to :8080
+# terminal 1 — API on 127.0.0.1:8080 (dev token injected by the vite proxy)
+go run ./cmd/zatudan -seed -api-token dev-token -db /tmp/spa-zatudan.db
+
+# terminal 2 — SPA on :5173, /api proxied to :8080
+npm --prefix web run dev
 ```
+
+## Verify
+
+```sh
+# web (in web/)
+npm run build   # tsc -b + vite build
+npm test        # vitest browser mode (system Chrome, real DOM)
+npm run lint    # oxlint
+
+# go
+go build ./... && go vet ./... && go test ./...
+```
+
+For full-browser checks against the running app, use the `playwright-cli`
+skill (`npx playwright-cli ...`) — that's the agent's "hands" for E2E.
+Component-level visual checks happen inside vitest browser-mode tests
+instead of Storybook. See `docs/sketch/ja/dev-workflow.md`.
+
+## Conventions
+
+- Local React state: `useReducer` only — `useState` is banned.
+- Server data: Router loaders + `router.invalidate()` on mutation.
+- UI code follows modern-web-guidance (native `<dialog>`, `:user-invalid`
+  + aria sync, `<search>`) — applied patterns in `docs/sketch/ja/libraries.md`.
+- Presentational components take props + callbacks; routes wire loaders
+  and mutations. Verify components in browser-mode tests *before*
+  connecting them to the real server.
+- Task tracking lives in `TODO.md` (see `.agents/skills/todo-md/`).
