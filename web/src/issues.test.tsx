@@ -275,6 +275,29 @@ describe('route: /issues/$issueId', () => {
     await expect.element(submit).toBeDisabled()
   })
 
+  it('resets browser validation state after posting a comment', async () => {
+    let posted = false
+    stubAPI((url, init) => {
+      if (init?.method === 'POST' && url.endsWith('/comments')) {
+        posted = true
+        return { status: 201, body: { comment: comment({ id: 2, body: 'posted body' }) } }
+      }
+      return {
+        body: {
+          issue: issue(),
+          comments: posted ? [comment({ id: 2, body: 'posted body' })] : [],
+        },
+      }
+    })
+    renderAt('/w/default/issues/1')
+    await page.getByLabelText(/Add a comment/).fill('posted body')
+    await page.getByRole('button', { name: 'Comment', exact: true }).click()
+    await expect.element(page.getByLabelText(/Add a comment/)).toHaveValue('')
+    await expect
+      .poll(() => document.getElementById('comment-body')?.matches(':user-invalid'))
+      .toBe(false)
+  })
+
   it('confirms before leaving with a comment draft, and navigates on accept', async () => {
     stubAPI((url) => {
       if (url.includes('/labels')) return { body: { labels: [] } }

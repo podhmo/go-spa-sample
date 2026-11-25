@@ -525,7 +525,7 @@ export function CommentForm({
   onSubmit,
   submitting,
 }: {
-  onSubmit: (body: string) => void
+  onSubmit: (body: string) => void | boolean | Promise<void | boolean>
   submitting?: boolean
 }) {
   const [body, setBody] = useReducer((_: string, v: string) => v, '')
@@ -537,8 +537,16 @@ export function CommentForm({
       aria-label={m.form.newCommentAria}
       onSubmit={(e) => {
         e.preventDefault()
-        onSubmit(body)
-        setBody('')
+        const form = e.currentTarget
+        void (async () => {
+          const ok = await onSubmit(body)
+          if (ok !== false) {
+            // Native reset clears the :user-invalid interaction state;
+            // clearing only the controlled value leaves it looking invalid.
+            form.reset()
+            setBody('')
+          }
+        })()
       }}
     >
       <div className="field">

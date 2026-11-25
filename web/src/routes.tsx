@@ -462,11 +462,11 @@ const workspacesRoute = createRoute({
         try {
           await fn()
           setError(null)
+          void router.invalidate()
         } catch (err) {
           setError(err instanceof Error ? err.message : String(err))
         } finally {
           setPending(false)
-          void router.invalidate()
         }
       })()
     }
@@ -969,14 +969,17 @@ const issueRoute = createRoute({
     const issueID = Number(issueId)
     const mutate = (fn: () => Promise<unknown>) => {
       setPending(true)
-      void (async () => {
+      return (async () => {
         try {
           await fn()
+          void router.invalidate()
+          return true
         } catch {
-          // mutation failures surface via the refetched state
+          // A failed mutation changed nothing; refetching here can drop
+          // the whole page into the route error boundary during an outage.
+          return false
         } finally {
           setPending(false)
-          void router.invalidate()
         }
       })()
     }
@@ -1366,6 +1369,7 @@ const discussionRoute = createRoute({
         try {
           await fn()
           setError(null)
+          void router.invalidate()
           return true
         } catch (err) {
           const fields = err instanceof RequestError ? err.apiError?.fields : undefined
@@ -1382,7 +1386,6 @@ const discussionRoute = createRoute({
           return false
         } finally {
           setPending(false)
-          void router.invalidate()
         }
       })()
     }
@@ -1858,16 +1861,18 @@ const pullRoute = createRoute({
     const mutate = (fn: () => Promise<unknown>) => {
       setPending(true)
       setActionError(null)
-      void (async () => {
+      return (async () => {
         try {
           await fn()
+          void router.invalidate()
+          return true
         } catch (err) {
-          // A failed merge changes nothing on refetch, so surface the
-          // rejection (e.g. a dirty worktree) instead of staying silent.
+          // A failed mutation changes nothing; refetching here can drop
+          // the whole page into the route error boundary during an outage.
           setActionError(err instanceof RequestError ? err.message : m.error.requestFailed)
+          return false
         } finally {
           setPending(false)
-          void router.invalidate()
         }
       })()
     }
@@ -1968,11 +1973,11 @@ const labelsRoute = createRoute({
         try {
           await fn()
           setErrors({})
+          void router.invalidate()
         } catch (err) {
           setErrors(apiFieldErrors(err))
         } finally {
           setPending(false)
-          void router.invalidate()
         }
       })()
     }
