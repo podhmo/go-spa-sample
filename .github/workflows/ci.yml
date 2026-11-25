@@ -34,7 +34,7 @@ jobs:
       - run: npm run format:check
       - run: npm run lint
       - run: npm run generate-routes
-      - run: test -z "$(git status --porcelain -- src/routeTree.gen.ts)"
+      - run: test -z "$(git status --porcelain -- src/routes src/routeTree.gen.ts)"
       - run: npm run build
       # vitest browser mode uses channel: 'chrome' — ubuntu-latest ships Chrome
       - run: npm test
