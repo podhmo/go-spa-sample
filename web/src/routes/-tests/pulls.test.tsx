@@ -1,6 +1,7 @@
 import { page } from 'vitest/browser'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { PRComment, PRCommit, PullRequest } from '../../api'
+import contentStyles from '../../styles/content.module.css'
 import { renderAt, stubAPI } from '../../test-utils'
 
 const pull = (over: Partial<PullRequest> = {}): PullRequest => ({
@@ -73,7 +74,8 @@ describe('route: /pulls', () => {
     renderAt('/pulls')
     await expect.element(page.getByText('feature-x')).toBeInTheDocument()
     await expect.element(page.getByText('main')).toBeInTheDocument()
-    expect(document.querySelector('.issue-row .badge')).toHaveTextContent('Open')
+    const badge = document.querySelector(`.${contentStyles['issue-row']} .${contentStyles.badge}`)
+    expect(badge).toHaveTextContent('Open')
   })
 
   it('404s when the server has no git repo', async () => {

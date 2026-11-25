@@ -21,18 +21,21 @@ export function MergeableBadge({ mergeable }: { mergeable: PullMergeable }) {
   const m = useMessages()
   if (!mergeable) return null
   if (mergeable.status === 'clean') {
-    return <span className={`badge ${pullStyles.badgePrOpen}`}>{m.pulls.mergeable}</span>
+    return <span className={`${cx('badge')} ${pullStyles.badgePrOpen}`}>{m.pulls.mergeable}</span>
   }
   if (mergeable.status === 'conflicting') {
     return (
-      <span className={`badge ${pullStyles.badgePrConflict}`} title={mergeable.files?.join(', ')}>
+      <span
+        className={`${cx('badge')} ${pullStyles.badgePrConflict}`}
+        title={mergeable.files?.join(', ')}
+      >
         {mergeable.files?.length
           ? fmt(m.pulls.conflicting, { n: mergeable.files.length })
           : m.pulls.conflictNoFiles}
       </span>
     )
   }
-  return <span className="badge">{m.pulls.mergeUnknown}</span>
+  return <span className={cx('badge')}>{m.pulls.mergeUnknown}</span>
 }
 
 // The merge dialog: method radio (merge/squash/rebase) + optional
@@ -112,7 +115,7 @@ export function MergeDialog({
               />
             </div>
           )}
-          <div className={cx('form-actions')}>
+          <div className={`${cx('form-actions')} ${dialogStyles.actions}`}>
             <button type="submit" className={cx('btn')} value="cancel" formNoValidate autoFocus>
               {mm.copy.cancel}
             </button>
@@ -151,14 +154,14 @@ export function PullDetail({
   const fmtTime = useFmtTime()
   return (
     <article className={cx('card issue-detail')} id="pull-article">
-      <header className="issue-detail-head">
-        <div className="issue-title-row">
+      <header className={cx('issue-detail-head')}>
+        <div className={cx('issue-title-row')}>
           <PullStatusBadge status={p.status} />
           <h1>
-            {p.title} <span className="issue-num">#{p.id}</span>
+            {p.title} <span className={cx('issue-num')}>#{p.id}</span>
           </h1>
         </div>
-        <p className="issue-meta">
+        <p className={cx('issue-meta')}>
           <code className={pullStyles.prRef}>{shortRef(p.head)}</code> →{' '}
           <code className={pullStyles.prRef}>{shortRef(p.base)}</code> ·{' '}
           {fmt(m.pulls.openedBy, { name: p.author?.name ?? m.comments.anonymous })}{' '}
@@ -177,16 +180,16 @@ export function PullDetail({
       </header>
 
       {p.body ? (
-        <div className="issue-body">
+        <div className={cx('issue-body')}>
           <Markdown text={p.body} />
         </div>
       ) : (
-        <div className="issue-body issue-body-empty">
+        <div className={cx('issue-body issue-body-empty')}>
           <em>{m.pulls.noDescription}</em>
         </div>
       )}
 
-      <div className="issue-actions">
+      <div className={cx('issue-actions')}>
         {p.status === 'open' && onMerge && mergeable?.status !== 'conflicting' && (
           <MergeDialog pullId={p.id} pending={pending} onMerge={onMerge} />
         )}
@@ -251,10 +254,10 @@ export function PullCommitList({ commits }: { commits: PRCommit[] }) {
   return (
     <section className={styles.pullCommits}>
       <h2>{fmt(m.pulls.commits, { n: commits.length })}</h2>
-      <ol className="comment-list" role="list">
+      <ol className={cx('comment-list')} role="list">
         {commits.map((c) => (
           <li className={cx('card comment')} key={c.sha}>
-            <header className="comment-meta">
+            <header className={cx('comment-meta')}>
               <code className={pullStyles.prSha}>{c.sha.slice(0, 10)}</code>{' '}
               <span className="comment-author">{c.subject}</span>{' '}
               <span className="muted">
@@ -302,8 +305,8 @@ export function PRCommentItem({
   const fmtTime = useFmtTime()
   const id = `comment-${c.id}`
   return (
-    <li className={`${cx('card comment')}${c.hidden ? ' comment-hidden' : ''}`} id={id}>
-      <header className="comment-meta">
+    <li className={cx(`card comment${c.hidden ? ' comment-hidden' : ''}`)} id={id}>
+      <header className={cx('comment-meta')}>
         <span className="comment-author">
           {fmt(m.comments.commented, { name: c.author?.name ?? m.comments.anonymous })}
         </span>{' '}
@@ -316,13 +319,13 @@ export function PRCommentItem({
             </code>{' '}
           </>
         )}
-        <a className="comment-permalink" href={`#${id}`}>
+        <a className={cx('comment-permalink')} href={`#${id}`}>
           <time dateTime={c.created_at}>{fmtTime(c.created_at)}</time>
         </a>
         {c.edited_at && (
           <>
             {' '}
-            · <span className="comment-edited">{m.comments.edited}</span>
+            · <span className={cx('comment-edited')}>{m.comments.edited}</span>
           </>
         )}
       </header>
@@ -333,15 +336,15 @@ export function PRCommentItem({
       )}
       {c.hidden ? (
         <>
-          <p className="comment-hidden-note">
+          <p className={cx('comment-hidden-note')}>
             {fmt(m.comments.markedAs, {
               noun: m.comments.nounComment,
               reason: c.hidden_reason ?? 'hidden',
             })}
           </p>
-          <details className="comment-hidden-body">
+          <details className={cx('comment-hidden-body')}>
             <summary>{fmt(m.comments.show, { noun: m.comments.nounComment })}</summary>
-            <div className="comment-body">
+            <div className={cx('comment-body')}>
               <Markdown text={c.body} />
             </div>
           </details>
@@ -387,16 +390,16 @@ export function PRCommentItem({
           </div>
         </form>
       ) : (
-        <div className="comment-body">
+        <div className={cx('comment-body')}>
           <Markdown text={c.body} />
         </div>
       )}
       {!editing && (
-        <div className="comment-actions">
+        <div className={cx('comment-actions')}>
           {onEdit && !c.hidden && (
             <button
               type="button"
-              className="comment-action"
+              className={cx('comment-action')}
               onClick={toggleEditing}
               aria-label={fmt(m.comments.ariaEdit, { noun: m.comments.nounComment, id: c.id })}
             >
@@ -407,7 +410,7 @@ export function PRCommentItem({
             ? onUnhide && (
                 <button
                   type="button"
-                  className="comment-action"
+                  className={cx('comment-action')}
                   disabled={pending}
                   onClick={() => onUnhide(c.id)}
                   aria-label={fmt(m.comments.ariaUnhide, {
@@ -432,7 +435,7 @@ export function PRCommentItem({
               title={fmt(m.comments.deleteTitle, { noun: m.comments.nounComment, id: c.id })}
               description={m.comments.deleteCommentBody}
               confirmLabel={fmt(m.comments.deleteConfirm, { noun: m.comments.nounComment })}
-              triggerClass="comment-action comment-action-danger"
+              triggerClass={cx('comment-action comment-action-danger')}
               pending={pending}
               onConfirm={() => onDelete(c.id)}
             />
@@ -459,7 +462,7 @@ export function PRCommentList({
     return <p className="muted">{m.comments.empty}</p>
   }
   return (
-    <ol className="comment-list" role="list">
+    <ol className={cx('comment-list')} role="list">
       {comments.map((c) => (
         <PRCommentItem key={c.id} comment={c} {...handlers} />
       ))}

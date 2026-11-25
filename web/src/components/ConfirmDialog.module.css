@@ -32,6 +32,6 @@
   color: var(--text);
 }
 
-.dialog :global(.form-actions) {
+.dialog .actions {
   margin-top: 20px;
 }

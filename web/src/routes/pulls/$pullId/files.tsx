@@ -41,7 +41,7 @@ export const Route = createFileRoute('/pulls/$pullId/files')({
 
         <div className={cx('page-head')}>
           <h1>
-            {pull_request.title} <span className="issue-num">#{pull_request.id}</span>
+            {pull_request.title} <span className={cx('issue-num')}>#{pull_request.id}</span>
           </h1>
           <Link preload={false} className={cx('btn')} to="/pulls/$pullId" params={{ pullId }}>
             {m.pulls.conversation}

@@ -1,0 +1,14 @@
+.form {
+  padding: 16px;
+}
+
+/* Same-specificity primitive margins must not depend on stylesheet order. */
+.form .formField {
+  margin-bottom: 12px;
+}
+
+/* Keep the short reply composer compact while field-sizing grows it. */
+.body {
+  min-block-size: 4lh;
+  max-block-size: 16lh;
+}

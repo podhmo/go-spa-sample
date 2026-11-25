@@ -118,7 +118,7 @@ export const Route = createFileRoute('/w/$ws/discussions/$discussionId/')({
           onCopyMarkdown={() => api.getDiscussionMarkdown(ws, did)}
         />
 
-        <section id="comments" className="comments">
+        <section id="comments" className={cx('comments')}>
           <h2>
             {m.issues.comments}
             {threads.length > 0 && <span className="comment-count"> ({threads.length})</span>}
@@ -166,7 +166,7 @@ export const Route = createFileRoute('/w/$ws/discussions/$discussionId/')({
           />
         </section>
 
-        <a className="back-to-top" href="#main-content" aria-label={m.chrome.backToTopAria}>
+        <a className={cx('back-to-top')} href="#main-content" aria-label={m.chrome.backToTopAria}>
           {m.chrome.backToTop}
         </a>
       </div>

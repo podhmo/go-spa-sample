@@ -81,7 +81,7 @@ export const Route = createFileRoute('/pulls/$pullId/')({
 
         <PullCommitList commits={commits} />
 
-        <section id="comments" className="comments">
+        <section id="comments" className={cx('comments')}>
           <h2>
             {m.issues.comments}
             {comments.length > 0 && <span className="comment-count"> ({comments.length})</span>}
@@ -100,7 +100,7 @@ export const Route = createFileRoute('/pulls/$pullId/')({
           />
         </section>
 
-        <a className="back-to-top" href="#main-content" aria-label={m.chrome.backToTopAria}>
+        <a className={cx('back-to-top')} href="#main-content" aria-label={m.chrome.backToTopAria}>
           {m.chrome.backToTop}
         </a>
       </div>

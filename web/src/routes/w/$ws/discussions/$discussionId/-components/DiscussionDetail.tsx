@@ -138,19 +138,19 @@ function ModeratedBody({
   const m = useMessages()
   if (!hidden) {
     return (
-      <div className="comment-body">
+      <div className={cx('comment-body')}>
         <Markdown text={body} />
       </div>
     )
   }
   return (
     <>
-      <p className="comment-hidden-note">
+      <p className={cx('comment-hidden-note')}>
         {fmt(m.comments.markedAs, { noun, reason: hiddenReason ?? 'hidden' })}
       </p>
-      <details className="comment-hidden-body">
+      <details className={cx('comment-hidden-body')}>
         <summary>{fmt(m.comments.show, { noun })}</summary>
-        <div className="comment-body">
+        <div className={cx('comment-body')}>
           <Markdown text={body} />
         </div>
       </details>
@@ -178,20 +178,20 @@ function ReplyItem({
   const noun = m.comments.nounReply
   return (
     <li
-      className={`${cx('card comment comment-nested')}${c.hidden ? ' comment-hidden' : ''}`}
+      className={cx(`card comment comment-nested${c.hidden ? ' comment-hidden' : ''}`)}
       id={`comment-${c.id}`}
     >
-      <header className="comment-meta">
+      <header className={cx('comment-meta')}>
         <span className="comment-author">
           {fmt(m.comments.replied, { name: c.author?.name ?? m.comments.anonymous })}
         </span>{' '}
-        <a className="comment-permalink" href={`#comment-${c.id}`}>
+        <a className={cx('comment-permalink')} href={`#comment-${c.id}`}>
           <time dateTime={c.created_at}>{fmtTime(c.created_at)}</time>
         </a>
         {c.edited_at && (
           <>
             {' '}
-            · <span className="comment-edited">{m.comments.edited}</span>
+            · <span className={cx('comment-edited')}>{m.comments.edited}</span>
           </>
         )}
       </header>
@@ -206,16 +206,16 @@ function ReplyItem({
           onCancel={() => dispatch({ type: 'cancel' })}
         />
       ) : (
-        <div className="comment-body">
+        <div className={cx('comment-body')}>
           <Markdown text={c.body} />
         </div>
       )}
       {!ui.editing && (
-        <div className="comment-actions">
+        <div className={cx('comment-actions')}>
           {onEdit && !c.hidden && (
             <button
               type="button"
-              className="comment-action"
+              className={cx('comment-action')}
               onClick={() => dispatch({ type: 'start-edit' })}
               aria-label={fmt(m.comments.ariaEdit, { noun, id: c.id })}
             >
@@ -226,7 +226,7 @@ function ReplyItem({
             ? onUnhide && (
                 <button
                   type="button"
-                  className="comment-action"
+                  className={cx('comment-action')}
                   disabled={pending}
                   onClick={() => onUnhide(threadId, c.id)}
                   aria-label={fmt(m.comments.ariaUnhide, { noun, id: c.id })}
@@ -248,7 +248,7 @@ function ReplyItem({
               title={fmt(m.comments.deleteTitle, { noun, id: c.id })}
               description={m.comments.deleteReplyBody}
               confirmLabel={fmt(m.comments.deleteConfirm, { noun })}
-              triggerClass="comment-action comment-action-danger"
+              triggerClass={cx('comment-action comment-action-danger')}
               pending={pending}
               onConfirm={() => onDelete(threadId, c.id)}
             />
@@ -289,25 +289,27 @@ function ThreadItem({
   const permalink = () => `${location.origin}${location.pathname}#thread-${t.id}`
   return (
     <li
-      className={`${cx('card comment')}${t.is_answer ? ' comment-answer' : ''}${t.hidden ? ' comment-hidden' : ''}`}
+      className={cx(
+        `card comment${t.is_answer ? ' comment-answer' : ''}${t.hidden ? ' comment-hidden' : ''}`,
+      )}
       id={`thread-${t.id}`}
     >
-      <header className="comment-meta">
+      <header className={cx('comment-meta')}>
         {t.is_answer && <AnsweredBadge />}{' '}
         <span className="comment-author">
           {fmt(m.comments.commented, { name: t.author?.name ?? m.comments.anonymous })}
         </span>{' '}
-        <a className="comment-permalink" href={`#thread-${t.id}`}>
+        <a className={cx('comment-permalink')} href={`#thread-${t.id}`}>
           <time dateTime={t.created_at}>{fmtTime(t.created_at)}</time>
         </a>
         {t.edited_at && (
           <>
             {' '}
-            · <span className="comment-edited">{m.comments.edited}</span>
+            · <span className={cx('comment-edited')}>{m.comments.edited}</span>
           </>
         )}
         <CopyButton
-          className="copy-btn"
+          variant="quiet"
           label={m.comments.copyLink}
           getText={permalink}
           pending={pending}
@@ -324,16 +326,16 @@ function ThreadItem({
           onCancel={() => dispatch({ type: 'cancel' })}
         />
       ) : (
-        <div className="comment-body">
+        <div className={cx('comment-body')}>
           <Markdown text={t.body} />
         </div>
       )}
       {!ui.editing && (
-        <div className="comment-actions">
+        <div className={cx('comment-actions')}>
           {onEdit && !t.hidden && (
             <button
               type="button"
-              className="comment-action"
+              className={cx('comment-action')}
               onClick={() => dispatch({ type: 'start-edit' })}
               aria-label={fmt(m.comments.ariaEdit, { noun, id: t.id })}
             >
@@ -345,7 +347,7 @@ function ThreadItem({
             (t.is_answer ? (
               <button
                 type="button"
-                className="comment-action"
+                className={cx('comment-action')}
                 disabled={pending}
                 onClick={() => onSetAnswer(t.id, false)}
               >
@@ -355,7 +357,7 @@ function ThreadItem({
               !t.hidden && (
                 <button
                   type="button"
-                  className="comment-action"
+                  className={cx('comment-action')}
                   disabled={pending}
                   onClick={() => onSetAnswer(t.id, true)}
                 >
@@ -366,7 +368,7 @@ function ThreadItem({
           {onReply && !t.hidden && (
             <button
               type="button"
-              className="comment-action"
+              className={cx('comment-action')}
               onClick={() => dispatch({ type: 'reply', replying: !ui.replying })}
               aria-expanded={ui.replying}
             >
@@ -377,7 +379,7 @@ function ThreadItem({
             ? onUnhide && (
                 <button
                   type="button"
-                  className="comment-action"
+                  className={cx('comment-action')}
                   disabled={pending}
                   onClick={() => onUnhide(t.id)}
                   aria-label={fmt(m.comments.ariaUnhide, { noun, id: t.id })}
@@ -399,7 +401,7 @@ function ThreadItem({
               title={fmt(m.comments.deleteTitle, { noun, id: t.id })}
               description={m.comments.deleteThreadBody}
               confirmLabel={fmt(m.comments.deleteConfirm, { noun })}
-              triggerClass="comment-action comment-action-danger"
+              triggerClass={cx('comment-action comment-action-danger')}
               pending={pending}
               onConfirm={() => onDelete(t.id)}
             />
@@ -408,7 +410,7 @@ function ThreadItem({
       )}
       {ui.replying && (
         <form
-          className="comment-reply-form"
+          className={cx('comment-reply-form')}
           aria-label={fmt(m.comments.replyFormAria, { id: t.id })}
           onSubmit={(e) => {
             e.preventDefault()
@@ -447,7 +449,7 @@ function ThreadItem({
         </form>
       )}
       {t.comments.length > 0 && (
-        <ol className="comment-list comment-list-nested" role="list">
+        <ol className={cx('comment-list comment-list-nested')} role="list">
           {t.comments.map((c) => (
             <ReplyItem key={c.id} reply={c} threadId={t.id} {...replyHandlers} />
           ))}
@@ -469,7 +471,7 @@ export function ThreadList({
     return <p className="muted">{m.comments.empty}</p>
   }
   return (
-    <ol className="comment-list" role="list">
+    <ol className={cx('comment-list')} role="list">
       {threads.map((t) => (
         <ThreadItem key={t.id} thread={t} replyHandlers={replyHandlers} {...handlers} />
       ))}
@@ -498,24 +500,24 @@ export function DiscussionDetail({
   const fmtTime = useFmtTime()
   return (
     <article className={cx('card issue-detail')} id="discussion-article">
-      <header className="issue-detail-head">
-        <div className="issue-title-row">
+      <header className={cx('issue-detail-head')}>
+        <div className={cx('issue-title-row')}>
           <CategoryBadge name={d.category.name} />
           {d.answered && <AnsweredBadge />}
           <h1>
-            {d.title} <span className="issue-num">#{d.id}</span>
+            {d.title} <span className={cx('issue-num')}>#{d.id}</span>
           </h1>
         </div>
         {d.labels.length > 0 && (
-          <div className="issue-labels">
+          <div className={cx('issue-labels')}>
             {d.labels.map((l) => (
-              <span className="label-badge" style={labelStyle(l)} key={l.id}>
+              <span className={cx('label-badge')} style={labelStyle(l)} key={l.id}>
                 {l.name}
               </span>
             ))}
           </div>
         )}
-        <p className="issue-meta">
+        <p className={cx('issue-meta')}>
           {fmt(m.issues.openedBy, { name: d.author?.name ?? m.comments.anonymous })}{' '}
           <time dateTime={d.created_at}>{fmtTime(d.created_at)}</time> · {m.issues.lastUpdated}{' '}
           <time dateTime={d.updated_at}>{fmtTime(d.updated_at)}</time>
@@ -523,16 +525,16 @@ export function DiscussionDetail({
       </header>
 
       {d.body ? (
-        <div className="issue-body">
+        <div className={cx('issue-body')}>
           <Markdown text={d.body} />
         </div>
       ) : (
-        <div className="issue-body issue-body-empty">
+        <div className={cx('issue-body issue-body-empty')}>
           <em>{m.issues.noDescription}</em>
         </div>
       )}
 
-      <div className="issue-actions">
+      <div className={cx('issue-actions')}>
         <Link
           className={cx('btn')}
           to="/w/$ws/discussions/$discussionId/edit"

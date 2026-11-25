@@ -105,7 +105,7 @@ export const Route = createFileRoute('/w/$ws/issues/$issueId/')({
           onCopyMarkdown={() => api.getIssueMarkdown(ws, issueID)}
         />
 
-        <section id="comments" className="comments">
+        <section id="comments" className={cx('comments')}>
           <h2>
             {m.issues.comments}
             {comments.length > 0 && <span className="comment-count"> ({comments.length})</span>}
@@ -143,7 +143,7 @@ export const Route = createFileRoute('/w/$ws/issues/$issueId/')({
           />
         </section>
 
-        <a className="back-to-top" href="#main-content" aria-label={m.chrome.backToTopAria}>
+        <a className={cx('back-to-top')} href="#main-content" aria-label={m.chrome.backToTopAria}>
           {m.chrome.backToTop}
         </a>
       </div>

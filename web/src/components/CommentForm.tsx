@@ -2,6 +2,7 @@ import { useReducer } from 'react'
 import { submitOnCtrlEnter } from '../enter-submit'
 import { useMessages } from '../i18n'
 import { useLeaveGuard } from '../leave-guard'
+import styles from './CommentForm.module.css'
 import { cx } from '../styles/cx'
 
 export function CommentForm({
@@ -20,7 +21,7 @@ export function CommentForm({
   useLeaveGuard(body.trim() !== '', m.form.unsavedChanges)
   return (
     <form
-      className={cx('card comment-form')}
+      className={`${cx('card')} ${styles.form}`}
       aria-label={m.form.newCommentAria}
       onSubmit={(e) => {
         e.preventDefault()
@@ -41,7 +42,7 @@ export function CommentForm({
         })()
       }}
     >
-      <div className={cx('field')}>
+      <div className={`${cx('field')} ${styles.formField}`}>
         <label htmlFor="comment-body">
           {m.form.addComment}{' '}
           <span className={cx('req')} aria-hidden="true">
@@ -50,6 +51,7 @@ export function CommentForm({
         </label>
         <textarea
           id="comment-body"
+          className={styles.body}
           name="body"
           value={body}
           onChange={(e) => setBody(e.target.value)}

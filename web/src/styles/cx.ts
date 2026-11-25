@@ -1,15 +1,18 @@
-import styles from './primitives.module.css'
+import primitiveStyles from './primitives.module.css'
+import contentStyles from './content.module.css'
 
-// Migration helper: scoped primitive classes keep their original global
-// names as compatibility hooks while list/detail selectors are modularized.
-// The compat half is removed once every cross-component selector is owned.
+const styles = { ...primitiveStyles, ...contentStyles }
+
+// Shared classes are intentionally keyed by their original names so call sites
+// stay readable while the actual class names remain CSS-module scoped.
 export function cx(names: string) {
   return names
     .split(/\s+/)
     .filter(Boolean)
     .map((name) => {
       const scoped = (styles as Record<string, string | undefined>)[name]
-      return scoped === undefined || scoped === name ? name : `${scoped} ${name}`
+      if (scoped === undefined) throw new Error(`unknown shared CSS class: ${name}`)
+      return scoped
     })
     .join(' ')
 }

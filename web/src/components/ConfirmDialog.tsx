@@ -56,7 +56,7 @@ export function ConfirmDialog({
       >
         <h2 id={`${dialogId}-title`}>{title}</h2>
         {description && <p>{description}</p>}
-        <form method="dialog" className={cx('form-actions')}>
+        <form method="dialog" className={`${cx('form-actions')} ${styles.actions}`}>
           {/* safe action first: it also receives initial focus */}
           <button type="submit" className={cx('btn')} value="cancel" autoFocus>
             {m.copy.cancel}

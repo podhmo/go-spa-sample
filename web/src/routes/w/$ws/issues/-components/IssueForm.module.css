@@ -1,0 +1,5 @@
+/* Long-form issue bodies get more vertical room than inline comments. */
+.body {
+  min-block-size: 10lh;
+  max-block-size: 32lh;
+}
