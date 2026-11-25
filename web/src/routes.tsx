@@ -966,24 +966,34 @@ const issueRoute = createRoute({
     // off by router.invalidate() can suspend on a loader thenable that a
     // later invalidation supersedes, which would pin isPending forever.
     const [isPending, setPending] = useReducer((_: boolean, v: boolean) => v, false)
+    const [error, setError] = useReducer((_: string | null, v: string | null) => v, null)
     const issueID = Number(issueId)
+    const m = useMessages()
     const mutate = (fn: () => Promise<unknown>) => {
       setPending(true)
       return (async () => {
         try {
           await fn()
+          setError(null)
           void router.invalidate()
           return true
-        } catch {
+        } catch (err) {
           // A failed mutation changed nothing; refetching here can drop
           // the whole page into the route error boundary during an outage.
+          const fields = err instanceof RequestError ? err.apiError?.fields : undefined
+          setError(
+            fields
+              ? Object.values(fields).join(' ')
+              : err instanceof RequestError
+                ? err.message
+                : m.error.requestFailed,
+          )
           return false
         } finally {
           setPending(false)
         }
       })()
     }
-    const m = useMessages()
     return (
       <div>
         <nav className="breadcrumb" aria-label={m.chrome.breadcrumb}>
@@ -1035,6 +1045,7 @@ const issueRoute = createRoute({
             onHide={(cid, reason) => mutate(() => api.hideComment(ws, issueID, cid, reason))}
             onUnhide={(cid) => mutate(() => api.unhideComment(ws, issueID, cid))}
           />
+          {error && <em role="alert">{error}</em>}
           <CommentForm
             submitting={isPending}
             onSubmit={(body) => mutate(() => api.createComment(ws, issueID, body))}
@@ -1827,10 +1838,13 @@ const pullFilesRoute = createRoute({
                   hash: `comment-${comment.id}`,
                 })
               } catch (err) {
-                // A stale anchor (e.g. a force-push moved head) fails
-                // until the diff reloads — invalidate so a retry posts
-                // against the live head.
-                void router.invalidate()
+                // Only a stale anchor needs a fresh diff. Network/5xx
+                // failures must not refetch: the loader failure would
+                // replace the page — and the preserved draft — with the
+                // route error boundary.
+                if (err instanceof RequestError && err.apiError?.fields?.anchor !== undefined) {
+                  void router.invalidate()
+                }
                 throw err
               } finally {
                 setPending(false)

@@ -318,6 +318,37 @@ describe('route: /pulls/{id}/files', () => {
     confirm.mockRestore()
   })
 
+  it('does not reload the diff after a non-anchor rejection', async () => {
+    let diffCalls = 0
+    stubAPI((url, init) => {
+      if (url.endsWith('/diff')) {
+        diffCalls++
+        return { body: DIFF, headers: { 'x-anchor-sha': 'abc123' } }
+      }
+      if (url.endsWith('/comments') && init?.method === 'POST') {
+        return {
+          status: 422,
+          body: {
+            error: {
+              message: 'Validation failed.',
+              fields: { body: 'Body must be at most 10,000 characters.' },
+            },
+          },
+        }
+      }
+      return { body: { pull_request: pull(), comments: [], commits: [] } }
+    })
+    renderAt('/pulls/1/files')
+    await page.getByRole('button', { name: 'Comment on a.txt line 2 (right side)' }).click()
+    await page.getByLabelText('comment').fill('keep this draft')
+    await page.getByRole('button', { name: 'Comment', exact: true }).click()
+    await expect
+      .element(page.getByText('Body must be at most 10,000 characters.'))
+      .toBeInTheDocument()
+    expect(page.getByLabelText('comment')).toHaveValue('keep this draft')
+    expect(diffCalls).toBe(1)
+  })
+
   it('drops the draft when a refreshed diff puts different code at its anchor', async () => {
     // Force-push rewrites the line at the same path:side:line — a retry
     // must not attach the old draft to the replacement code.

@@ -298,6 +298,49 @@ describe('route: /issues/$issueId', () => {
       .toBe(false)
   })
 
+  it('disables the comment textarea while the post is in flight', async () => {
+    let finishPost: (() => void) | undefined
+    stubAPI((url, init) => {
+      if (init?.method === 'POST' && url.endsWith('/comments')) {
+        return new Promise((resolve) => {
+          finishPost = () =>
+            resolve({ status: 201, body: { comment: comment({ id: 2, body: 'posted body' }) } })
+        })
+      }
+      return { body: { issue: issue(), comments: [] } }
+    })
+    renderAt('/w/default/issues/1')
+    await page.getByLabelText(/Add a comment/).fill('posted body')
+    await page.getByRole('button', { name: 'Comment', exact: true }).click()
+    await expect.element(page.getByLabelText(/Add a comment/)).toBeDisabled()
+    finishPost?.()
+    await expect.element(page.getByLabelText(/Add a comment/)).toHaveValue('')
+  })
+
+  it('keeps the draft and shows the field error when a comment is rejected', async () => {
+    stubAPI((url, init) => {
+      if (init?.method === 'POST' && url.endsWith('/comments')) {
+        return {
+          status: 422,
+          body: {
+            error: {
+              message: 'Validation failed.',
+              fields: { body: 'Body must be at most 10,000 characters.' },
+            },
+          },
+        }
+      }
+      return { body: { issue: issue(), comments: [] } }
+    })
+    renderAt('/w/default/issues/1')
+    await page.getByLabelText(/Add a comment/).fill('too long')
+    await page.getByRole('button', { name: 'Comment', exact: true }).click()
+    await expect.element(page.getByLabelText(/Add a comment/)).toHaveValue('too long')
+    await expect
+      .element(page.getByText('Body must be at most 10,000 characters.'))
+      .toBeInTheDocument()
+  })
+
   it('confirms before leaving with a comment draft, and navigates on accept', async () => {
     stubAPI((url) => {
       if (url.includes('/labels')) return { body: { labels: [] } }
