@@ -970,6 +970,10 @@ const issueRoute = createRoute({
       (_: string | null, v: string | null) => v,
       null,
     )
+    const [editError, setEditError] = useReducer(
+      (_: { cid: number; message: string } | null, v: { cid: number; message: string } | null) => v,
+      null,
+    )
     const [commentError, setCommentError] = useReducer(
       (_: string | null, v: string | null) => v,
       null,
@@ -987,6 +991,7 @@ const issueRoute = createRoute({
     const mutate = (fn: () => Promise<unknown>, onError?: (err: unknown) => void) => {
       setPending(true)
       setActionError(null)
+      setEditError(null)
       return (async () => {
         try {
           await fn()
@@ -1050,7 +1055,13 @@ const issueRoute = createRoute({
           <CommentList
             comments={comments}
             pending={isPending}
-            onEdit={(cid, body) => mutate(() => api.updateComment(ws, issueID, cid, body))}
+            editError={editError}
+            onEdit={(cid, body) =>
+              mutate(
+                () => api.updateComment(ws, issueID, cid, body),
+                (err) => setEditError({ cid, message: errorMessage(err) }),
+              )
+            }
             onDelete={(cid) => mutate(() => api.deleteComment(ws, issueID, cid))}
             onHide={(cid, reason) => mutate(() => api.hideComment(ws, issueID, cid, reason))}
             onUnhide={(cid) => mutate(() => api.unhideComment(ws, issueID, cid))}

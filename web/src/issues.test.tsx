@@ -248,6 +248,42 @@ describe('route: /issues/$issueId', () => {
     expect(JSON.parse(String(patch?.init?.body))).toEqual({ body: 'edited body' })
   })
 
+  it('disables the comment edit textarea while saving is in flight', async () => {
+    let finishPatch: (() => void) | undefined
+    let edited = false
+    stubAPI((url, init) => {
+      if (init?.method === 'PATCH' && url.includes('/comments/')) {
+        return new Promise((resolve) => {
+          finishPatch = () => {
+            edited = true
+            resolve({
+              body: {
+                comment: comment({ body: 'edited body', edited_at: '2026-01-02T00:00:00Z' }),
+              },
+            })
+          }
+        })
+      }
+      return {
+        body: {
+          issue: issue(),
+          comments: [
+            comment(edited ? { body: 'edited body', edited_at: '2026-01-02T00:00:00Z' } : {}),
+          ],
+        },
+      }
+    })
+    renderAt('/w/default/issues/1')
+    await expect.element(page.getByText('a comment')).toBeInTheDocument()
+    await page.getByRole('button', { name: 'Edit comment 1' }).click()
+    await page.getByLabelText('comment body').fill('edited body')
+    await page.getByRole('button', { name: 'Save changes' }).click()
+
+    await expect.element(page.getByLabelText('comment body')).toBeDisabled()
+    finishPatch?.()
+    await expect.element(page.getByText('edited', { exact: true })).toBeInTheDocument()
+  })
+
   it('keeps a comment edit open and announces the error when saving is rejected', async () => {
     stubAPI((url, init) => {
       if (init?.method === 'PATCH' && url.includes('/comments/')) {
@@ -270,9 +306,12 @@ describe('route: /issues/$issueId', () => {
     await page.getByRole('button', { name: 'Save changes' }).click()
 
     await expect
-      .element(page.getByText('Body must be at most 10,000 characters.'))
-      .toBeInTheDocument()
+      .element(page.getByRole('alert'))
+      .toHaveTextContent('Body must be at most 10,000 characters.')
     await expect.element(page.getByLabelText('comment body')).toHaveValue('edited body')
+    const textarea = document.getElementById('comment-edit-1')
+    expect(textarea?.getAttribute('aria-invalid')).toBe('true')
+    expect(textarea?.getAttribute('aria-describedby')).toBe('comment-edit-1-error')
   })
 
   it('deletes a comment through the confirm dialog', async () => {

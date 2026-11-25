@@ -31,6 +31,7 @@ const commentUIReducer = (s: CommentUIState, a: CommentUIAction): CommentUIState
 // legitimately pass explicit undefined (exactOptionalPropertyTypes).
 export type CommentHandlers = {
   pending?: boolean | undefined
+  editError?: { cid: number; message: string } | null | undefined
   onEdit?: ((cid: number, body: string) => void | boolean | Promise<void | boolean>) | undefined
   onDelete?: ((cid: number) => void) | undefined
   onHide?: ((cid: number, reason: string) => void) | undefined
@@ -130,12 +131,14 @@ function HideCommentDialog({
 function CommentItem({
   comment: c,
   pending,
+  editError,
   onEdit,
   onDelete,
   onHide,
   onUnhide,
 }: { comment: Comment } & CommentHandlers) {
   const [ui, dispatch] = useReducer(commentUIReducer, { editing: false, draft: '' })
+  const fieldError = editError?.cid === c.id ? editError.message : null
   const m = useMessages()
   useLeaveGuard(ui.editing && ui.draft !== c.body, m.form.unsavedChanges)
   const fmtTime = useFmtTime()
@@ -199,8 +202,16 @@ function CommentItem({
               onKeyDown={submitOnCtrlEnter}
               rows={4}
               required
+              disabled={pending}
+              aria-invalid={fieldError ? 'true' : 'false'}
+              aria-describedby={fieldError ? `comment-edit-${c.id}-error` : undefined}
               aria-label={m.comments.commentBodyLabel}
             />
+            {fieldError && (
+              <em id={`comment-edit-${c.id}-error`} role="alert">
+                {fieldError}
+              </em>
+            )}
           </div>
           <div className="form-actions">
             <button
