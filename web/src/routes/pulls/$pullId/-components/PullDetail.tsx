@@ -21,14 +21,11 @@ export function MergeableBadge({ mergeable }: { mergeable: PullMergeable }) {
   const m = useMessages()
   if (!mergeable) return null
   if (mergeable.status === 'clean') {
-    return <span className={`${cx('badge')} ${pullStyles.badgePrOpen}`}>{m.pulls.mergeable}</span>
+    return <span className={pullStyles.badgePrOpen}>{m.pulls.mergeable}</span>
   }
   if (mergeable.status === 'conflicting') {
     return (
-      <span
-        className={`${cx('badge')} ${pullStyles.badgePrConflict}`}
-        title={mergeable.files?.join(', ')}
-      >
+      <span className={pullStyles.badgePrConflict} title={mergeable.files?.join(', ')}>
         {mergeable.files?.length
           ? fmt(m.pulls.conflicting, { n: mergeable.files.length })
           : m.pulls.conflictNoFiles}

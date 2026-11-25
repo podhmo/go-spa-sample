@@ -1,7 +1,7 @@
 /* Open and closed differ by shape (ring vs filled disc), text and
    color. */
 
-.badge {
+:where(.badge) {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -14,7 +14,7 @@
   white-space: nowrap;
 }
 
-.badge::before {
+:where(.badge)::before {
   content: '';
   display: inline-block;
   width: 0.7em;
@@ -549,18 +549,13 @@
    against the browser's default font size, so it moves with the user's
    text size. */
 @media (max-width: 40em) {
-  :global(.page-head) {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
   .issue-actions {
     flex-direction: column;
     align-items: stretch;
   }
 
-  .issue-actions :global(.btn),
-  .issue-actions [data-copy-wrap],
+  .issue-actions > :where(button, a),
+  .issue-actions > [data-copy-wrap],
   .issue-actions [data-copy-variant='action'] {
     width: 100%;
     display: block;

@@ -278,6 +278,13 @@ fieldset.field:has(:is(:user-invalid, [aria-invalid='true'])) {
   margin-top: 20px;
 }
 
+@media (max-width: 40em) {
+  .page-head {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
 .page-info {
   color: var(--text-muted);
   font-size: 0.9rem;

@@ -26,7 +26,7 @@ export function AuthForm({
   const m = useMessages()
   return (
     <form
-      className={cx('card issue-form')}
+      className={cx('card')}
       aria-label={mode === 'login' ? m.auth.logInAria : m.auth.registerAria}
       onSubmit={(e) => {
         e.preventDefault()

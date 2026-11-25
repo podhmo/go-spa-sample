@@ -71,7 +71,7 @@ export function PullForm({
   )
   return (
     <form
-      className={cx('card issue-form')}
+      className={cx('card')}
       aria-label={editing ? m.pulls.editAria : m.pulls.newAria}
       onSubmit={(e) => {
         e.preventDefault()
@@ -89,7 +89,7 @@ export function PullForm({
       </p>
       {!editing && (
         <div className={styles.pullRefsRow}>
-          <div className={cx('field')}>
+          <div className={styles.pullRefsField}>
             <label htmlFor="pull-head">
               {m.pulls.head}{' '}
               <span className={cx('req')} aria-hidden="true">
@@ -124,7 +124,7 @@ export function PullForm({
               </em>
             )}
           </div>
-          <div className={cx('field')}>
+          <div className={styles.pullRefsField}>
             <label htmlFor="pull-base">
               {m.pulls.base}{' '}
               <span className={cx('req')} aria-hidden="true">

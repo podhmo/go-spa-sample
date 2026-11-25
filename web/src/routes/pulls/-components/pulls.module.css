@@ -1,45 +1,49 @@
 /* Pull requests: GitHub's palette — open = green, merged = purple (the
    --closed pair), closed-without-merge = neutral gray. */
 
-:global(.badge).badgePrOpen {
+.badgePrOpen {
+  composes: badge from '../../../styles/content.module.css';
   color: var(--open);
   background: var(--open-bg);
   border-color: var(--open-border);
 }
 
-:global(.badge).badgePrOpen::before {
+.badgePrOpen::before {
   border: 2px solid var(--open);
   background: transparent;
 }
 
-:global(.badge).badgePrMerged {
+.badgePrMerged {
+  composes: badge from '../../../styles/content.module.css';
   color: var(--closed);
   background: var(--closed-bg);
   border-color: var(--closed-border);
 }
 
-:global(.badge).badgePrMerged::before {
+.badgePrMerged::before {
   background: var(--closed);
 }
 
-:global(.badge).badgePrClosed {
+.badgePrClosed {
+  composes: badge from '../../../styles/content.module.css';
   color: var(--text-muted);
   background: transparent;
   border-color: var(--text-muted);
 }
 
-:global(.badge).badgePrClosed::before {
+.badgePrClosed::before {
   border: 2px solid var(--text-muted);
   background: transparent;
 }
 
-:global(.badge).badgePrConflict {
+.badgePrConflict {
+  composes: badge from '../../../styles/content.module.css';
   color: var(--danger);
   background: var(--danger-bg);
   border-color: var(--danger);
 }
 
-:global(.badge).badgePrConflict::before {
+.badgePrConflict::before {
   background: var(--danger);
 }
 
@@ -58,6 +62,7 @@
   flex-wrap: wrap;
 }
 
-.pullRefsRow :global(.field) {
+.pullRefsField {
+  composes: field from '../../../styles/primitives.module.css';
   flex: 1 1 12rem;
 }

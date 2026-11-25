@@ -40,7 +40,7 @@ export function WorkspaceForm({
   )
   return (
     <form
-      className={cx('card issue-form')}
+      className={cx('card')}
       aria-label={m.workspaces.formAria}
       onSubmit={(e) => {
         e.preventDefault()

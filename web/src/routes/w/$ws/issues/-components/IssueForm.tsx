@@ -70,7 +70,7 @@ export function IssueForm({
   )
   return (
     <form
-      className={cx('card issue-form')}
+      className={cx('card')}
       aria-label={initial ? m.issues.editAria : m.issues.newAria}
       onSubmit={(e) => {
         e.preventDefault()
