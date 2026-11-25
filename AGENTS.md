@@ -63,8 +63,9 @@ CI (`.github/workflows/ci.yml`) runs both stacks on push/PR.
   `:user-invalid` + `aria-invalid` sync (`src/a11y.ts`), `<search>` for
   filter forms, `.visually-hidden` labels, `data-error` field errors.
 - Styling: co-locate component/route CSS in `*.module.css`; keep only
-  tokens, minimal reset, and base elements in `src/index.css`
-  (`docs/sketch/ja/css.md`). vanilla-extract/Panda CSS are future options.
+  tokens, minimal reset, base elements, and app-wide accessibility utilities
+  in `src/index.css` (`docs/sketch/ja/css.md`). vanilla-extract/Panda CSS
+  are future options.
 - MPA-era `X-Partial` fragments are NOT ported — data flows as JSON.
   Live updates ARE: the server streams hint-only SSE on `/api/v1/events`
   (fed by the changes table, so local-CLI writes in other processes are
