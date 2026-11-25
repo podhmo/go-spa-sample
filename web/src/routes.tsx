@@ -1056,6 +1056,7 @@ const issueRoute = createRoute({
             comments={comments}
             pending={isPending}
             editError={editError}
+            onEditErrorClear={() => setEditError(null)}
             onEdit={(cid, body) =>
               mutate(
                 () => api.updateComment(ws, issueID, cid, body),

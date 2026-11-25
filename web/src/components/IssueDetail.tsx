@@ -32,6 +32,7 @@ const commentUIReducer = (s: CommentUIState, a: CommentUIAction): CommentUIState
 export type CommentHandlers = {
   pending?: boolean | undefined
   editError?: { cid: number; message: string } | null | undefined
+  onEditErrorClear?: (() => void) | undefined
   onEdit?: ((cid: number, body: string) => void | boolean | Promise<void | boolean>) | undefined
   onDelete?: ((cid: number) => void) | undefined
   onHide?: ((cid: number, reason: string) => void) | undefined
@@ -132,6 +133,7 @@ function CommentItem({
   comment: c,
   pending,
   editError,
+  onEditErrorClear,
   onEdit,
   onDelete,
   onHide,
@@ -203,12 +205,16 @@ function CommentItem({
               rows={4}
               required
               disabled={pending}
+              data-error={`comment-edit-${c.id}-error`}
               aria-invalid={fieldError ? 'true' : 'false'}
-              aria-describedby={fieldError ? `comment-edit-${c.id}-error` : undefined}
+              aria-describedby={fieldError ? `comment-edit-${c.id}-api-error` : undefined}
               aria-label={m.comments.commentBodyLabel}
             />
+            <span id={`comment-edit-${c.id}-error`} className="error-msg">
+              {m.form.bodyRequired}
+            </span>
             {fieldError && (
-              <em id={`comment-edit-${c.id}-error`} role="alert">
+              <em id={`comment-edit-${c.id}-api-error`} role="alert">
                 {fieldError}
               </em>
             )}
@@ -217,7 +223,10 @@ function CommentItem({
             <button
               type="button"
               className="btn btn-quiet"
-              onClick={() => dispatch({ type: 'cancel' })}
+              onClick={() => {
+                if (fieldError) onEditErrorClear?.()
+                dispatch({ type: 'cancel' })
+              }}
             >
               {m.copy.cancel}
             </button>
@@ -241,7 +250,10 @@ function CommentItem({
             <button
               type="button"
               className="comment-action"
-              onClick={() => dispatch({ type: 'start-edit', body: c.body })}
+              onClick={() => {
+                if (fieldError) onEditErrorClear?.()
+                dispatch({ type: 'start-edit', body: c.body })
+              }}
               aria-label={fmt(m.comments.ariaEdit, { noun: m.comments.nounComment, id: c.id })}
             >
               {m.comments.edit}

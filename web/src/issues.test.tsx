@@ -310,8 +310,15 @@ describe('route: /issues/$issueId', () => {
       .toHaveTextContent('Body must be at most 10,000 characters.')
     await expect.element(page.getByLabelText('comment body')).toHaveValue('edited body')
     const textarea = document.getElementById('comment-edit-1')
+    expect(textarea?.getAttribute('data-error')).toBe('comment-edit-1-error')
     expect(textarea?.getAttribute('aria-invalid')).toBe('true')
-    expect(textarea?.getAttribute('aria-describedby')).toBe('comment-edit-1-error')
+    expect(textarea?.getAttribute('aria-describedby')).toBe('comment-edit-1-api-error')
+
+    await page.getByRole('button', { name: 'Cancel' }).click()
+    await page.getByRole('button', { name: 'Edit comment 1' }).click()
+    const reopened = document.getElementById('comment-edit-1')
+    expect(reopened?.getAttribute('aria-invalid')).toBe('false')
+    expect(reopened?.getAttribute('aria-describedby')).toBeNull()
   })
 
   it('deletes a comment through the confirm dialog', async () => {
