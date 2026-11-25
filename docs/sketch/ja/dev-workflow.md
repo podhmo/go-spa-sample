@@ -70,4 +70,4 @@ mutation 後は `router.invalidate()` で loader を再実行して画面を
 - UI実装前に `npx -y modern-web-guidance@latest search "<query>"` で
   モダンなベストプラクティスを確認 (`.agents/skills/modern-web-guidance/`)
 - ライブラリの使い方は context7 MCP で最新ドキュメントを引く
-  (`docs/sketch/ja/libraries.md` 参照)
+  (`docs/ja/libraries.md` 参照)

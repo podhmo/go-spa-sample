@@ -61,7 +61,7 @@ instead of Storybook. See `docs/sketch/ja/dev-workflow.md`.
 - Local React state: `useReducer` only — `useState` is banned.
 - Server data: Router loaders + `router.invalidate()` on mutation.
 - UI code follows modern-web-guidance (native `<dialog>`, `:user-invalid`
-  + aria sync, `<search>`) — applied patterns in `docs/sketch/ja/libraries.md`.
+  + aria sync, `<search>`) — applied patterns in `docs/ja/libraries.md`.
 - Presentational components take props + callbacks; routes wire loaders
   and mutations. Verify components in browser-mode tests *before*
   connecting them to the real server.

@@ -37,7 +37,21 @@ issue tracker のSPA実装で使うライブラリ・スキルの使いどころ
   (error boundaryのresetも兼ねる)
 - **短期キャッシュ内蔵**: loaderデータはmatchがunmountされてもキャッシュに残る。
   手動キャッシュ管理は基本不要
-- **検討中**: file-based routing (`createFileRoute`) は route 数が増えたら移行候補
+- **file-based routing へ移行予定** (`createFileRoute`; 方針は
+  `docs/sketch/ja/directory-structure.md`)。`src/routes/` を URL 構造に対応させ、
+  `-` prefix の directory/file を route tree から外して component/test/data helper を
+  co-location する。移行時に追加する開発依存の役割:
+  - `@tanstack/router-plugin`: Vite dev/build 時に route tree を生成し、
+    automatic code splitting を有効化する。`vite.config.ts` では `react()` より前に置く
+  - `@tanstack/router-cli`: `tsr generate` を `tsc -b` より前に実行し、
+    typecheck が常に最新の `routeTree.gen.ts` を見るようにする。
+    CI でも generate 後に `test -z "$(git status --porcelain -- src/routeTree.gen.ts)"`
+    を使い、stale または untracked な generated file の commit を検出する。
+    plugin は dev/build 中に生成するが、通常の
+    `tsc -b && vite build` 順では typecheck が生成前に走るため、freshness 確認用に
+    generation command を別途持つ
+  - `routeTree.gen.ts` は generated だが runtime/typecheck の入力なので commit し、
+    formatter/linter の対象からは外す
 
 ## TanStack Query (`@tanstack/react-query`) — 未導入・要判断
 

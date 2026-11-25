@@ -401,8 +401,8 @@ URL・表示・API 呼び出し順を変えない。
 6. `main.tsx` / `test-utils.tsx` を generated `routeTree.gen.ts` に切り替える。
 7. generated `routeTree.gen.ts` を commit する。
 8. CI の web job で `npm run generate-routes` 直後に
-   `git diff --exit-code -- src/routeTree.gen.ts` を実行し、
-   stale な generated file が commit された場合を fail にする。
+   `test -z "$(git status --porcelain -- src/routeTree.gen.ts)"` を実行し、
+   stale/untracked な generated file が commit された場合を fail にする。
 9. `src/router.tsx` を消す。
 
 注意:

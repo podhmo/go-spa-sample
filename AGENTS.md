@@ -10,10 +10,11 @@ as-is; the frontend is a fresh SPA. See `README.md` for layout.
   source app; the porting target reference.
 - `docs/ja/ui-rules.md` — UI conventions consolidated (SPA adaptation of the
   MPA's rules). Read before touching UI; new UI work must follow it.
+- `docs/ja/libraries.md` — library usage table + applied modern-web-guidance
+  patterns.
 - `docs/sketch/ja/` — decision notes: `environment.md` (setup),
   `dev-workflow.md` (component-first + verification loop),
-  `libraries.md` (library usage table + applied modern-web-guidance
-  patterns), `css.md`, `tanstack-query.md` (evaluation: rejected for now).
+  `css.md`, `tanstack-query.md` (evaluation: rejected for now).
 - `TODO.md` — task tracker; follow `.agents/skills/todo-md/SKILL.md` for
   add/complete/GC rules.
 
@@ -22,7 +23,7 @@ as-is; the frontend is a fresh SPA. See `README.md` for layout.
 - `.agents/skills/modern-web-guidance/` — run
   `npx -y modern-web-guidance@latest search "<query>"` before touching
   HTML/CSS/client UI; applied patterns are recorded in
-  `docs/sketch/ja/libraries.md`.
+  `docs/ja/libraries.md`.
 - `.agents/skills/playwright-cli/` — drive a real browser against the
   running app for E2E verification.
 - `.agents/skills/chrome-devtools-cli/` — DevTools-level inspection:
@@ -30,7 +31,7 @@ as-is; the frontend is a fresh SPA. See `README.md` for layout.
 - `.agents/skills/todo-md/` — TODO.md upkeep rules.
 - `devin mcp` configured: context7 — **use proactively** whenever unsure
   about a library/framework API (`resolve-library-id` → `query-docs`,
-  one topic per query; see `docs/sketch/ja/libraries.md` for query tips).
+  one topic per query; see `docs/ja/libraries.md` for query tips).
 
 ## Commands
 
