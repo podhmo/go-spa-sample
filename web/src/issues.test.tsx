@@ -321,6 +321,36 @@ describe('route: /issues/$issueId', () => {
     expect(reopened?.getAttribute('aria-describedby')).toBeNull()
   })
 
+  it('links the required-field error after blurring an empty comment edit', async () => {
+    stubAPI(() => ({ body: { issue: issue(), comments: [comment()] } }))
+    renderAt('/w/default/issues/1')
+    await expect.element(page.getByText('a comment')).toBeInTheDocument()
+    await page.getByRole('button', { name: 'Edit comment 1' }).click()
+    await page.getByLabelText('comment body').fill('')
+    const textarea = document.getElementById('comment-edit-1') as HTMLTextAreaElement
+    textarea.blur()
+
+    await expect.poll(() => textarea.getAttribute('aria-invalid')).toBe('true')
+    expect(textarea.getAttribute('aria-describedby')).toContain('comment-edit-1-error')
+    await expect
+      .poll(() => document.querySelector('div.visually-hidden')?.textContent)
+      .toContain('Body is required.')
+  })
+
+  it('does not announce a required-field error after cancel removes the editor', async () => {
+    stubAPI(() => ({ body: { issue: issue(), comments: [comment()] } }))
+    renderAt('/w/default/issues/1')
+    await expect.element(page.getByText('a comment')).toBeInTheDocument()
+    await page.getByRole('button', { name: 'Edit comment 1' }).click()
+    await page.getByLabelText('comment body').fill('')
+    const textarea = document.getElementById('comment-edit-1') as HTMLTextAreaElement
+    textarea.blur()
+    await page.getByRole('button', { name: 'Cancel' }).click()
+
+    await new Promise((resolve) => setTimeout(resolve, 600))
+    expect(document.querySelector('div.visually-hidden')?.textContent).toBe('')
+  })
+
   it('deletes a comment through the confirm dialog', async () => {
     const requests: { url: string; init?: RequestInit | undefined }[] = []
     stubAPI((url, init) => {
