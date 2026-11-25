@@ -1,10 +1,11 @@
+import { tanstackRouter } from '@tanstack/router-plugin/vite'
 import react from '@vitejs/plugin-react'
 import { playwright } from '@vitest/browser-playwright'
 import { defineConfig } from 'vitest/config'
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react()],
+  plugins: [tanstackRouter({ target: 'react', autoCodeSplitting: true }), react()],
   server: {
     proxy: {
       // Go API server (cmd/zatudan, ported zatudan API) — same-origin /api,

@@ -5,12 +5,13 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "npm run generate-routes && tsc -b && vite build",
     "test": "vitest run",
     "lint": "oxlint",
     "preview": "vite preview",
     "format": "oxfmt",
-    "format:check": "oxfmt --check"
+    "format:check": "oxfmt --check",
+    "generate-routes": "tsr generate"
   },
   "dependencies": {
     "@tanstack/react-router": "^1.170.46",
@@ -21,6 +22,8 @@
     "remark-github-blockquote-alert": "^2.1.0"
   },
   "devDependencies": {
+    "@tanstack/router-cli": "^1.168.0",
+    "@tanstack/router-plugin": "^1.169.0",
     "@testing-library/jest-dom": "^8.0.0",
     "@testing-library/react": "^16.3.3",
     "@types/node": "^24.19.2",
