@@ -6,6 +6,7 @@ import { scoped } from '../../../-lib/scoped'
 import { listDiscussionFormData } from './-data'
 import { DiscussionForm } from './-components/DiscussionForm'
 import { useMessages } from '../../../../i18n'
+import { cx } from '../../../../styles/cx'
 
 export const Route = createFileRoute('/w/$ws/discussions/new')({
   loader: async ({ params }) => {
@@ -26,7 +27,7 @@ export const Route = createFileRoute('/w/$ws/discussions/new')({
     const m = useMessages()
     return (
       <div>
-        <div className="page-head">
+        <div className={cx('page-head')}>
           <h1>{m.discussions.new}</h1>
         </div>
         <DiscussionForm
@@ -35,7 +36,7 @@ export const Route = createFileRoute('/w/$ws/discussions/new')({
           categories={categories}
           labels={labels}
           cancelLink={
-            <Link className="btn btn-quiet" to="/w/$ws/discussions" params={{ ws }}>
+            <Link className={cx('btn btn-quiet')} to="/w/$ws/discussions" params={{ ws }}>
               {m.copy.cancel}
             </Link>
           }

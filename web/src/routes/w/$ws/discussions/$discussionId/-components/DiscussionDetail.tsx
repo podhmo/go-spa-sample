@@ -10,6 +10,7 @@ import { labelStyle } from '../../../../../../format'
 import { fmt, useFmtTime, useMessages } from '../../../../../../i18n'
 import { AnsweredBadge, CategoryBadge } from '../../-components/DiscussionList'
 import { Markdown } from '../../../../../../components/Markdown'
+import { cx } from '../../../../../../styles/cx'
 
 type EditUI = { editing: boolean; replying: boolean; draft: string; replyDraft: string }
 type EditAction =
@@ -91,7 +92,7 @@ function InlineEditForm({
         onCancel()
       }}
     >
-      <div className="field">
+      <div className={cx('field')}>
         <label htmlFor={`edit-${id}`} className="visually-hidden">
           {m.comments.bodyLabel}
         </label>
@@ -105,15 +106,15 @@ function InlineEditForm({
           aria-label={m.comments.bodyLabel}
           data-error={`edit-${id}-error`}
         />
-        <span id={`edit-${id}-error`} className="error-msg">
+        <span id={`edit-${id}-error`} className={cx('error-msg')}>
           {m.form.bodyRequired}
         </span>
       </div>
-      <div className="form-actions">
-        <button type="button" className="btn btn-quiet" onClick={onCancel}>
+      <div className={cx('form-actions')}>
+        <button type="button" className={cx('btn btn-quiet')} onClick={onCancel}>
           {m.copy.cancel}
         </button>
-        <button type="submit" className="btn btn-primary" disabled={pending || !draft.trim()}>
+        <button type="submit" className={cx('btn btn-primary')} disabled={pending || !draft.trim()}>
           {m.form.saveChanges}
         </button>
       </div>
@@ -177,7 +178,7 @@ function ReplyItem({
   const noun = m.comments.nounReply
   return (
     <li
-      className={`card comment comment-nested${c.hidden ? ' comment-hidden' : ''}`}
+      className={`${cx('card comment comment-nested')}${c.hidden ? ' comment-hidden' : ''}`}
       id={`comment-${c.id}`}
     >
       <header className="comment-meta">
@@ -288,7 +289,7 @@ function ThreadItem({
   const permalink = () => `${location.origin}${location.pathname}#thread-${t.id}`
   return (
     <li
-      className={`card comment${t.is_answer ? ' comment-answer' : ''}${t.hidden ? ' comment-hidden' : ''}`}
+      className={`${cx('card comment')}${t.is_answer ? ' comment-answer' : ''}${t.hidden ? ' comment-hidden' : ''}`}
       id={`thread-${t.id}`}
     >
       <header className="comment-meta">
@@ -420,7 +421,7 @@ function ThreadItem({
             })
           }}
         >
-          <div className="field">
+          <div className={cx('field')}>
             <label htmlFor={`reply-${t.id}`} className="visually-hidden">
               {m.comments.replyLabel}
             </label>
@@ -434,12 +435,12 @@ function ThreadItem({
               placeholder={m.comments.replyPh}
               data-error={`reply-${t.id}-error`}
             />
-            <span id={`reply-${t.id}-error`} className="error-msg">
+            <span id={`reply-${t.id}-error`} className={cx('error-msg')}>
               {m.comments.replyRequired}
             </span>
           </div>
-          <div className="form-actions">
-            <button type="submit" className="btn" disabled={pending || !ui.replyDraft.trim()}>
+          <div className={cx('form-actions')}>
+            <button type="submit" className={cx('btn')} disabled={pending || !ui.replyDraft.trim()}>
               {m.comments.reply}
             </button>
           </div>
@@ -496,7 +497,7 @@ export function DiscussionDetail({
   const m = useMessages()
   const fmtTime = useFmtTime()
   return (
-    <article className="card issue-detail" id="discussion-article">
+    <article className={cx('card issue-detail')} id="discussion-article">
       <header className="issue-detail-head">
         <div className="issue-title-row">
           <CategoryBadge name={d.category.name} />
@@ -533,7 +534,7 @@ export function DiscussionDetail({
 
       <div className="issue-actions">
         <Link
-          className="btn"
+          className={cx('btn')}
           to="/w/$ws/discussions/$discussionId/edit"
           params={{ ws, discussionId: String(d.id) }}
         >

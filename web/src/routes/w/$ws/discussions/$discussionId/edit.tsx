@@ -6,6 +6,7 @@ import { DiscussionForm } from '../-components/DiscussionForm'
 import { apiFieldErrors } from '../../../../-lib/mutation'
 import { scoped } from '../../../../-lib/scoped'
 import { fmt, useMessages } from '../../../../../i18n'
+import { cx } from '../../../../../styles/cx'
 
 export const Route = createFileRoute('/w/$ws/discussions/$discussionId/edit')({
   loader: async ({ params }) => {
@@ -35,7 +36,7 @@ export const Route = createFileRoute('/w/$ws/discussions/$discussionId/edit')({
     const m = useMessages()
     return (
       <div>
-        <div className="page-head">
+        <div className={cx('page-head')}>
           <h1>{fmt(m.discussions.editTitle, { id: discussion.id })}</h1>
         </div>
         <DiscussionForm
@@ -52,7 +53,7 @@ export const Route = createFileRoute('/w/$ws/discussions/$discussionId/edit')({
           submitLabel={m.form.saveChanges}
           cancelLink={
             <Link
-              className="btn btn-quiet"
+              className={cx('btn btn-quiet')}
               to="/w/$ws/discussions/$discussionId"
               params={{ ws, discussionId }}
             >

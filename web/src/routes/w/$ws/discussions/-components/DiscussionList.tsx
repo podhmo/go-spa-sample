@@ -2,6 +2,7 @@ import { Link } from '@tanstack/react-router'
 import type { Discussion } from '../../../../../api'
 import { labelStyle } from '../../../../../format'
 import { fmt, useFmtTime, useMessages } from '../../../../../i18n'
+import { cx } from '../../../../../styles/cx'
 
 export function AnsweredBadge() {
   const m = useMessages()
@@ -45,7 +46,7 @@ export function DiscussionList({
       <div className="empty-state">
         <p className="empty-lead">{m.discussions.blankEmpty}</p>
         <p>
-          <Link className="btn btn-primary" to="/w/$ws/discussions/new" params={{ ws }}>
+          <Link className={cx('btn btn-primary')} to="/w/$ws/discussions/new" params={{ ws }}>
             {m.discussions.createFirst}
           </Link>
         </p>

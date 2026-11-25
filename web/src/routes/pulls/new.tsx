@@ -5,6 +5,7 @@ import { apiFieldErrors } from '../-lib/mutation'
 import { PullForm } from './-components/PullForm'
 import { pullOrNotFound } from './-lib/pull-or-not-found'
 import { useMessages } from '../../i18n'
+import { cx } from '../../styles/cx'
 
 export const Route = createFileRoute('/pulls/new')({
   loader: () => pullOrNotFound(api.listPullRefs()),
@@ -19,7 +20,7 @@ export const Route = createFileRoute('/pulls/new')({
     const m = useMessages()
     return (
       <div>
-        <div className="page-head">
+        <div className={cx('page-head')}>
           <h1>{m.pulls.new}</h1>
         </div>
         <PullForm
@@ -27,7 +28,7 @@ export const Route = createFileRoute('/pulls/new')({
           errors={errors}
           refs={refs}
           cancelLink={
-            <Link className="btn btn-quiet" to="/pulls">
+            <Link className={cx('btn btn-quiet')} to="/pulls">
               {m.copy.cancel}
             </Link>
           }

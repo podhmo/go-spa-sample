@@ -6,6 +6,7 @@ import { scoped } from '../../../-lib/scoped'
 import { listIssueFormLabels } from './-data'
 import { IssueForm } from './-components/IssueForm'
 import { useMessages } from '../../../../i18n'
+import { cx } from '../../../../styles/cx'
 
 export const Route = createFileRoute('/w/$ws/issues/new')({
   loader: ({ params }) =>
@@ -24,7 +25,7 @@ export const Route = createFileRoute('/w/$ws/issues/new')({
     const m = useMessages()
     return (
       <div>
-        <div className="page-head">
+        <div className={cx('page-head')}>
           <h1>{m.issues.new}</h1>
         </div>
         <IssueForm
@@ -32,7 +33,7 @@ export const Route = createFileRoute('/w/$ws/issues/new')({
           errors={errors}
           labels={labels}
           cancelLink={
-            <Link className="btn btn-quiet" to="/w/$ws/issues" params={{ ws }}>
+            <Link className={cx('btn btn-quiet')} to="/w/$ws/issues" params={{ ws }}>
               {m.copy.cancel}
             </Link>
           }

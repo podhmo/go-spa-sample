@@ -5,6 +5,7 @@ import { scoped } from '../../../../-lib/scoped'
 import { CommentForm } from '../../../../../components/CommentForm'
 import { CommentList, IssueDetail } from './-components/IssueDetail'
 import { useMessages } from '../../../../../i18n'
+import { cx } from '../../../../../styles/cx'
 
 export const Route = createFileRoute('/w/$ws/issues/$issueId/')({
   loader: ({ params, location }) =>
@@ -68,7 +69,7 @@ export const Route = createFileRoute('/w/$ws/issues/$issueId/')({
     }
     return (
       <div>
-        <nav className="breadcrumb" aria-label={m.chrome.breadcrumb}>
+        <nav className={cx('breadcrumb')} aria-label={m.chrome.breadcrumb}>
           <ol>
             <li>
               <Link to="/w/$ws/issues" params={{ ws }} activeOptions={{ exact: true }}>

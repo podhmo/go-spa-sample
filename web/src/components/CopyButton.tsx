@@ -1,5 +1,6 @@
 import { useReducer } from 'react'
 import { useMessages } from '../i18n'
+import { cx } from '../styles/cx'
 
 type CopyState = 'idle' | 'copied' | 'failed'
 // `timer` is present-but-undefined after a dispatch without one
@@ -17,7 +18,7 @@ export function CopyButton({
   label,
   getText,
   pending,
-  className = 'btn',
+  className = cx('btn'),
 }: {
   label: string
   getText: () => string | Promise<string>

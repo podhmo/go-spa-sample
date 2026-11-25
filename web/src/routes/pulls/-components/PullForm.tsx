@@ -4,6 +4,7 @@ import { submitOnCtrlEnter } from '../../../enter-submit'
 import { useMessages } from '../../../i18n'
 import styles from './pulls.module.css'
 import { useLeaveGuard } from '../../../leave-guard'
+import { cx } from '../../../styles/cx'
 
 type PullFormState = {
   title: string
@@ -70,7 +71,7 @@ export function PullForm({
   )
   return (
     <form
-      className="card issue-form"
+      className={cx('card issue-form')}
       aria-label={editing ? m.pulls.editAria : m.pulls.newAria}
       onSubmit={(e) => {
         e.preventDefault()
@@ -79,19 +80,19 @@ export function PullForm({
         onSubmit(editing ? { title: input.title, body: input.body } : input)
       }}
     >
-      <p className="form-note">
+      <p className={cx('form-note')}>
         {m.form.requiredPre}{' '}
-        <span className="req" aria-hidden="true">
+        <span className={cx('req')} aria-hidden="true">
           *
         </span>{' '}
         {m.form.requiredPost}
       </p>
       {!editing && (
         <div className={styles.pullRefsRow}>
-          <div className="field">
+          <div className={cx('field')}>
             <label htmlFor="pull-head">
               {m.pulls.head}{' '}
-              <span className="req" aria-hidden="true">
+              <span className={cx('req')} aria-hidden="true">
                 *
               </span>
             </label>
@@ -114,7 +115,7 @@ export function PullForm({
                 </option>
               ))}
             </select>
-            <span id="pull-head-error" className="error-msg">
+            <span id="pull-head-error" className={cx('error-msg')}>
               {m.pulls.headRequired}
             </span>
             {errors?.head && (
@@ -123,10 +124,10 @@ export function PullForm({
               </em>
             )}
           </div>
-          <div className="field">
+          <div className={cx('field')}>
             <label htmlFor="pull-base">
               {m.pulls.base}{' '}
-              <span className="req" aria-hidden="true">
+              <span className={cx('req')} aria-hidden="true">
                 *
               </span>
             </label>
@@ -149,7 +150,7 @@ export function PullForm({
                 </option>
               ))}
             </select>
-            <span id="pull-base-error" className="error-msg">
+            <span id="pull-base-error" className={cx('error-msg')}>
               {m.pulls.baseRequired}
             </span>
             {errors?.base && (
@@ -160,10 +161,10 @@ export function PullForm({
           </div>
         </div>
       )}
-      <div className="field">
+      <div className={cx('field')}>
         <label htmlFor="pull-title">
           {m.form.title}{' '}
-          <span className="req" aria-hidden="true">
+          <span className={cx('req')} aria-hidden="true">
             *
           </span>
         </label>
@@ -178,7 +179,7 @@ export function PullForm({
           aria-invalid={errors?.title ? 'true' : 'false'}
           aria-describedby={errors?.title ? 'pull-title-api-error' : undefined}
         />
-        <span id="pull-title-error" className="error-msg">
+        <span id="pull-title-error" className={cx('error-msg')}>
           {m.form.titleRequired}
         </span>
         {errors?.title && (
@@ -187,7 +188,7 @@ export function PullForm({
           </em>
         )}
       </div>
-      <div className="field">
+      <div className={cx('field')}>
         <label htmlFor="pull-body">{m.form.body}</label>
         <textarea
           id="pull-body"
@@ -205,9 +206,9 @@ export function PullForm({
           </em>
         )}
       </div>
-      <div className="form-actions">
+      <div className={cx('form-actions')}>
         {cancelLink}
-        <button type="submit" className="btn btn-primary" disabled={submitting}>
+        <button type="submit" className={cx('btn btn-primary')} disabled={submitting}>
           {submitting
             ? m.form.saving
             : (submitLabel ?? (editing ? m.form.saveChanges : m.pulls.create))}

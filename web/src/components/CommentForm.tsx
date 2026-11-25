@@ -2,6 +2,7 @@ import { useReducer } from 'react'
 import { submitOnCtrlEnter } from '../enter-submit'
 import { useMessages } from '../i18n'
 import { useLeaveGuard } from '../leave-guard'
+import { cx } from '../styles/cx'
 
 export function CommentForm({
   onSubmit,
@@ -19,7 +20,7 @@ export function CommentForm({
   useLeaveGuard(body.trim() !== '', m.form.unsavedChanges)
   return (
     <form
-      className="card comment-form"
+      className={cx('card comment-form')}
       aria-label={m.form.newCommentAria}
       onSubmit={(e) => {
         e.preventDefault()
@@ -40,10 +41,10 @@ export function CommentForm({
         })()
       }}
     >
-      <div className="field">
+      <div className={cx('field')}>
         <label htmlFor="comment-body">
           {m.form.addComment}{' '}
-          <span className="req" aria-hidden="true">
+          <span className={cx('req')} aria-hidden="true">
             *
           </span>
         </label>
@@ -62,7 +63,7 @@ export function CommentForm({
             error ? 'comment-body-api-error comment-body-hint' : 'comment-body-hint'
           }
         />
-        <span id="comment-body-error" className="error-msg">
+        <span id="comment-body-error" className={cx('error-msg')}>
           {m.form.bodyRequired}
         </span>
         {error && (
@@ -70,15 +71,15 @@ export function CommentForm({
             {error}
           </em>
         )}
-        <p className="field-hint" id="comment-body-hint">
+        <p className={cx('field-hint')} id="comment-body-hint">
           {m.form.bodyHintShort}
         </p>
       </div>
-      <div className="form-actions">
+      <div className={cx('form-actions')}>
         {/* disabled while empty: an empty post can only 422, so the
             GitHub-style rule disables the button until there is input
             (ui-rules §6) */}
-        <button type="submit" className="btn btn-primary" disabled={busy || !body.trim()}>
+        <button type="submit" className={cx('btn btn-primary')} disabled={busy || !body.trim()}>
           {busy ? m.form.posting : m.pulls.commentSubmit}
         </button>
       </div>

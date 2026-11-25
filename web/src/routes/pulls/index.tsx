@@ -4,6 +4,7 @@ import { pullSearch, str } from '../-lib/search'
 import { PullList } from './-components/PullList'
 import { pullOrNotFound } from './-lib/pull-or-not-found'
 import { fmt, useMessages } from '../../i18n'
+import { cx } from '../../styles/cx'
 
 export const Route = createFileRoute('/pulls/')({
   validateSearch: pullSearch,
@@ -23,9 +24,9 @@ export const Route = createFileRoute('/pulls/')({
     const m = useMessages()
     return (
       <div>
-        <div className="page-head">
+        <div className={cx('page-head')}>
           <h1>{m.pulls.title}</h1>
-          <Link className="btn" to="/pulls/new">
+          <Link className={cx('btn')} to="/pulls/new">
             {m.pulls.new}
           </Link>
         </div>
@@ -34,7 +35,7 @@ export const Route = createFileRoute('/pulls/')({
           {/* key remounts the uncontrolled inputs when the URL filters change */}
           <form
             key={JSON.stringify(search)}
-            className="filter-bar"
+            className={cx('filter-bar')}
             aria-label={m.filter.ariaPulls}
             onSubmit={(e) => {
               e.preventDefault()
@@ -49,7 +50,7 @@ export const Route = createFileRoute('/pulls/')({
               })
             }}
           >
-            <div className="filter-field">
+            <div className={cx('filter-field')}>
               <label htmlFor="filter-pstatus">{m.filter.status}</label>
               <select id="filter-pstatus" name="status" defaultValue={search.status ?? 'open'}>
                 <option value="open">{m.filter.open}</option>
@@ -58,7 +59,7 @@ export const Route = createFileRoute('/pulls/')({
                 <option value="all">{m.filter.all}</option>
               </select>
             </div>
-            <div className="filter-field">
+            <div className={cx('filter-field')}>
               <label htmlFor="filter-pq">{m.filter.search}</label>
               <input
                 type="search"
@@ -68,19 +69,19 @@ export const Route = createFileRoute('/pulls/')({
                 defaultValue={search.q}
               />
             </div>
-            <div className="filter-field">
+            <div className={cx('filter-field')}>
               <label htmlFor="filter-psort">{m.filter.sort}</label>
               <select id="filter-psort" name="sort" defaultValue={search.sort ?? 'newest'}>
                 <option value="newest">{m.filter.newest}</option>
                 <option value="oldest">{m.filter.oldest}</option>
               </select>
             </div>
-            <div className="filter-actions">
-              <button type="submit" className="btn">
+            <div className={cx('filter-actions')}>
+              <button type="submit" className={cx('btn')}>
                 {m.filter.apply}
               </button>
               {hasActiveFilter && (
-                <Link className="btn btn-quiet" to="/pulls">
+                <Link className={cx('btn btn-quiet')} to="/pulls">
                   {m.filter.clear}
                 </Link>
               )}
@@ -89,32 +90,32 @@ export const Route = createFileRoute('/pulls/')({
         </search>
 
         {data.pulls.length > 0 && (
-          <p className="result-count">
+          <p className={cx('result-count')}>
             {fmt(m.pager.showingPulls, { start: rangeStart, end: rangeEnd, total: data.total })}
           </p>
         )}
         <PullList pulls={data.pulls} filtered={hasActiveFilter} />
 
         {totalPages > 1 && (
-          <nav className="pagination" aria-label={m.pager.aria}>
+          <nav className={cx('pagination')} aria-label={m.pager.aria}>
             {data.page > 1 ? (
-              <Link className="btn" to="/pulls" search={{ ...search, page: data.page - 1 }}>
+              <Link className={cx('btn')} to="/pulls" search={{ ...search, page: data.page - 1 }}>
                 {m.pager.prev}
               </Link>
             ) : (
-              <span className="btn btn-disabled" aria-disabled="true">
+              <span className={cx('btn btn-disabled')} aria-disabled="true">
                 {m.pager.prev}
               </span>
             )}
-            <span className="page-info">
+            <span className={cx('page-info')}>
               {fmt(m.pager.info, { page: data.page, total: totalPages })}
             </span>
             {data.page < totalPages ? (
-              <Link className="btn" to="/pulls" search={{ ...search, page: data.page + 1 }}>
+              <Link className={cx('btn')} to="/pulls" search={{ ...search, page: data.page + 1 }}>
                 {m.pager.next}
               </Link>
             ) : (
-              <span className="btn btn-disabled" aria-disabled="true">
+              <span className={cx('btn btn-disabled')} aria-disabled="true">
                 {m.pager.next}
               </span>
             )}

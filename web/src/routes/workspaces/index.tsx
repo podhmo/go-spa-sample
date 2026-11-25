@@ -3,6 +3,7 @@ import { useReducer } from 'react'
 import { api } from '../../api'
 import { WorkspaceList } from './-components/WorkspaceList'
 import { useMessages } from '../../i18n'
+import { cx } from '../../styles/cx'
 
 export const Route = createFileRoute('/workspaces/')({
   loader: () => api.listWorkspaces(),
@@ -28,9 +29,9 @@ export const Route = createFileRoute('/workspaces/')({
     const m = useMessages()
     return (
       <div>
-        <div className="page-head">
+        <div className={cx('page-head')}>
           <h1>{m.workspaces.title}</h1>
-          <Link className="btn" to="/workspaces/new">
+          <Link className={cx('btn')} to="/workspaces/new">
             {m.workspaces.new}
           </Link>
         </div>

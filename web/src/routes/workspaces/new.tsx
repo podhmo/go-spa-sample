@@ -4,6 +4,7 @@ import { api } from '../../api'
 import { apiFieldErrors } from '../-lib/mutation'
 import { WorkspaceForm } from './-components/WorkspaceForm'
 import { useMessages } from '../../i18n'
+import { cx } from '../../styles/cx'
 
 export const Route = createFileRoute('/workspaces/new')({
   component: function NewWorkspacePage() {
@@ -17,14 +18,14 @@ export const Route = createFileRoute('/workspaces/new')({
     const m = useMessages()
     return (
       <div>
-        <div className="page-head">
+        <div className={cx('page-head')}>
           <h1>{m.workspaces.new}</h1>
         </div>
         <WorkspaceForm
           submitting={isPending}
           errors={errors}
           cancelLink={
-            <Link className="btn btn-quiet" to="/workspaces">
+            <Link className={cx('btn btn-quiet')} to="/workspaces">
               {m.copy.cancel}
             </Link>
           }

@@ -6,6 +6,7 @@ import { IssueForm } from '../-components/IssueForm'
 import { apiFieldErrors } from '../../../../-lib/mutation'
 import { scoped } from '../../../../-lib/scoped'
 import { fmt, useMessages } from '../../../../../i18n'
+import { cx } from '../../../../../styles/cx'
 
 export const Route = createFileRoute('/w/$ws/issues/$issueId/edit')({
   loader: async ({ params }) => {
@@ -36,7 +37,7 @@ export const Route = createFileRoute('/w/$ws/issues/$issueId/edit')({
     const m = useMessages()
     return (
       <div>
-        <div className="page-head">
+        <div className={cx('page-head')}>
           <h1>{fmt(m.issues.editTitle, { id: issue.id })}</h1>
         </div>
         <IssueForm
@@ -50,7 +51,11 @@ export const Route = createFileRoute('/w/$ws/issues/$issueId/edit')({
           }}
           submitLabel={m.form.saveChanges}
           cancelLink={
-            <Link className="btn btn-quiet" to="/w/$ws/issues/$issueId" params={{ ws, issueId }}>
+            <Link
+              className={cx('btn btn-quiet')}
+              to="/w/$ws/issues/$issueId"
+              params={{ ws, issueId }}
+            >
               {m.copy.cancel}
             </Link>
           }

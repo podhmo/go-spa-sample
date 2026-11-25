@@ -1,5 +1,6 @@
 import { useReducer } from 'react'
 import { useMessages } from '../../i18n'
+import { cx } from '../../styles/cx'
 
 // Register/login share one form: name + password, ?next handled by the
 // caller. mode picks labels and the password autocomplete token.
@@ -25,16 +26,16 @@ export function AuthForm({
   const m = useMessages()
   return (
     <form
-      className="card issue-form"
+      className={cx('card issue-form')}
       aria-label={mode === 'login' ? m.auth.logInAria : m.auth.registerAria}
       onSubmit={(e) => {
         e.preventDefault()
         onSubmit(state.name, state.password)
       }}
     >
-      <p className="form-note">
+      <p className={cx('form-note')}>
         {m.form.requiredPre}{' '}
-        <span className="req" aria-hidden="true">
+        <span className={cx('req')} aria-hidden="true">
           *
         </span>{' '}
         {m.form.requiredPost}
@@ -44,10 +45,10 @@ export function AuthForm({
           {errors.form}
         </em>
       )}
-      <div className="field">
+      <div className={cx('field')}>
         <label htmlFor={`${id}-name`}>
           {m.form.name}{' '}
-          <span className="req" aria-hidden="true">
+          <span className={cx('req')} aria-hidden="true">
             *
           </span>
         </label>
@@ -68,7 +69,7 @@ export function AuthForm({
           aria-invalid={errors?.name ? 'true' : 'false'}
           aria-describedby={errors?.name ? `${id}-name-api-error` : undefined}
         />
-        <span id={`${id}-name-error`} className="error-msg">
+        <span id={`${id}-name-error`} className={cx('error-msg')}>
           {m.form.nameRequired}
         </span>
         {errors?.name && (
@@ -77,10 +78,10 @@ export function AuthForm({
           </em>
         )}
       </div>
-      <div className="field">
+      <div className={cx('field')}>
         <label htmlFor={`${id}-password`}>
           {m.form.password}{' '}
-          <span className="req" aria-hidden="true">
+          <span className={cx('req')} aria-hidden="true">
             *
           </span>
         </label>
@@ -97,7 +98,7 @@ export function AuthForm({
           aria-invalid={errors?.password ? 'true' : 'false'}
           aria-describedby={errors?.password ? `${id}-password-api-error` : undefined}
         />
-        <span id={`${id}-password-error`} className="error-msg">
+        <span id={`${id}-password-error`} className={cx('error-msg')}>
           {mode === 'register' ? m.form.passwordMin : m.form.passwordRequired}
         </span>
         {errors?.password && (
@@ -106,8 +107,8 @@ export function AuthForm({
           </em>
         )}
       </div>
-      <div className="form-actions">
-        <button type="submit" className="btn btn-primary" disabled={submitting}>
+      <div className={cx('form-actions')}>
+        <button type="submit" className={cx('btn btn-primary')} disabled={submitting}>
           {submitting ? '…' : mode === 'login' ? m.nav.logIn : m.nav.register}
         </button>
       </div>

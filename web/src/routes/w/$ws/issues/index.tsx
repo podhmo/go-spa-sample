@@ -4,6 +4,7 @@ import { scoped } from '../../../-lib/scoped'
 import { issueSearch, str } from '../../../-lib/search'
 import { IssueList } from './-components/IssueList'
 import { fmt, useMessages } from '../../../../i18n'
+import { cx } from '../../../../styles/cx'
 
 const STATUS_TABS = ['open', 'closed', 'all'] as const
 
@@ -36,7 +37,7 @@ export const Route = createFileRoute('/w/$ws/issues/')({
     const statusLabel = { open: m.filter.open, closed: m.filter.closed, all: m.filter.all }
     return (
       <div>
-        <div className="page-head">
+        <div className={cx('page-head')}>
           <h1>{m.issues.title}</h1>
         </div>
 
@@ -60,7 +61,7 @@ export const Route = createFileRoute('/w/$ws/issues/')({
               change (e.g. pagination links), keeping defaults in sync */}
           <form
             key={JSON.stringify(search)}
-            className="filter-bar"
+            className={cx('filter-bar')}
             aria-label={m.filter.ariaIssues}
             onSubmit={(e) => {
               e.preventDefault()
@@ -78,7 +79,7 @@ export const Route = createFileRoute('/w/$ws/issues/')({
             }}
           >
             <input type="hidden" name="status" value={status} />
-            <div className="filter-field">
+            <div className={cx('filter-field')}>
               <label htmlFor="filter-q">{m.filter.search}</label>
               <input
                 type="search"
@@ -88,7 +89,7 @@ export const Route = createFileRoute('/w/$ws/issues/')({
                 defaultValue={search.q}
               />
             </div>
-            <div className="filter-field">
+            <div className={cx('filter-field')}>
               <label htmlFor="filter-label">{m.filter.label}</label>
               <select id="filter-label" name="label" defaultValue={search.label ?? ''}>
                 <option value="">{m.filter.allLabels}</option>
@@ -99,19 +100,19 @@ export const Route = createFileRoute('/w/$ws/issues/')({
                 ))}
               </select>
             </div>
-            <div className="filter-field">
+            <div className={cx('filter-field')}>
               <label htmlFor="filter-sort">{m.filter.sort}</label>
               <select id="filter-sort" name="sort" defaultValue={search.sort ?? 'newest'}>
                 <option value="newest">{m.filter.newest}</option>
                 <option value="oldest">{m.filter.oldest}</option>
               </select>
             </div>
-            <div className="filter-actions">
-              <button type="submit" className="btn">
+            <div className={cx('filter-actions')}>
+              <button type="submit" className={cx('btn')}>
                 {m.filter.apply}
               </button>
               {hasActiveFilter && (
-                <Link className="btn btn-quiet" to="/w/$ws/issues" params={{ ws }}>
+                <Link className={cx('btn btn-quiet')} to="/w/$ws/issues" params={{ ws }}>
                   {m.filter.clear}
                 </Link>
               )}
@@ -120,17 +121,17 @@ export const Route = createFileRoute('/w/$ws/issues/')({
         </search>
 
         {data.issues.length > 0 && (
-          <p className="result-count">
+          <p className={cx('result-count')}>
             {fmt(m.pager.showingIssues, { start: rangeStart, end: rangeEnd, total: data.total })}
           </p>
         )}
         <IssueList issues={data.issues} ws={ws} filtered={hasActiveFilter} search={search} />
 
         {totalPages > 1 && (
-          <nav className="pagination" aria-label={m.pager.aria}>
+          <nav className={cx('pagination')} aria-label={m.pager.aria}>
             {data.page > 1 ? (
               <Link
-                className="btn"
+                className={cx('btn')}
                 to="/w/$ws/issues"
                 params={{ ws }}
                 search={{ ...search, page: data.page - 1 }}
@@ -138,16 +139,16 @@ export const Route = createFileRoute('/w/$ws/issues/')({
                 {m.pager.prev}
               </Link>
             ) : (
-              <span className="btn btn-disabled" aria-disabled="true">
+              <span className={cx('btn btn-disabled')} aria-disabled="true">
                 {m.pager.prev}
               </span>
             )}
-            <span className="page-info">
+            <span className={cx('page-info')}>
               {fmt(m.pager.info, { page: data.page, total: totalPages })}
             </span>
             {data.page < totalPages ? (
               <Link
-                className="btn"
+                className={cx('btn')}
                 to="/w/$ws/issues"
                 params={{ ws }}
                 search={{ ...search, page: data.page + 1 }}
@@ -155,7 +156,7 @@ export const Route = createFileRoute('/w/$ws/issues/')({
                 {m.pager.next}
               </Link>
             ) : (
-              <span className="btn btn-disabled" aria-disabled="true">
+              <span className={cx('btn btn-disabled')} aria-disabled="true">
                 {m.pager.next}
               </span>
             )}

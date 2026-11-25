@@ -2,6 +2,7 @@ import { useId } from 'react'
 import { HIDE_REASONS } from '../api'
 import { fmt, useMessages } from '../i18n'
 import dialogStyles from './ConfirmDialog.module.css'
+import { cx } from '../styles/cx'
 
 // Hide reason picker: same native <dialog> + <form method="dialog">
 // pattern as the comment one, but generalized over the noun.
@@ -49,10 +50,10 @@ export function HideDialog({
       >
         <h2 id={`${dialogId}-title`}>{fmt(m.comments.hideTitle, { noun, id: itemId })}</h2>
         <form method="dialog">
-          <div className="field">
+          <div className={cx('field')}>
             <label htmlFor={`${dialogId}-reason`}>
               {m.comments.reason}{' '}
-              <span className="req" aria-hidden="true">
+              <span className={cx('req')} aria-hidden="true">
                 *
               </span>
             </label>
@@ -72,17 +73,17 @@ export function HideDialog({
                 </option>
               ))}
             </select>
-            <span id={`${dialogId}-reason-error`} className="error-msg">
+            <span id={`${dialogId}-reason-error`} className={cx('error-msg')}>
               {m.comments.reasonRequired}
             </span>
           </div>
-          <div className="form-actions">
+          <div className={cx('form-actions')}>
             {/* Chrome validates required controls even on method="dialog"
                 submits — formnovalidate lets Cancel close without a reason. */}
-            <button type="submit" className="btn" value="cancel" formNoValidate autoFocus>
+            <button type="submit" className={cx('btn')} value="cancel" formNoValidate autoFocus>
               {m.copy.cancel}
             </button>
-            <button type="submit" className="btn btn-primary" value="hide">
+            <button type="submit" className={cx('btn btn-primary')} value="hide">
               {fmt(m.comments.hideSubmit, { noun })}
             </button>
           </div>

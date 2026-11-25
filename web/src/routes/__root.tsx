@@ -14,6 +14,7 @@ import { api, type User } from '../api'
 import { getLocale, setLocale, useMessages, type Locale } from '../i18n'
 import { usePageTitle } from '../page-title'
 import styles from './-components/SiteChrome.module.css'
+import { cx } from '../styles/cx'
 
 // The site chrome: same as the MPA's layout.html — skip link, sticky
 // header (site title + nav + primary action), main landmark, footer.
@@ -89,7 +90,7 @@ function SiteNav({
             {m.nav.workspaces}
           </Link>
           {langSwitch}
-          <Link className="btn" to="/w/$ws/issues/new" params={{ ws }}>
+          <Link className={cx('btn')} to="/w/$ws/issues/new" params={{ ws }}>
             {m.nav.newIssue}
           </Link>
           {account}
@@ -121,7 +122,7 @@ function SiteNav({
           {m.nav.workspaces}
         </Link>
         {langSwitch}
-        <Link className="btn" to="/issues/new">
+        <Link className={cx('btn')} to="/issues/new">
           {m.nav.newIssue}
         </Link>
         {account}
@@ -143,7 +144,7 @@ function LogoutButton() {
     <>
       <button
         type="button"
-        className="btn"
+        className={cx('btn')}
         disabled={state === 'pending'}
         onClick={() => {
           setState('pending')

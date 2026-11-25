@@ -5,6 +5,7 @@ import { scoped } from '../../../../-lib/scoped'
 import { CommentForm } from '../../../../../components/CommentForm'
 import { DiscussionDetail, ThreadList } from './-components/DiscussionDetail'
 import { useMessages } from '../../../../../i18n'
+import { cx } from '../../../../../styles/cx'
 
 export const Route = createFileRoute('/w/$ws/discussions/$discussionId/')({
   loader: ({ params, location }) =>
@@ -80,7 +81,7 @@ export const Route = createFileRoute('/w/$ws/discussions/$discussionId/')({
     const answerable = discussion.category.format === 'qa'
     return (
       <div>
-        <nav className="breadcrumb" aria-label={m.chrome.breadcrumb}>
+        <nav className={cx('breadcrumb')} aria-label={m.chrome.breadcrumb}>
           <ol>
             <li>
               <Link to="/w/$ws/discussions" params={{ ws }} activeOptions={{ exact: true }}>
