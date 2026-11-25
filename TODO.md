@@ -122,5 +122,10 @@ workspace → discussions → pulls → accounts へ展開する。
   (DB直叩き) でコメント/スレッドを書いたとき、開いている issues /
   discussions 画面が追加・編集・削除に追随するようにする。
   description/title 変更の細かい追随は MPA/SPA 双方 future work
+- [ ] **CSSのcomponent co-location移行**: `docs/sketch/ja/css.md` の方針に従い、
+  leaf component → app shell → feature固有style → shared primitive の順で
+  `src/index.css` のglobal ruleを `*.module.css` へ移す。目安は
+  `src/index.css` 300行以内、feature固有selectorはglobal fileに残さない
+  ([#22](https://github.com/podhmo/go-spa-sample/issues/22))
 - [ ] **本番構成の決定**: dev proxy の `Bearer dev-token` 注入は開発専用。
   embed 配信+セッション or 別配備+token のどちらにするか
