@@ -1,14 +1,14 @@
 import { Link } from '@tanstack/react-router'
 import { useId, useReducer } from 'react'
-import { useLeaveGuard } from '../leave-guard'
-import { HIDE_REASONS, type Comment, type Issue } from '../api'
-import { ConfirmDialog } from './ConfirmDialog'
-import { CopyButton } from './CopyButton'
-import { submitOnCtrlEnter } from '../enter-submit'
-import { labelStyle } from '../format'
-import { fmt, useFmtTime, useMessages } from '../i18n'
-import { StatusBadge } from './IssueList'
-import { Markdown } from './Markdown'
+import { useLeaveGuard } from '../../../../../../leave-guard'
+import { HIDE_REASONS, type Comment, type Issue } from '../../../../../../api'
+import { ConfirmDialog } from '../../../../../../components/ConfirmDialog'
+import { CopyButton } from '../../../../../../components/CopyButton'
+import { submitOnCtrlEnter } from '../../../../../../enter-submit'
+import { labelStyle } from '../../../../../../format'
+import { fmt, useFmtTime, useMessages } from '../../../../../../i18n'
+import { StatusBadge } from '../../-components/IssueList'
+import { Markdown } from '../../../../../../components/Markdown'
 
 type CommentUIState = { editing: boolean; draft: string }
 type CommentUIAction =

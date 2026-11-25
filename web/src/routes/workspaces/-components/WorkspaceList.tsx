@@ -1,7 +1,7 @@
 import { Link } from '@tanstack/react-router'
-import type { Workspace } from '../api'
-import { fmt, useMessages } from '../i18n'
-import { ConfirmDialog } from './ConfirmDialog'
+import type { Workspace } from '../../../api'
+import { fmt, useMessages } from '../../../i18n'
+import { ConfirmDialog } from '../../../components/ConfirmDialog'
 
 // The MPA's /workspaces index: one row per workspace — slug link, name
 // (when it differs from the slug), description, counts, delete action.

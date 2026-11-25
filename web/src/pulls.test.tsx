@@ -1,7 +1,7 @@
 import { page } from 'vitest/browser'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { PRComment, PRCommit, PullRequest } from './api'
-import { PullForm } from './components/forms'
+import { PullForm } from './routes/pulls/-components/PullForm'
 import { renderAt, renderWithRouter, stubAPI } from './test-utils'
 
 const pull = (over: Partial<PullRequest> = {}): PullRequest => ({

@@ -1,7 +1,7 @@
 import { Link } from '@tanstack/react-router'
-import type { Discussion } from '../api'
-import { labelStyle } from '../format'
-import { fmt, useFmtTime, useMessages } from '../i18n'
+import type { Discussion } from '../../../../../api'
+import { labelStyle } from '../../../../../format'
+import { fmt, useFmtTime, useMessages } from '../../../../../i18n'
 
 export function AnsweredBadge() {
   const m = useMessages()

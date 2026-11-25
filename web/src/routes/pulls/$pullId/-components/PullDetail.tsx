@@ -1,14 +1,14 @@
 import { Link } from '@tanstack/react-router'
 import { useId, useReducer } from 'react'
-import { useLeaveGuard } from '../leave-guard'
-import type { PRComment, PRCommit, PullMergeable, PullRequest } from '../api'
-import { ConfirmDialog } from './ConfirmDialog'
-import { CopyButton } from './CopyButton'
-import { submitOnCtrlEnter } from '../enter-submit'
-import { fmt, useFmtTime, useMessages } from '../i18n'
-import { HideDialog } from './DiscussionDetail'
-import { Markdown } from './Markdown'
-import { PullStatusBadge } from './PullList'
+import { useLeaveGuard } from '../../../../leave-guard'
+import type { PRComment, PRCommit, PullMergeable, PullRequest } from '../../../../api'
+import { ConfirmDialog } from '../../../../components/ConfirmDialog'
+import { CopyButton } from '../../../../components/CopyButton'
+import { submitOnCtrlEnter } from '../../../../enter-submit'
+import { fmt, useFmtTime, useMessages } from '../../../../i18n'
+import { HideDialog } from '../../../../components/HideDialog'
+import { Markdown } from '../../../../components/Markdown'
+import { PullStatusBadge } from '../../-components/PullList'
 
 const shortRef = (ref: string) => ref.replace(/^refs\/(heads|remotes|tags)\//, '')
 

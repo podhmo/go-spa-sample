@@ -7,7 +7,7 @@ import type {
   DiscussionThread,
   Workspace,
 } from './api'
-import { DiscussionForm } from './components/forms'
+import { DiscussionForm } from './routes/w/$ws/discussions/-components/DiscussionForm'
 import { renderAt, renderWithRouter, stubAPI } from './test-utils'
 
 const workspace = (over: Partial<Workspace> = {}): Workspace => ({
