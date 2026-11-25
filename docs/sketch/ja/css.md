@@ -179,14 +179,16 @@ layer整理は別途行う。
 
 一度に全量を動かさず、影響範囲の小さいものからstrangler fig的に移す。
 
-1. **leaf component**: `Markdown`, `CopyButton`, `ConfirmDialog`,
-   `HideDialog`, `LabelBadge`
+1. **component単位で閉じるもの**: `Markdown`、`ConfirmDialog`+`HideDialog`
+   (両者が共有するdialog styleは同じmoduleへ)
 2. **app shell**: `__root.tsx`のheader/nav/footer/progress/error page
 3. **単一featureで閉じるもの**: workspace list、labels admin、pulls diff、
    PR badge/form
 4. **form/buttonなどの共有primitive**: `btn`, `field`, `form-actions`,
    `card`, `page-head`, `filter`, `pagination`, `breadcrumb`
-5. **list/comment/detail**: issue/discussion/pull跨ぎの共有関係を整理しつつ分割
+5. **list/comment/detail**: issue/discussion/pull跨ぎの共有関係を整理しつつ分割。
+   `CopyButton`はcomment hover/focusで表示するruleと同じstepで動かし、
+   `LabelBadge`もlist/detail側の利用箇所と同じstepで動かす
 6. **dead CSS削除**: dynamic classやMPA由来の未使用selectorを消す
 
 各stepはvisual変更なしを基本とし、必要なtest selector更新だけを伴う。
