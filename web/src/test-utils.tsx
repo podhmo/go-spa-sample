@@ -7,6 +7,7 @@ import {
 import type { ReactNode } from 'react'
 import { render } from 'vitest-browser-react'
 import { vi } from 'vitest'
+import { setupFieldErrorSync } from './a11y'
 import { watchLeaveGuardReset } from './leave-guard'
 import { routeTree } from './routes'
 
@@ -14,6 +15,7 @@ import { routeTree } from './routes'
 // checks run inside the actual router so Link/loader/useSearch all work.
 // The router rides along so tests can assert the landed location.
 export function renderAt(initialPath: string) {
+  setupFieldErrorSync()
   const router = createRouter({
     routeTree,
     history: createMemoryHistory({ initialEntries: [initialPath] }),

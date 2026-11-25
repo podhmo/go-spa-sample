@@ -248,6 +248,113 @@ describe('route: /issues/$issueId', () => {
     expect(JSON.parse(String(patch?.init?.body))).toEqual({ body: 'edited body' })
   })
 
+  it('disables the comment edit textarea while saving is in flight', async () => {
+    let finishPatch: (() => void) | undefined
+    let edited = false
+    stubAPI((url, init) => {
+      if (init?.method === 'PATCH' && url.includes('/comments/')) {
+        return new Promise((resolve) => {
+          finishPatch = () => {
+            edited = true
+            resolve({
+              body: {
+                comment: comment({ body: 'edited body', edited_at: '2026-01-02T00:00:00Z' }),
+              },
+            })
+          }
+        })
+      }
+      return {
+        body: {
+          issue: issue(),
+          comments: [
+            comment(edited ? { body: 'edited body', edited_at: '2026-01-02T00:00:00Z' } : {}),
+          ],
+        },
+      }
+    })
+    renderAt('/w/default/issues/1')
+    await expect.element(page.getByText('a comment')).toBeInTheDocument()
+    await page.getByRole('button', { name: 'Edit comment 1' }).click()
+    await page.getByLabelText('comment body').fill('edited body')
+    await page.getByRole('button', { name: 'Save changes' }).click()
+
+    await expect.element(page.getByLabelText('comment body')).toBeDisabled()
+    finishPatch?.()
+    await expect.element(page.getByText('edited', { exact: true })).toBeInTheDocument()
+  })
+
+  it('keeps a comment edit open and announces the error when saving is rejected', async () => {
+    stubAPI((url, init) => {
+      if (init?.method === 'PATCH' && url.includes('/comments/')) {
+        return {
+          status: 422,
+          body: {
+            error: {
+              message: 'Validation failed.',
+              fields: { body: 'Body must be at most 10,000 characters.' },
+            },
+          },
+        }
+      }
+      return { body: { issue: issue(), comments: [comment()] } }
+    })
+    renderAt('/w/default/issues/1')
+    await expect.element(page.getByText('a comment')).toBeInTheDocument()
+    await page.getByRole('button', { name: 'Edit comment 1' }).click()
+    await page.getByLabelText('comment body').fill('edited body')
+    await page.getByRole('button', { name: 'Save changes' }).click()
+
+    await expect
+      .element(page.getByRole('alert'))
+      .toHaveTextContent('Body must be at most 10,000 characters.')
+    await expect.element(page.getByLabelText('comment body')).toHaveValue('edited body')
+    const textarea = document.getElementById('comment-edit-1')
+    expect(textarea?.getAttribute('data-error')).toBe('comment-edit-1-error')
+    expect(textarea?.getAttribute('aria-invalid')).toBe('true')
+    expect(textarea?.getAttribute('aria-describedby')).toBe('comment-edit-1-api-error')
+
+    await page.getByRole('button', { name: 'Cancel' }).click()
+    await page.getByRole('button', { name: 'Edit comment 1' }).click()
+    const reopened = document.getElementById('comment-edit-1')
+    expect(reopened?.getAttribute('aria-invalid')).toBe('false')
+    expect(reopened?.getAttribute('aria-describedby')).toBeNull()
+  })
+
+  it('links the required-field error after blurring an empty comment edit', async () => {
+    stubAPI(() => ({ body: { issue: issue(), comments: [comment()] } }))
+    renderAt('/w/default/issues/1')
+    await expect.element(page.getByText('a comment')).toBeInTheDocument()
+    await page.getByRole('button', { name: 'Edit comment 1' }).click()
+    await page.getByLabelText('comment body').fill('')
+    const textarea = document.getElementById('comment-edit-1') as HTMLTextAreaElement
+    textarea.blur()
+
+    await expect.poll(() => textarea.getAttribute('aria-invalid')).toBe('true')
+    expect(textarea.getAttribute('aria-describedby')).toContain('comment-edit-1-error')
+    await expect
+      .poll(() => document.querySelector('div.visually-hidden')?.textContent)
+      .toContain('Body is required.')
+  })
+
+  it('does not announce a required-field error after cancel removes the editor', async () => {
+    stubAPI(() => ({ body: { issue: issue(), comments: [comment()] } }))
+    renderAt('/w/default/issues/1')
+    await expect.element(page.getByText('a comment')).toBeInTheDocument()
+    await page.getByRole('button', { name: 'Edit comment 1' }).click()
+    await page.getByLabelText('comment body').fill('')
+    const textarea = document.getElementById('comment-edit-1') as HTMLTextAreaElement
+    textarea.blur()
+    const cancel = textarea
+      .closest('form')
+      ?.querySelector<HTMLButtonElement>('button[type="button"]')
+    expect(cancel?.textContent).toBe('Cancel')
+    cancel?.click()
+
+    await new Promise((resolve) => setTimeout(resolve, 600))
+    expect(document.querySelector('div.visually-hidden')?.textContent).toBe('')
+  })
+
   it('deletes a comment through the confirm dialog', async () => {
     const requests: { url: string; init?: RequestInit | undefined }[] = []
     stubAPI((url, init) => {
@@ -273,6 +380,75 @@ describe('route: /issues/$issueId', () => {
     await expect.element(submit).toBeEnabled()
     await page.getByLabelText(/Add a comment/).fill('   ')
     await expect.element(submit).toBeDisabled()
+  })
+
+  it('resets browser validation state after posting a comment', async () => {
+    let posted = false
+    stubAPI((url, init) => {
+      if (init?.method === 'POST' && url.endsWith('/comments')) {
+        posted = true
+        return { status: 201, body: { comment: comment({ id: 2, body: 'posted body' }) } }
+      }
+      return {
+        body: {
+          issue: issue(),
+          comments: posted ? [comment({ id: 2, body: 'posted body' })] : [],
+        },
+      }
+    })
+    renderAt('/w/default/issues/1')
+    await page.getByLabelText(/Add a comment/).fill('posted body')
+    await page.getByRole('button', { name: 'Comment', exact: true }).click()
+    await expect.element(page.getByLabelText(/Add a comment/)).toHaveValue('')
+    await expect
+      .poll(() => document.getElementById('comment-body')?.matches(':user-invalid'))
+      .toBe(false)
+  })
+
+  it('disables the comment textarea while the post is in flight', async () => {
+    let finishPost: (() => void) | undefined
+    stubAPI((url, init) => {
+      if (init?.method === 'POST' && url.endsWith('/comments')) {
+        return new Promise((resolve) => {
+          finishPost = () =>
+            resolve({ status: 201, body: { comment: comment({ id: 2, body: 'posted body' }) } })
+        })
+      }
+      return { body: { issue: issue(), comments: [] } }
+    })
+    renderAt('/w/default/issues/1')
+    await page.getByLabelText(/Add a comment/).fill('posted body')
+    await page.getByRole('button', { name: 'Comment', exact: true }).click()
+    await expect.element(page.getByLabelText(/Add a comment/)).toBeDisabled()
+    finishPost?.()
+    await expect.element(page.getByLabelText(/Add a comment/)).toHaveValue('')
+  })
+
+  it('keeps the draft and shows the field error when a comment is rejected', async () => {
+    stubAPI((url, init) => {
+      if (init?.method === 'POST' && url.endsWith('/comments')) {
+        return {
+          status: 422,
+          body: {
+            error: {
+              message: 'Validation failed.',
+              fields: { body: 'Body must be at most 10,000 characters.' },
+            },
+          },
+        }
+      }
+      return { body: { issue: issue(), comments: [] } }
+    })
+    renderAt('/w/default/issues/1')
+    await page.getByLabelText(/Add a comment/).fill('too long')
+    await page.getByRole('button', { name: 'Comment', exact: true }).click()
+    await expect.element(page.getByLabelText(/Add a comment/)).toHaveValue('too long')
+    await expect
+      .element(page.getByText('Body must be at most 10,000 characters.'))
+      .toBeInTheDocument()
+    const textarea = document.getElementById('comment-body')
+    expect(textarea?.getAttribute('aria-invalid')).toBe('true')
+    expect(textarea?.getAttribute('aria-describedby')).toContain('comment-body-api-error')
   })
 
   it('confirms before leaving with a comment draft, and navigates on accept', async () => {

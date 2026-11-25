@@ -524,11 +524,15 @@ export function DiscussionForm({
 export function CommentForm({
   onSubmit,
   submitting,
+  error,
 }: {
-  onSubmit: (body: string) => void
+  onSubmit: (body: string) => void | boolean | Promise<void | boolean>
   submitting?: boolean
+  error?: string | null | undefined
 }) {
   const [body, setBody] = useReducer((_: string, v: string) => v, '')
+  const [sending, setSending] = useReducer((_: boolean, v: boolean) => v, false)
+  const busy = submitting === true || sending
   const m = useMessages()
   useLeaveGuard(body.trim() !== '', m.form.unsavedChanges)
   return (
@@ -537,8 +541,21 @@ export function CommentForm({
       aria-label={m.form.newCommentAria}
       onSubmit={(e) => {
         e.preventDefault()
-        onSubmit(body)
-        setBody('')
+        const form = e.currentTarget
+        void (async () => {
+          setSending(true)
+          try {
+            const ok = await onSubmit(body)
+            if (ok !== false) {
+              // Native reset clears the :user-invalid interaction state;
+              // clearing only the controlled value leaves it looking invalid.
+              form.reset()
+              setBody('')
+            }
+          } finally {
+            setSending(false)
+          }
+        })()
       }}
     >
       <div className="field">
@@ -556,13 +573,21 @@ export function CommentForm({
           onKeyDown={submitOnCtrlEnter}
           rows={4}
           required
+          disabled={busy}
           data-error="comment-body-error"
-          aria-invalid="false"
-          aria-describedby="comment-body-hint"
+          aria-invalid={error ? 'true' : 'false'}
+          aria-describedby={
+            error ? 'comment-body-api-error comment-body-hint' : 'comment-body-hint'
+          }
         />
         <span id="comment-body-error" className="error-msg">
           {m.form.bodyRequired}
         </span>
+        {error && (
+          <em id="comment-body-api-error" role="alert">
+            {error}
+          </em>
+        )}
         <p className="field-hint" id="comment-body-hint">
           {m.form.bodyHintShort}
         </p>
@@ -571,8 +596,8 @@ export function CommentForm({
         {/* disabled while empty: an empty post can only 422, so the
             GitHub-style rule disables the button until there is input
             (ui-rules §6) */}
-        <button type="submit" className="btn btn-primary" disabled={submitting || !body.trim()}>
-          {submitting ? m.form.posting : m.pulls.commentSubmit}
+        <button type="submit" className="btn btn-primary" disabled={busy || !body.trim()}>
+          {busy ? m.form.posting : m.pulls.commentSubmit}
         </button>
       </div>
     </form>

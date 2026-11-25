@@ -33,8 +33,11 @@ const announceError = (el: HTMLElement) => {
   clearTimeout(announceTimer)
   announcer.textContent = ''
   announcedField = el
+  const field = el
   announceTimer = setTimeout(() => {
-    if (announcer) announcer.textContent = prefix + spokenText(error)
+    if (announcer && announcedField === field && field.isConnected) {
+      announcer.textContent = prefix + spokenText(error)
+    }
   }, 500)
 }
 

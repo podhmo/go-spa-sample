@@ -127,7 +127,7 @@ MPA: `go run ./cmd/zatudan -seed`):
 
 | 画面 | MPA (:8090) | SPA (:5174) |
 | --- | --- | --- |
-| issues 一覧 | `ui-parity-mpa-issues.png` | `ui-parity-spa-issues.png` |
-| issue 詳細 | `ui-parity-mpa-issue.png` | `ui-parity-spa-issue.png` |
-| issue 作成 | `ui-parity-mpa-new.png` | `ui-parity-spa-new.png` |
-| labels 管理 | `ui-parity-mpa-labels.png` | `ui-parity-spa-labels.png` |
+| issues 一覧 | `images/ui-parity-mpa-issues.png` | `images/ui-parity-spa-issues.png` |
+| issue 詳細 | `images/ui-parity-mpa-issue.png` | `images/ui-parity-spa-issue.png` |
+| issue 作成 | `images/ui-parity-mpa-new.png` | `images/ui-parity-spa-new.png` |
+| labels 管理 | `images/ui-parity-mpa-labels.png` | `images/ui-parity-spa-labels.png` |

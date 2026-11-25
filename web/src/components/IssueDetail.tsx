@@ -31,7 +31,9 @@ const commentUIReducer = (s: CommentUIState, a: CommentUIAction): CommentUIState
 // legitimately pass explicit undefined (exactOptionalPropertyTypes).
 export type CommentHandlers = {
   pending?: boolean | undefined
-  onEdit?: ((cid: number, body: string) => void) | undefined
+  editError?: { cid: number; message: string } | null | undefined
+  onEditErrorClear?: (() => void) | undefined
+  onEdit?: ((cid: number, body: string) => void | boolean | Promise<void | boolean>) | undefined
   onDelete?: ((cid: number) => void) | undefined
   onHide?: ((cid: number, reason: string) => void) | undefined
   onUnhide?: ((cid: number) => void) | undefined
@@ -130,12 +132,15 @@ function HideCommentDialog({
 function CommentItem({
   comment: c,
   pending,
+  editError,
+  onEditErrorClear,
   onEdit,
   onDelete,
   onHide,
   onUnhide,
 }: { comment: Comment } & CommentHandlers) {
   const [ui, dispatch] = useReducer(commentUIReducer, { editing: false, draft: '' })
+  const fieldError = editError?.cid === c.id ? editError.message : null
   const m = useMessages()
   useLeaveGuard(ui.editing && ui.draft !== c.body, m.form.unsavedChanges)
   const fmtTime = useFmtTime()
@@ -182,8 +187,10 @@ function CommentItem({
           aria-label={fmt(m.comments.editFormAria, { noun: m.comments.nounComment, id: c.id })}
           onSubmit={(e) => {
             e.preventDefault()
-            onEdit?.(c.id, ui.draft)
-            dispatch({ type: 'cancel' })
+            void (async () => {
+              const ok = await onEdit?.(c.id, ui.draft)
+              if (ok !== false) dispatch({ type: 'cancel' })
+            })()
           }}
         >
           <div className="field">
@@ -197,14 +204,29 @@ function CommentItem({
               onKeyDown={submitOnCtrlEnter}
               rows={4}
               required
+              disabled={pending}
+              data-error={`comment-edit-${c.id}-error`}
+              aria-invalid={fieldError ? 'true' : 'false'}
+              aria-describedby={fieldError ? `comment-edit-${c.id}-api-error` : undefined}
               aria-label={m.comments.commentBodyLabel}
             />
+            <span id={`comment-edit-${c.id}-error`} className="error-msg">
+              {m.form.bodyRequired}
+            </span>
+            {fieldError && (
+              <em id={`comment-edit-${c.id}-api-error`} role="alert">
+                {fieldError}
+              </em>
+            )}
           </div>
           <div className="form-actions">
             <button
               type="button"
               className="btn btn-quiet"
-              onClick={() => dispatch({ type: 'cancel' })}
+              onClick={() => {
+                if (fieldError) onEditErrorClear?.()
+                dispatch({ type: 'cancel' })
+              }}
             >
               {m.copy.cancel}
             </button>
@@ -228,7 +250,10 @@ function CommentItem({
             <button
               type="button"
               className="comment-action"
-              onClick={() => dispatch({ type: 'start-edit', body: c.body })}
+              onClick={() => {
+                if (fieldError) onEditErrorClear?.()
+                dispatch({ type: 'start-edit', body: c.body })
+              }}
               aria-label={fmt(m.comments.ariaEdit, { noun: m.comments.nounComment, id: c.id })}
             >
               {m.comments.edit}

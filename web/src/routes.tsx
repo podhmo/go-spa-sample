@@ -462,11 +462,11 @@ const workspacesRoute = createRoute({
         try {
           await fn()
           setError(null)
+          void router.invalidate()
         } catch (err) {
           setError(err instanceof Error ? err.message : String(err))
         } finally {
           setPending(false)
-          void router.invalidate()
         }
       })()
     }
@@ -966,21 +966,48 @@ const issueRoute = createRoute({
     // off by router.invalidate() can suspend on a loader thenable that a
     // later invalidation supersedes, which would pin isPending forever.
     const [isPending, setPending] = useReducer((_: boolean, v: boolean) => v, false)
+    const [actionError, setActionError] = useReducer(
+      (_: string | null, v: string | null) => v,
+      null,
+    )
+    const [editError, setEditError] = useReducer(
+      (_: { cid: number; message: string } | null, v: { cid: number; message: string } | null) => v,
+      null,
+    )
+    const [commentError, setCommentError] = useReducer(
+      (_: string | null, v: string | null) => v,
+      null,
+    )
     const issueID = Number(issueId)
-    const mutate = (fn: () => Promise<unknown>) => {
+    const m = useMessages()
+    const errorMessage = (err: unknown) => {
+      const fields = err instanceof RequestError ? err.apiError?.fields : undefined
+      return fields
+        ? Object.values(fields).join(' ')
+        : err instanceof RequestError
+          ? err.message
+          : m.error.requestFailed
+    }
+    const mutate = (fn: () => Promise<unknown>, onError?: (err: unknown) => void) => {
       setPending(true)
-      void (async () => {
+      setActionError(null)
+      setEditError(null)
+      return (async () => {
         try {
           await fn()
-        } catch {
-          // mutation failures surface via the refetched state
+          void router.invalidate()
+          return true
+        } catch (err) {
+          // A failed mutation changed nothing; refetching here can drop
+          // the whole page into the route error boundary during an outage.
+          if (onError) onError(err)
+          else setActionError(errorMessage(err))
+          return false
         } finally {
           setPending(false)
-          void router.invalidate()
         }
       })()
     }
-    const m = useMessages()
     return (
       <div>
         <nav className="breadcrumb" aria-label={m.chrome.breadcrumb}>
@@ -1024,17 +1051,32 @@ const issueRoute = createRoute({
             {m.issues.comments}
             {comments.length > 0 && <span className="comment-count"> ({comments.length})</span>}
           </h2>
+          {actionError && <em role="alert">{actionError}</em>}
           <CommentList
             comments={comments}
             pending={isPending}
-            onEdit={(cid, body) => mutate(() => api.updateComment(ws, issueID, cid, body))}
+            editError={editError}
+            onEditErrorClear={() => setEditError(null)}
+            onEdit={(cid, body) =>
+              mutate(
+                () => api.updateComment(ws, issueID, cid, body),
+                (err) => setEditError({ cid, message: errorMessage(err) }),
+              )
+            }
             onDelete={(cid) => mutate(() => api.deleteComment(ws, issueID, cid))}
             onHide={(cid, reason) => mutate(() => api.hideComment(ws, issueID, cid, reason))}
             onUnhide={(cid) => mutate(() => api.unhideComment(ws, issueID, cid))}
           />
           <CommentForm
             submitting={isPending}
-            onSubmit={(body) => mutate(() => api.createComment(ws, issueID, body))}
+            error={commentError}
+            onSubmit={(body) => {
+              setCommentError(null)
+              return mutate(
+                () => api.createComment(ws, issueID, body),
+                (err) => setCommentError(errorMessage(err)),
+              )
+            }}
           />
         </section>
 
@@ -1366,6 +1408,7 @@ const discussionRoute = createRoute({
         try {
           await fn()
           setError(null)
+          void router.invalidate()
           return true
         } catch (err) {
           const fields = err instanceof RequestError ? err.apiError?.fields : undefined
@@ -1382,7 +1425,6 @@ const discussionRoute = createRoute({
           return false
         } finally {
           setPending(false)
-          void router.invalidate()
         }
       })()
     }
@@ -1824,10 +1866,17 @@ const pullFilesRoute = createRoute({
                   hash: `comment-${comment.id}`,
                 })
               } catch (err) {
-                // A stale anchor (e.g. a force-push moved head) fails
-                // until the diff reloads — invalidate so a retry posts
-                // against the live head.
-                void router.invalidate()
+                // Stale anchor/path errors need a fresh diff. Network/5xx
+                // failures must not refetch: the loader failure would
+                // replace the page — and the preserved draft — with the
+                // route error boundary.
+                if (
+                  err instanceof RequestError &&
+                  (err.apiError?.fields?.anchor !== undefined ||
+                    err.apiError?.fields?.path !== undefined)
+                ) {
+                  void router.invalidate()
+                }
                 throw err
               } finally {
                 setPending(false)
@@ -1858,16 +1907,18 @@ const pullRoute = createRoute({
     const mutate = (fn: () => Promise<unknown>) => {
       setPending(true)
       setActionError(null)
-      void (async () => {
+      return (async () => {
         try {
           await fn()
+          void router.invalidate()
+          return true
         } catch (err) {
-          // A failed merge changes nothing on refetch, so surface the
-          // rejection (e.g. a dirty worktree) instead of staying silent.
+          // A failed mutation changes nothing; refetching here can drop
+          // the whole page into the route error boundary during an outage.
           setActionError(err instanceof RequestError ? err.message : m.error.requestFailed)
+          return false
         } finally {
           setPending(false)
-          void router.invalidate()
         }
       })()
     }
@@ -1968,11 +2019,11 @@ const labelsRoute = createRoute({
         try {
           await fn()
           setErrors({})
+          void router.invalidate()
         } catch (err) {
           setErrors(apiFieldErrors(err))
         } finally {
           setPending(false)
-          void router.invalidate()
         }
       })()
     }
