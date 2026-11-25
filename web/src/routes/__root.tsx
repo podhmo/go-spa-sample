@@ -13,6 +13,7 @@ import { useReducer } from 'react'
 import { api, type User } from '../api'
 import { getLocale, setLocale, useMessages, type Locale } from '../i18n'
 import { usePageTitle } from '../page-title'
+import styles from './-components/SiteChrome.module.css'
 
 // The site chrome: same as the MPA's layout.html — skip link, sticky
 // header (site title + nav + primary action), main landmark, footer.
@@ -34,15 +35,15 @@ function SiteNav({
   const next = loc.pathname === '/login' || loc.pathname === '/register' ? undefined : loc.href
   const account = user ? (
     <>
-      <span className="nav-user">{user.name}</span>
+      <span className={styles.navUser}>{user.name}</span>
       <LogoutButton />
     </>
   ) : (
     <>
-      <Link to="/login" search={{ next }}>
+      <Link className={styles.navLink} to="/login" search={{ next }}>
         {m.nav.logIn}
       </Link>
-      <Link to="/register" search={{ next }}>
+      <Link className={styles.navLink} to="/register" search={{ next }}>
         {m.nav.register}
       </Link>
     </>
@@ -54,7 +55,7 @@ function SiteNav({
       </label>
       <select
         id="lang-switch"
-        className="lang-switch"
+        className={styles.langSwitch}
         value={getLocale()}
         onChange={(e) => setLocale(e.target.value as Locale)}
       >
@@ -66,21 +67,27 @@ function SiteNav({
   if (ws !== undefined) {
     return (
       <>
-        <Link className="site-title" to="/w/$ws/issues" params={{ ws }}>
+        <Link className={styles.siteTitle} to="/w/$ws/issues" params={{ ws }}>
           zatudan
         </Link>
-        <nav className="site-nav" aria-label={m.nav.aria}>
-          <Link to="/w/$ws/issues" params={{ ws }}>
+        <nav className={styles.siteNav} aria-label={m.nav.aria}>
+          <Link className={styles.navLink} to="/w/$ws/issues" params={{ ws }}>
             {m.nav.issues}
           </Link>
-          <Link to="/w/$ws/discussions" params={{ ws }}>
+          <Link className={styles.navLink} to="/w/$ws/discussions" params={{ ws }}>
             {m.nav.discussions}
           </Link>
-          {pulls && <Link to="/pulls">{m.nav.pulls}</Link>}
-          <Link to="/w/$ws/labels" params={{ ws }}>
+          {pulls && (
+            <Link className={styles.navLink} to="/pulls">
+              {m.nav.pulls}
+            </Link>
+          )}
+          <Link className={styles.navLink} to="/w/$ws/labels" params={{ ws }}>
             {m.nav.labels}
           </Link>
-          <Link to="/workspaces">{m.nav.workspaces}</Link>
+          <Link className={styles.navLink} to="/workspaces">
+            {m.nav.workspaces}
+          </Link>
           {langSwitch}
           <Link className="btn" to="/w/$ws/issues/new" params={{ ws }}>
             {m.nav.newIssue}
@@ -92,15 +99,27 @@ function SiteNav({
   }
   return (
     <>
-      <Link className="site-title" to="/">
+      <Link className={styles.siteTitle} to="/">
         zatudan
       </Link>
-      <nav className="site-nav" aria-label={m.nav.aria}>
-        <Link to="/issues">{m.nav.issues}</Link>
-        <Link to="/discussions">{m.nav.discussions}</Link>
-        {pulls && <Link to="/pulls">{m.nav.pulls}</Link>}
-        <Link to="/labels">{m.nav.labels}</Link>
-        <Link to="/workspaces">{m.nav.workspaces}</Link>
+      <nav className={styles.siteNav} aria-label={m.nav.aria}>
+        <Link className={styles.navLink} to="/issues">
+          {m.nav.issues}
+        </Link>
+        <Link className={styles.navLink} to="/discussions">
+          {m.nav.discussions}
+        </Link>
+        {pulls && (
+          <Link className={styles.navLink} to="/pulls">
+            {m.nav.pulls}
+          </Link>
+        )}
+        <Link className={styles.navLink} to="/labels">
+          {m.nav.labels}
+        </Link>
+        <Link className={styles.navLink} to="/workspaces">
+          {m.nav.workspaces}
+        </Link>
         {langSwitch}
         <Link className="btn" to="/issues/new">
           {m.nav.newIssue}
@@ -173,22 +192,26 @@ export const Route = createRootRoute({
     const isPending = useRouterState({ select: (s) => s.status === 'pending' })
     return (
       <>
-        {isPending && <progress className="route-progress" aria-label={m.chrome.loading} />}
-        <a className="skip-link" href="#main-content">
+        {isPending && <progress className={styles.routeProgress} aria-label={m.chrome.loading} />}
+        <a className={styles.skipLink} href="#main-content">
           {m.nav.skip}
         </a>
-        <header className="site-header">
-          <div className="header-bar">
-            <div className="container header-inner">
+        <header className={styles.siteHeader}>
+          <div className={styles.headerBar}>
+            <div className={`${styles.container} ${styles.headerInner}`}>
               <SiteNav ws={ws} pulls={pulls} user={user} />
             </div>
           </div>
         </header>
-        <main className="container main-content" id="main-content" tabIndex={-1}>
+        <main
+          className={`${styles.container} ${styles.mainContent}`}
+          id="main-content"
+          tabIndex={-1}
+        >
           <Outlet />
         </main>
-        <footer className="site-footer">
-          <div className="container">
+        <footer className={styles.siteFooter}>
+          <div className={styles.container}>
             <p>{m.chrome.footerTagline}</p>
           </div>
         </footer>
@@ -198,8 +221,8 @@ export const Route = createRootRoute({
   notFoundComponent: function NotFoundPage() {
     const m = useMessages()
     return (
-      <div className="error-page">
-        <p className="error-code">404</p>
+      <div className={styles.errorPage}>
+        <p className={styles.errorCode}>404</p>
         <h1>{m.error.notFoundTitle}</h1>
         <p>
           {m.error.notFoundBody} <Link to="/issues">{m.error.backToIssues}</Link>
@@ -210,7 +233,7 @@ export const Route = createRootRoute({
   errorComponent: function ErrorPage({ error }: ErrorComponentProps) {
     const m = useMessages()
     return (
-      <div className="error-page">
+      <div className={styles.errorPage}>
         <h1>{m.error.somethingWrong}</h1>
         {isNotFound(error) ? (
           <p>

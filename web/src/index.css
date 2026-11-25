@@ -175,13 +175,7 @@ body {
   background: var(--bg);
 }
 
-.container {
-  max-width: 60rem;
-  margin: 0 auto;
-  padding: 0 16px;
-}
-
-/* Fluid between 1.25rem and 1.5rem with the width of .main-content. */
+/* Fluid between 1.25rem and 1.5rem with the width of the main content container. */
 h1 {
   font-size: clamp(1.25rem, 1rem + 2cqi, 1.5rem);
   font-weight: 600;
@@ -226,154 +220,6 @@ a {
   padding: 0 !important;
   border: 0 !important;
   white-space: nowrap !important;
-}
-
-/* First element in <body>, so the first Tab stop: invisible until
-   focused, then pinned to the top-left corner of the viewport. */
-.skip-link {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  margin: -1px;
-  padding: 0;
-  overflow: hidden;
-  clip-path: inset(50%);
-  white-space: nowrap;
-}
-
-.skip-link:is(:focus, :active) {
-  position: fixed;
-  top: 0.5rem;
-  left: 0.5rem;
-  z-index: 100;
-  width: auto;
-  height: auto;
-  margin: 0;
-  padding: 8px 14px;
-  overflow: visible;
-  clip-path: none;
-  white-space: normal;
-  color: var(--on-emphasis);
-  background: var(--accent-emphasis);
-  border-radius: var(--radius);
-  font-weight: 600;
-}
-
-/* The generic accent ring is invisible on the accent background; a
-   light ring keeps the focus indication readable. */
-.skip-link:focus-visible {
-  outline: 2px solid var(--on-emphasis);
-  outline-offset: 2px;
-}
-
-/* Sticky site header: stays pinned at the top while scrolling. The
-   stuck state is styled via a scroll-state container query (guide
-   state-aware-sticky-headers): the query styles DESCENDANTS of the
-   container, so the visual chrome lives on .header-bar, not
-   .site-header. Unsupported browsers still get a working sticky
-   header, just without the stuck shadow. */
-.site-header {
-  position: sticky;
-  top: 0;
-  container-type: scroll-state;
-  container-name: site-header;
-  z-index: 20;
-}
-
-.header-bar {
-  background: var(--surface);
-  border-bottom: 1px solid var(--border);
-  transition: box-shadow 0.2s;
-}
-
-@container site-header scroll-state(stuck: block-start) {
-  .header-bar {
-    /* shadow only, no box-model change: no overflow-anchor needed */
-    box-shadow: 0 4px 12px rgb(0 0 0 / 0.14);
-  }
-}
-
-.header-inner {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  padding-top: 12px;
-  padding-bottom: 12px;
-}
-
-.site-title {
-  font-size: 1.05rem;
-  font-weight: 700;
-  color: var(--text);
-}
-
-@media (hover: hover) {
-  .site-title:hover {
-    text-decoration: none;
-    color: var(--accent);
-  }
-}
-
-.site-nav {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 16px;
-}
-
-.site-nav > a:not(.btn) {
-  color: var(--text-muted);
-  font-weight: 500;
-}
-
-@media (hover: hover) {
-  .site-nav > a:not(.btn):hover {
-    color: var(--text);
-  }
-}
-
-/* Current section tab (Issues/Labels): underline, not color alone
-   (navbar guide — WCAG 1.4.1). TanStack Router puts aria-current="page"
-   on the active Link; that attribute is the hook. */
-.site-nav > a[aria-current='page']:not(.btn) {
-  color: var(--text);
-  font-weight: 600;
-  text-decoration: underline;
-  text-decoration-color: var(--accent);
-  text-decoration-thickness: 2px;
-  text-underline-offset: 4px;
-}
-
-/* Signed-in user name in the nav: muted, not a link. */
-.site-nav > .nav-user {
-  color: var(--text-muted);
-  font-weight: 500;
-}
-
-/* Language switcher: quiet inline select in the nav. */
-.site-nav .lang-switch {
-  font: inherit;
-  font-size: 0.85rem;
-  color: var(--text-muted);
-  background: transparent;
-  border: 1px solid var(--border);
-  border-radius: 4px;
-  padding: 2px 4px;
-}
-
-.main-content {
-  container: main / inline-size;
-  padding-top: 24px;
-  padding-bottom: 48px;
-}
-
-.site-footer {
-  border-top: 1px solid var(--border);
-  color: var(--text-muted);
-  font-size: 0.85rem;
-  padding: 16px 0;
 }
 
 .btn {
@@ -1453,23 +1299,6 @@ fieldset.field:has(:is(:user-invalid, [aria-invalid='true'])) {
   }
 }
 
-.error-page {
-  max-width: 30rem;
-  margin: 48px auto;
-  text-align: center;
-}
-
-.error-code {
-  font-size: 2.4rem;
-  font-weight: 700;
-  color: var(--text-muted);
-  margin: 0;
-}
-
-.error-page h1 {
-  margin: 4px 0 12px;
-}
-
 /* Labels admin: the MPA's labels.html intentionally leaves
    .label-list/.label-row/.label-scope/.form-inline unstyled — plain
    bulleted rows with inline content, matching its minimal admin look.
@@ -1524,10 +1353,6 @@ fieldset.field:has(:is(:user-invalid, [aria-invalid='true'])) {
   .back-to-top {
     inset-inline-end: auto;
     inset-inline-start: calc(1.25rem + env(safe-area-inset-left, 0px));
-  }
-
-  .main-content {
-    padding-block-end: calc(5.5rem + env(safe-area-inset-bottom, 0px));
   }
 }
 
@@ -1733,46 +1558,6 @@ fieldset.field:has(:is(:user-invalid, [aria-invalid='true'])) {
 .diff-comment-form td {
   padding: 0.75rem;
   white-space: normal;
-}
-
-/* Navigation progress (spinner guide: indeterminate <progress>) — the
-   SPA counterpart of the browser's own loading chrome during a
-   full-page load. Delayed fade-in keeps fast navigations flash-free. */
-.route-progress {
-  position: fixed;
-  inset-inline: 0;
-  top: 0;
-  z-index: 100;
-  width: 100%;
-  height: 3px;
-  border: 0;
-  opacity: 0;
-  animation: route-progress-in 0.15s 0.15s forwards;
-}
-
-.route-progress::-webkit-progress-bar {
-  background: transparent;
-}
-
-.route-progress::-webkit-progress-value {
-  background: var(--accent);
-}
-
-.route-progress::-moz-progress-bar {
-  background: var(--accent);
-}
-
-@keyframes route-progress-in {
-  to {
-    opacity: 1;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .route-progress {
-    animation: none;
-    opacity: 1;
-  }
 }
 
 /* Off-screen list items / comments skip layout+paint until needed
