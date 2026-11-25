@@ -1,6 +1,7 @@
 import { createFileRoute, Link, redirect, useNavigate } from '@tanstack/react-router'
 import { useReducer, useTransition } from 'react'
 import { api } from '../../../../../api'
+import { listDiscussionFormData } from '../-data'
 import { DiscussionForm } from '../-components/DiscussionForm'
 import { apiFieldErrors } from '../../../../-lib/mutation'
 import { scoped } from '../../../../-lib/scoped'
@@ -8,11 +9,10 @@ import { fmt, useMessages } from '../../../../../i18n'
 
 export const Route = createFileRoute('/w/$ws/discussions/$discussionId/edit')({
   loader: async ({ params }) => {
-    const [detail, labels, categories] = await scoped(
+    const [detail, formData] = await scoped(
       Promise.all([
         api.getDiscussion(params.ws, Number(params.discussionId)),
-        api.listLabels(params.ws, { kind: 'discussion' }),
-        api.listDiscussionCategories(),
+        listDiscussionFormData(params.ws),
       ]),
       (real) => {
         throw redirect({
@@ -21,7 +21,7 @@ export const Route = createFileRoute('/w/$ws/discussions/$discussionId/edit')({
         })
       },
     )
-    return { ...detail, labels: labels.labels, categories: categories.categories }
+    return { ...detail, ...formData }
   },
   component: function EditDiscussionPage() {
     const { discussion, labels, categories } = Route.useLoaderData()

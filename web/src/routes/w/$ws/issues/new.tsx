@@ -3,12 +3,13 @@ import { useReducer, useTransition } from 'react'
 import { api } from '../../../../api'
 import { apiFieldErrors } from '../../../-lib/mutation'
 import { scoped } from '../../../-lib/scoped'
+import { listIssueFormLabels } from './-data'
 import { IssueForm } from './-components/IssueForm'
 import { useMessages } from '../../../../i18n'
 
 export const Route = createFileRoute('/w/$ws/issues/new')({
   loader: ({ params }) =>
-    scoped(api.listLabels(params.ws, { kind: 'issue' }), (real) => {
+    scoped(listIssueFormLabels(params.ws), (real) => {
       throw redirect({ to: '/w/$ws/issues/new', params: { ws: real } })
     }),
   component: function NewIssuePage() {
