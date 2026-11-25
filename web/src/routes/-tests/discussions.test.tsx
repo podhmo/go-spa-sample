@@ -124,7 +124,8 @@ describe('route: discussion forms', () => {
       if (url.includes('/pulls')) return { status: 404, body: {} }
       if (url.endsWith('/api/v1/discussion-categories'))
         return { body: { categories: [cat(), qaCat] } }
-      if (url.includes('/labels')) return { body: { labels: [label()] } }
+      if (url.endsWith('/api/v1/w/default/labels?kind=discussion'))
+        return { body: { labels: [label()] } }
       return { status: 404, body: {} }
     })
     renderAt('/w/default/discussions/new')
@@ -139,13 +140,17 @@ describe('route: discussion forms', () => {
       if (url.includes('/pulls')) return { status: 404, body: {} }
       if (url.endsWith('/api/v1/discussion-categories'))
         return { body: { categories: [cat(), qaCat] } }
-      if (url.includes('/labels')) return { body: { labels: [label()] } }
-      return {
-        body: {
-          discussion: discussion({ labels: [label()] }),
-          threads: [],
-        },
+      if (url.endsWith('/api/v1/w/default/labels?kind=discussion'))
+        return { body: { labels: [label()] } }
+      if (url.endsWith('/api/v1/w/default/discussions/1')) {
+        return {
+          body: {
+            discussion: discussion({ labels: [label()] }),
+            threads: [],
+          },
+        }
       }
+      return { status: 404, body: {} }
     })
     renderAt('/w/default/discussions/1/edit')
     await expect.element(page.getByLabelText(/Category/)).toHaveValue('2')
