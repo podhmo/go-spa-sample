@@ -83,7 +83,7 @@ API サーバー部分を移植し、フロントを **SPA として作り直す
   (vdomネイティブ、innerHTML不使用。比較: `docs/sketch/ja/markdown.md`)
 - CSS: `src/index.css` (+必要なら CSS Modules)。Panda は将来案 (`css.md`)
 - UI は modern-web-guidance 準拠 — 適用パターン集:
-  `docs/sketch/ja/libraries.md` (dialog/`commandfor`、`:user-invalid`+aria
+  `docs/ja/libraries.md` (dialog/`commandfor`、`:user-invalid`+aria
   同期 `<search>`、copy-button の role=status bubble 等)
 - Lint = oxlint、Formatter = oxfmt (`npm run format` を編集後に必ず。
   `format:check` は CI)。TS は `~7.0.2` (native)、target/lib = ES2025
