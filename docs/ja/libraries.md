@@ -22,7 +22,7 @@ issue tracker のSPA実装で使うライブラリ・スキルの使いどころ
 
 ## TanStack Router (`@tanstack/react-router`)
 
-採用済み。code-based routing (`createRootRoute` + `createRoute`) を使用中。
+採用済み。file-based routing (`createFileRoute` + generated `routeTree.gen.ts`) を使用中。
 出典: https://tanstack.com/router/latest/docs/
 
 - **データ取得は loader**: route に `loader: () => fetchJSON(...)` を書き、
@@ -37,10 +37,10 @@ issue tracker のSPA実装で使うライブラリ・スキルの使いどころ
   (error boundaryのresetも兼ねる)
 - **短期キャッシュ内蔵**: loaderデータはmatchがunmountされてもキャッシュに残る。
   手動キャッシュ管理は基本不要
-- **file-based routing へ移行予定** (`createFileRoute`; 方針は
-  `docs/sketch/ja/directory-structure.md`)。`src/routes/` を URL 構造に対応させ、
+- **file-based routing** (方針は `docs/sketch/ja/directory-structure.md`)。
+  `src/routes/` を URL 構造に対応させ、
   `-` prefix の directory/file を route tree から外して component/test/data helper を
-  co-location する。移行時に追加する開発依存の役割:
+  co-location する。開発依存の役割:
   - `@tanstack/router-plugin`: Vite dev/build 時に route tree を生成し、
     automatic code splitting を有効化する。`vite.config.ts` では `react()` より前に置く
   - `@tanstack/router-cli`: `tsr generate` を `tsc -b` より前に実行し、

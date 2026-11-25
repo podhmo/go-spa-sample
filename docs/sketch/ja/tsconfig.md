@@ -70,8 +70,10 @@ tsconfig を見直し、厳格化した。起点は1ファイル統合案のド�
 
 - `moduleResolution: bundler`: exports 条件 + 拡張子省略を許す
   バンドラ向け解決規則。
-- `allowImportingTsExtensions`: `import { routeTree } from './routes.tsx'`
-  のような `.tsx` 拡張子付き import を許す (`noEmit` 前提のため両立可)。
+- `allowImportingTsExtensions`: `.tsx` / `.ts` 拡張子付き import を許す
+  (`noEmit` 前提のため両立可)。file-based routing 移行後は
+  `routeTree.gen` を拡張子なしで import しているため live の使用例はないが、
+  template parity のため維持している。
 - `verbatimModuleSyntax`: `import type` と値 import の区別を保持し、
   型だけの import を値 import と書いたらエラーにする。トランスパイラが
   1ファイルずつ処理する前提で型の import/export が残って壊れる事故を防ぐ。
@@ -148,7 +150,7 @@ tsconfig を見直し、厳格化した。起点は1ファイル統合案のド�
 渡し得る」箇所を `T | undefined` 宣言に修正 (型を緩めたのではなく、
 実態に合わせて正確にした):
 
-- `IssueSearch` (routes.tsx) / `IssueListFilter` (api.ts):
+- `IssueSearch` (`src/routes/-lib/search.ts`) / `IssueListFilter` (api.ts):
   `validateSearch` が全キーを `undefined` 可で埋めるので各フィールドを
   `?: T | undefined` に。`qs()` が undefined を取り除く設計はそのまま。
 - `CommentHandlers` の全メンバ、`pending`/`onArchive` props
@@ -246,9 +248,9 @@ tsconfig を見直し、厳格化した。起点は1ファイル統合案のド�
 フラグ群のみで、今回 target/lib の es2025 化が template からの
 唯一の新規差分になった。
 
-- `allowImportingTsExtensions` は scaffold 飾りではなく実稼働中:
-  `src/main.tsx` が `import { routeTree } from './routes.tsx'` と
-  `.tsx` 拡張子付きで import している。
+- `allowImportingTsExtensions` は file-based routing 移行後は scaffold parity
+  目的の維持になっている (`src/main.tsx` は extensionless の
+  `import { routeTree } from './routeTree.gen'`)。
 - `allowArbitraryExtensions` は現状 `*.css.d.ts` パターンの使用実が
   ないが、template parity で維持 (CSS import は `vite/client` types
   が解決)。
