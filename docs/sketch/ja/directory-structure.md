@@ -419,6 +419,7 @@ URL・表示・API 呼び出し順を変えない。
 最低限、既存 test がカバーしている次の挙動を落とさない。
 
 - `/issues` など workspace なし URL が home workspace 配下へ redirect される
+- home workspace が 1 件もない場合は `/` や legacy redirect が `/workspaces` へ redirect される
 - `?q=...` など search params と `#comment-N` hash が redirect 後も残る
 - `/w/$ws` が `/w/$ws/issues` へ redirect される
 - login/register の `next` が安全な same-site path のときだけ使われる
