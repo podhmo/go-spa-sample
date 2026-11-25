@@ -1,5 +1,6 @@
 import { useId } from 'react'
 import { useMessages } from '../i18n'
+import styles from './ConfirmDialog.module.css'
 
 // Native <dialog> confirmation, styled like the MPA's .confirm-dialog.
 // The trigger opens it declaratively via Invoker Commands
@@ -40,7 +41,7 @@ export function ConfirmDialog({
       </button>
       <dialog
         id={dialogId}
-        className="confirm-dialog"
+        className={styles.dialog}
         aria-labelledby={`${dialogId}-title`}
         ref={(el) => {
           // closedby isn't in React's types yet; Esc still closes modals without it.

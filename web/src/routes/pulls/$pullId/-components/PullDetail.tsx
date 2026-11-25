@@ -3,6 +3,7 @@ import { useId, useReducer } from 'react'
 import { useLeaveGuard } from '../../../../leave-guard'
 import type { PRComment, PRCommit, PullMergeable, PullRequest } from '../../../../api'
 import { ConfirmDialog } from '../../../../components/ConfirmDialog'
+import dialogStyles from '../../../../components/ConfirmDialog.module.css'
 import { CopyButton } from '../../../../components/CopyButton'
 import { submitOnCtrlEnter } from '../../../../enter-submit'
 import { fmt, useFmtTime, useMessages } from '../../../../i18n'
@@ -60,7 +61,7 @@ export function MergeDialog({
       </button>
       <dialog
         id={dialogId}
-        className="confirm-dialog"
+        className={dialogStyles.dialog}
         aria-labelledby={`${dialogId}-title`}
         ref={(el) => {
           if (el && !el.hasAttribute('closedby')) el.setAttribute('closedby', 'any')
