@@ -1,4 +1,5 @@
 import { Component, Suspense, lazy, type ReactNode } from 'react'
+import styles from './Markdown.module.css'
 
 // GFM (tables, task lists, strikethrough, autolinks) + GitHub-style
 // [!NOTE] alerts, matching the MPA's goldmark setup. Rendering stays in
@@ -46,7 +47,7 @@ class MarkdownBoundary extends Component<
 
 export function Markdown({ text }: { text: string }) {
   return (
-    <div className="markdown-body">
+    <div className={styles.body}>
       <MarkdownBoundary text={text}>
         <Suspense fallback={text}>
           <LazyMarkdown text={text} />

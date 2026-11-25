@@ -1,0 +1,195 @@
+/* Applied to issue bodies and comments rendered through react-markdown
+   (GFM). Mirrors the MPA's goldmark output styling: block-level
+   elements need explicit spacing. */
+
+.body > :first-child {
+  margin-top: 0;
+}
+
+.body > :last-child {
+  margin-bottom: 0;
+}
+
+.body p {
+  margin: 0 0 12px;
+}
+
+/* Readable line length and fewer orphans in running text. */
+.body :is(p, li, blockquote) {
+  max-inline-size: 75ch;
+  text-wrap: pretty;
+}
+
+.body h1,
+.body h2,
+.body h3,
+.body h4,
+.body h5,
+.body h6 {
+  margin: 20px 0 10px;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.body h1,
+.body h2 {
+  padding-bottom: 4px;
+  border-bottom: 1px solid var(--border-muted);
+}
+
+.body h1 {
+  font-size: 1.3rem;
+}
+
+.body h2 {
+  font-size: 1.15rem;
+}
+
+.body h3 {
+  font-size: 1.05rem;
+}
+
+.body h4,
+.body h5,
+.body h6 {
+  font-size: 1rem;
+}
+
+.body ul,
+.body ol {
+  margin: 0 0 12px;
+  padding-left: 26px;
+}
+
+.body li + li {
+  margin-top: 4px;
+}
+
+.body code {
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+  background: var(--bg);
+  border: 1px solid var(--border-muted);
+  border-radius: var(--radius);
+  padding: 1px 5px;
+}
+
+.body pre {
+  background: var(--bg);
+  border: 1px solid var(--border-muted);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  overflow-x: auto;
+  margin: 0 0 12px;
+}
+
+.body pre code {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  font-size: 0.85rem;
+  overflow-wrap: normal;
+}
+
+.body blockquote {
+  margin: 0 0 12px;
+  padding: 2px 14px;
+  border-left: 3px solid var(--border);
+  color: var(--text-muted);
+}
+
+/* GitHub-style alerts (> [!NOTE] etc., remark-github-blockquote-alert).
+   The icon SVGs inherit the title color via fill: currentColor. Alert
+   classes are emitted by the remark plugin, so only their use under the
+   component root is scoped here. */
+
+.body :global(.markdown-alert) {
+  border-left: 3px solid var(--border);
+  padding: 2px 14px;
+  margin: 0 0 12px;
+}
+
+.body :global(.markdown-alert) > :last-child {
+  margin-bottom: 0;
+}
+
+.body :global(.markdown-alert-title) {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  margin: 0 0 4px;
+}
+
+.body :global(.markdown-alert-title) svg {
+  flex: 0 0 auto;
+  fill: currentColor;
+}
+
+.body :global(.markdown-alert-note) {
+  border-left-color: var(--accent);
+}
+
+.body :global(.markdown-alert-note) > :global(.markdown-alert-title) {
+  color: var(--accent);
+}
+
+.body :global(.markdown-alert-tip) {
+  border-left-color: var(--open);
+}
+
+.body :global(.markdown-alert-tip) > :global(.markdown-alert-title) {
+  color: var(--open);
+}
+
+.body :global(.markdown-alert-important) {
+  border-left-color: var(--closed);
+}
+
+.body :global(.markdown-alert-important) > :global(.markdown-alert-title) {
+  color: var(--closed);
+}
+
+.body :global(.markdown-alert-warning) {
+  border-left-color: var(--warn);
+}
+
+.body :global(.markdown-alert-warning) > :global(.markdown-alert-title) {
+  color: var(--warn);
+}
+
+.body :global(.markdown-alert-caution) {
+  border-left-color: var(--danger);
+}
+
+.body :global(.markdown-alert-caution) > :global(.markdown-alert-title) {
+  color: var(--danger);
+}
+
+.body table {
+  border-collapse: collapse;
+  margin: 0 0 12px;
+  display: block;
+  overflow-x: auto;
+}
+
+.body th,
+.body td {
+  border: 1px solid var(--border);
+  padding: 6px 12px;
+}
+
+.body th {
+  background: var(--bg);
+  font-weight: 600;
+}
+
+.body img {
+  max-width: 100%;
+}
+
+.body hr {
+  border: 0;
+  border-top: 1px solid var(--border);
+  margin: 20px 0;
+}

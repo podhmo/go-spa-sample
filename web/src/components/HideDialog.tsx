@@ -1,6 +1,7 @@
 import { useId } from 'react'
 import { HIDE_REASONS } from '../api'
 import { fmt, useMessages } from '../i18n'
+import dialogStyles from './ConfirmDialog.module.css'
 
 // Hide reason picker: same native <dialog> + <form method="dialog">
 // pattern as the comment one, but generalized over the noun.
@@ -31,7 +32,7 @@ export function HideDialog({
       </button>
       <dialog
         id={dialogId}
-        className="confirm-dialog"
+        className={dialogStyles.dialog}
         aria-labelledby={`${dialogId}-title`}
         ref={(el) => {
           if (el && !el.hasAttribute('closedby')) el.setAttribute('closedby', 'any')
