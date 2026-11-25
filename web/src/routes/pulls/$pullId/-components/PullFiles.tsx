@@ -4,6 +4,7 @@ import { RequestError, type PRCommentInput } from '../../../../api'
 import { submitOnCtrlEnter } from '../../../../enter-submit'
 import { fmt, useMessages } from '../../../../i18n'
 import { parseDiff, type DiffLine } from '../-lib/diff'
+import styles from './PullFiles.module.css'
 
 // The open draft anchors to a coordinate AND that row's code when the
 // form opened (without the +/-/space diff marker — a rebase can turn an
@@ -54,13 +55,13 @@ export function PullFiles({
     return <p className="muted">{m.pulls.noChanges}</p>
   }
   return (
-    <div className="diff-files">
+    <div className={styles.diffFiles}>
       {files.map((f) => (
-        <section className="diff-file" key={f.path}>
-          <h2 className="diff-file-name">
+        <section key={f.path}>
+          <h2 className={styles.diffFileName}>
             <code>{f.path}</code>
           </h2>
-          <table className="diff-table">
+          <table className={styles.diffTable}>
             <tbody>
               {f.lines.map((l, i) => {
                 const key = `${f.path}:${l.side}:${l.line ?? i}`
@@ -127,22 +128,28 @@ function DiffRow({
   }
   if (line.kind === 'meta') {
     return (
-      <tr className="diff-line diff-meta">
-        <td className="diff-comment-cell" />
+      <tr className={`${styles.diffLine} ${styles.diffMeta}`}>
+        <td className={styles.diffCommentCell} />
         <td colSpan={2}>
           <code>{line.text}</code>
         </td>
       </tr>
     )
   }
+  const kindClasses = {
+    ctx: '',
+    add: styles.diffAdd,
+    del: styles.diffDel,
+    meta: styles.diffMeta,
+  } as const
   return (
     <>
-      <tr className={`diff-line diff-${line.kind}`}>
-        <td className="diff-comment-cell">
+      <tr className={`${styles.diffLine} ${kindClasses[line.kind]}`}>
+        <td className={styles.diffCommentCell}>
           {canComment && (
             <button
               type="button"
-              className="diff-add-comment"
+              className={styles.diffAddComment}
               onClick={toggle}
               aria-expanded={formOpen}
               aria-label={fmt(m.pulls.commentOnLine, {
@@ -155,7 +162,7 @@ function DiffRow({
             </button>
           )}
         </td>
-        <td className="diff-lineno">
+        <td className={styles.diffLineno}>
           <code>{line.line}</code>
         </td>
         <td className="diff-text">
@@ -163,7 +170,7 @@ function DiffRow({
         </td>
       </tr>
       {formOpen && (
-        <tr className="diff-line diff-comment-form">
+        <tr className={`${styles.diffLine} ${styles.diffCommentForm}`}>
           <td />
           <td colSpan={2}>
             <form

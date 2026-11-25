@@ -1,0 +1,63 @@
+/* Pull requests: GitHub's palette — open = green, merged = purple (the
+   --closed pair), closed-without-merge = neutral gray. */
+
+:global(.badge).badgePrOpen {
+  color: var(--open);
+  background: var(--open-bg);
+  border-color: var(--open-border);
+}
+
+:global(.badge).badgePrOpen::before {
+  border: 2px solid var(--open);
+  background: transparent;
+}
+
+:global(.badge).badgePrMerged {
+  color: var(--closed);
+  background: var(--closed-bg);
+  border-color: var(--closed-border);
+}
+
+:global(.badge).badgePrMerged::before {
+  background: var(--closed);
+}
+
+:global(.badge).badgePrClosed {
+  color: var(--text-muted);
+  background: transparent;
+  border-color: var(--text-muted);
+}
+
+:global(.badge).badgePrClosed::before {
+  border: 2px solid var(--text-muted);
+  background: transparent;
+}
+
+:global(.badge).badgePrConflict {
+  color: var(--danger);
+  background: var(--danger-bg);
+  border-color: var(--danger);
+}
+
+:global(.badge).badgePrConflict::before {
+  background: var(--danger);
+}
+
+.prRef,
+.prSha {
+  font-size: 0.85em;
+  padding: 0.1em 0.4em;
+  border-radius: 6px;
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.pullRefsRow {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.pullRefsRow :global(.field) {
+  flex: 1 1 12rem;
+}

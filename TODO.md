@@ -132,7 +132,7 @@ workspace → discussions → pulls → accounts へ展開する。
     `*.module.css` へ移す
   - [x] **app shellのmodule化**: `__root.tsx` のheader/nav/footer/progress/error
     pageのstyleを `routes/-components/SiteChrome.module.css` へ移す
-  - [ ] **feature固有styleのmodule化**: workspace list、labels admin、pulls
+  - [x] **feature固有styleのmodule化**: workspace list、labels admin、pulls
     diff/PR styleをroute-local moduleへ移す
   - [ ] **共有primitiveのmodule化**: `btn`, `field`, `form-actions`, `card`,
     `page-head`, `filter`, `pagination`, `breadcrumb`をexplicit importへ移す

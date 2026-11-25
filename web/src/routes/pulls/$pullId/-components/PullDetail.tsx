@@ -10,6 +10,8 @@ import { fmt, useFmtTime, useMessages } from '../../../../i18n'
 import { HideDialog } from '../../../../components/HideDialog'
 import { Markdown } from '../../../../components/Markdown'
 import { PullStatusBadge } from '../../-components/PullList'
+import pullStyles from '../../-components/pulls.module.css'
+import styles from './PullDetail.module.css'
 
 const shortRef = (ref: string) => ref.replace(/^refs\/(heads|remotes|tags)\//, '')
 
@@ -18,11 +20,11 @@ export function MergeableBadge({ mergeable }: { mergeable: PullMergeable }) {
   const m = useMessages()
   if (!mergeable) return null
   if (mergeable.status === 'clean') {
-    return <span className="badge badge-pr-open">{m.pulls.mergeable}</span>
+    return <span className={`badge ${pullStyles.badgePrOpen}`}>{m.pulls.mergeable}</span>
   }
   if (mergeable.status === 'conflicting') {
     return (
-      <span className="badge badge-pr-conflict" title={mergeable.files?.join(', ')}>
+      <span className={`badge ${pullStyles.badgePrConflict}`} title={mergeable.files?.join(', ')}>
         {mergeable.files?.length
           ? fmt(m.pulls.conflicting, { n: mergeable.files.length })
           : m.pulls.conflictNoFiles}
@@ -82,7 +84,7 @@ export function MergeDialog({
         <form method="dialog">
           <div className="field" role="radiogroup" aria-label={mm.pulls.mergeMethod}>
             {(['merge', 'squash', 'rebase'] as const).map((m) => (
-              <label key={m} className="merge-method">
+              <label key={m} className={styles.mergeMethod}>
                 <input
                   type="radio"
                   name="method"
@@ -156,8 +158,8 @@ export function PullDetail({
           </h1>
         </div>
         <p className="issue-meta">
-          <code className="pr-ref">{shortRef(p.head)}</code> →{' '}
-          <code className="pr-ref">{shortRef(p.base)}</code> ·{' '}
+          <code className={pullStyles.prRef}>{shortRef(p.head)}</code> →{' '}
+          <code className={pullStyles.prRef}>{shortRef(p.base)}</code> ·{' '}
           {fmt(m.pulls.openedBy, { name: p.author?.name ?? m.comments.anonymous })}{' '}
           <time dateTime={p.created_at}>{fmtTime(p.created_at)}</time>
           {p.status === 'merged' && p.merge_method && (
@@ -233,7 +235,7 @@ export function PullDetail({
         )}
       </div>
       {actionError && (
-        <em className="pull-action-error" role="alert">
+        <em className={styles.pullActionError} role="alert">
           {actionError}
         </em>
       )}
@@ -246,13 +248,13 @@ export function PullCommitList({ commits }: { commits: PRCommit[] }) {
   const fmtTime = useFmtTime()
   if (commits.length === 0) return null
   return (
-    <section className="pull-commits">
+    <section className={styles.pullCommits}>
       <h2>{fmt(m.pulls.commits, { n: commits.length })}</h2>
       <ol className="comment-list" role="list">
         {commits.map((c) => (
           <li className="card comment" key={c.sha}>
             <header className="comment-meta">
-              <code className="pr-sha">{c.sha.slice(0, 10)}</code>{' '}
+              <code className={pullStyles.prSha}>{c.sha.slice(0, 10)}</code>{' '}
               <span className="comment-author">{c.subject}</span>{' '}
               <span className="muted">
                 {fmt(m.pulls.by, { author: c.author })}{' '}
@@ -308,7 +310,7 @@ export function PRCommentItem({
           <>
             {' '}
             {m.pulls.onFile}{' '}
-            <code className="pr-ref">
+            <code className={pullStyles.prRef}>
               {c.path}:{c.line}
             </code>{' '}
           </>
@@ -324,7 +326,7 @@ export function PRCommentItem({
         )}
       </header>
       {c.diff_snippet && !c.hidden && (
-        <pre className="diff-snippet" aria-label={m.pulls.diffContext}>
+        <pre className={styles.diffSnippet} aria-label={m.pulls.diffContext}>
           <code>{c.diff_snippet}</code>
         </pre>
       )}

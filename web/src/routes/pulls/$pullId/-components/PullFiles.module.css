@@ -1,0 +1,96 @@
+/* Files changed tab: a table so the comment "+" button can sit in its
+   own column beside each anchorable line. */
+.diffFiles {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.diffFileName {
+  font-size: 0.95rem;
+  margin-block-end: 0.5rem;
+}
+
+.diffTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+.diffTable td {
+  padding: 0 0.5rem;
+  vertical-align: top;
+  white-space: pre;
+}
+
+.diffCommentCell {
+  width: 2rem;
+  text-align: end;
+  padding-inline-end: 0 !important;
+}
+
+.diffAddComment {
+  /* opacity, not visibility:hidden — a hidden button can't be reached
+     by keyboard, so it would never get :focus-visible. */
+  opacity: 0;
+  width: 1.5rem;
+  height: 1.5rem;
+  border: 1px solid var(--accent);
+  border-radius: 4px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.diffLine:hover .diffAddComment,
+.diffLine:focus-within .diffAddComment,
+.diffAddComment:focus-visible,
+.diffAddComment[aria-expanded='true'] {
+  opacity: 1;
+}
+
+.diffAddComment:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.notice {
+  margin: 0 0 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--accent-soft);
+  color: var(--text-muted);
+}
+
+.diffLineno {
+  width: 4rem;
+  text-align: end;
+  color: var(--text-muted);
+  user-select: none;
+}
+
+.diffAdd {
+  background: color-mix(in srgb, var(--open) 12%, transparent);
+}
+
+.diffDel {
+  background: color-mix(in srgb, var(--danger) 10%, transparent);
+}
+
+.diffMeta {
+  color: var(--text-muted);
+  background: var(--accent-soft);
+}
+
+.diffCommentForm td {
+  padding: 0.75rem;
+  white-space: normal;
+}

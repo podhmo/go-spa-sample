@@ -2,6 +2,7 @@ import { useReducer, type ReactNode } from 'react'
 import type { PullRef } from '../../../api'
 import { submitOnCtrlEnter } from '../../../enter-submit'
 import { useMessages } from '../../../i18n'
+import styles from './pulls.module.css'
 import { useLeaveGuard } from '../../../leave-guard'
 
 type PullFormState = {
@@ -86,7 +87,7 @@ export function PullForm({
         {m.form.requiredPost}
       </p>
       {!editing && (
-        <div className="pull-refs-row">
+        <div className={styles.pullRefsRow}>
           <div className="field">
             <label htmlFor="pull-head">
               {m.pulls.head}{' '}
