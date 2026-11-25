@@ -2,7 +2,6 @@
    --closed pair), closed-without-merge = neutral gray. */
 
 .badgePrOpen {
-  composes: badge from '../../../styles/content.module.css';
   color: var(--open);
   background: var(--open-bg);
   border-color: var(--open-border);
@@ -14,7 +13,6 @@
 }
 
 .badgePrMerged {
-  composes: badge from '../../../styles/content.module.css';
   color: var(--closed);
   background: var(--closed-bg);
   border-color: var(--closed-border);
@@ -25,7 +23,6 @@
 }
 
 .badgePrClosed {
-  composes: badge from '../../../styles/content.module.css';
   color: var(--text-muted);
   background: transparent;
   border-color: var(--text-muted);
@@ -37,7 +34,6 @@
 }
 
 .badgePrConflict {
-  composes: badge from '../../../styles/content.module.css';
   color: var(--danger);
   background: var(--danger-bg);
   border-color: var(--danger);
@@ -63,6 +59,5 @@
 }
 
 .pullRefsField {
-  composes: field from '../../../styles/primitives.module.css';
   flex: 1 1 12rem;
 }

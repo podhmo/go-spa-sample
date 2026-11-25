@@ -89,7 +89,7 @@ export function PullForm({
       </p>
       {!editing && (
         <div className={styles.pullRefsRow}>
-          <div className={styles.pullRefsField}>
+          <div className={`${cx('field')} ${styles.pullRefsField}`}>
             <label htmlFor="pull-head">
               {m.pulls.head}{' '}
               <span className={cx('req')} aria-hidden="true">
@@ -124,7 +124,7 @@ export function PullForm({
               </em>
             )}
           </div>
-          <div className={styles.pullRefsField}>
+          <div className={`${cx('field')} ${styles.pullRefsField}`}>
             <label htmlFor="pull-base">
               {m.pulls.base}{' '}
               <span className={cx('req')} aria-hidden="true">

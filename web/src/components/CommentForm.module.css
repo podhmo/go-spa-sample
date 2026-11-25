@@ -1,10 +1,5 @@
 .form {
-  composes: card from '../styles/primitives.module.css';
   padding: 16px;
-}
-
-.formField {
-  composes: field from '../styles/primitives.module.css';
 }
 
 /* Same-specificity primitive margins must not depend on stylesheet order. */

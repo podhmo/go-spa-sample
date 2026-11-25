@@ -2,10 +2,6 @@
   position: relative;
 }
 
-.action {
-  composes: btn from '../styles/primitives.module.css';
-}
-
 .quiet {
   font: inherit;
   font-size: 0.75rem;

@@ -1,6 +1,7 @@
 import { useReducer } from 'react'
 import { useMessages } from '../i18n'
 import styles from './CopyButton.module.css'
+import { cx } from '../styles/cx'
 
 type CopyState = 'idle' | 'copied' | 'failed'
 // `timer` is present-but-undefined after a dispatch without one
@@ -39,7 +40,7 @@ export function CopyButton({
     <span className={styles.root} data-copy-wrap>
       <button
         type="button"
-        className={variant === 'quiet' ? styles.quiet : styles.action}
+        className={variant === 'quiet' ? styles.quiet : `${cx('btn')} ${styles.action}`}
         data-copy-variant={variant}
         data-copy-state={s.state === 'idle' ? undefined : s.state}
         disabled={pending}

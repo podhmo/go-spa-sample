@@ -14,7 +14,7 @@ export function PullStatusBadge({ status }: { status: PullRequest['status'] }) {
   const m = useMessages()
   const text =
     status === 'open' ? m.filter.open : status === 'closed' ? m.filter.closed : m.filter.merged
-  return <span className={statusClasses[status]}>{text}</span>
+  return <span className={`${cx('badge')} ${statusClasses[status]}`}>{text}</span>
 }
 
 const shortRef = (ref: string) => ref.replace(/^refs\/(heads|remotes|tags)\//, '')

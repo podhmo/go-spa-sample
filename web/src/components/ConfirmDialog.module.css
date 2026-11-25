@@ -32,10 +32,6 @@
   color: var(--text);
 }
 
-.actions {
-  composes: form-actions from '../styles/primitives.module.css';
-}
-
 .dialog .actions {
   margin-top: 20px;
 }
