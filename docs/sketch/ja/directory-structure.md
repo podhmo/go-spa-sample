@@ -392,11 +392,18 @@ URL・表示・API 呼び出し順を変えない。
 1. `@tanstack/router-plugin` を devDependency に追加する。
 2. `vite.config.ts` で `tanstackRouter({ target: 'react', autoCodeSplitting: true })`
    を `react()` より前に追加する。
-3. `src/routes/` に URL 構造どおりの route files を作る。
-4. `createRoute` + `getParentRoute` を `createFileRoute` へ機械的に移す。
-5. `main.tsx` / `test-utils.tsx` を generated `routeTree.gen.ts` に切り替える。
-6. generated `routeTree.gen.ts` を commit する。
-7. `src/router.tsx` を消す。
+3. `@tanstack/router-cli` と `tsr.config.json` を追加し、
+   `generate-routes` script (`tsr generate`) を用意する。`build` は
+   `npm run generate-routes && tsc -b && vite build` の順にし、
+   typecheck が常に最新の route tree を見るようにする。
+4. `src/routes/` に URL 構造どおりの route files を作る。
+5. `createRoute` + `getParentRoute` を `createFileRoute` へ機械的に移す。
+6. `main.tsx` / `test-utils.tsx` を generated `routeTree.gen.ts` に切り替える。
+7. generated `routeTree.gen.ts` を commit する。
+8. CI の web job で `npm run generate-routes` 直後に
+   `git diff --exit-code -- src/routeTree.gen.ts` を実行し、
+   stale な generated file が commit された場合を fail にする。
+9. `src/router.tsx` を消す。
 
 注意:
 
@@ -437,9 +444,11 @@ source なので、公式 FAQ に従って commit する。formatter/linter か�
 
 ### 依存を増やしたくない方針との関係
 
-この repo は最小依存寄りなので、`@tanstack/router-plugin` 追加はコスト。
-ただし routing は中心機能で、すでに `@tanstack/react-router` に依存している。
-公式 plugin による構造・型・code splitting の利益は依存 1 個に見合うと判断する。
+この repo は最小依存寄りなので、`@tanstack/router-plugin` と
+`@tanstack/router-cli` の追加はコスト。ただし routing は中心機能で、
+すでに `@tanstack/react-router` に依存している。公式 plugin による構造・型・
+code splitting の利益に加え、CLI による generation-first check で stale な
+generated file を CI で検出できるため、devDependency 2 個に見合うと判断する。
 
 それでも generated code/plugin を避けたい場合は fallback として、
 `src/routes/` に分割しつつ hand-written route tree を `src/route-tree.ts`
