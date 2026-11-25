@@ -400,84 +400,17 @@
   }
 }
 
-/* copy-link button on each comment header: revealed on
-   hover/focus-within (pointer: fine), always visible on touch (guide:
-   never hover-only) */
-.copy-wrap {
-  position: relative;
+/* Quiet copy buttons reveal with their owning comment on fine-pointer
+   devices; touch devices keep them visible because opacity transition is
+   only applied inside the hover media query. */
+.comment-meta [data-copy-wrap] {
   margin-inline-start: 0.5rem;
 }
 
-.copy-btn {
-  font: inherit;
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  background: transparent;
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 1px 6px;
-  min-inline-size: 24px;
-  min-block-size: 24px;
-  cursor: pointer;
-}
-
 @media (hover: hover) {
-  .copy-btn:hover {
-    color: var(--accent);
-    border-color: var(--accent);
-  }
-}
-
-.copy-btn[data-copy-state='copied'],
-.issue-actions :global(.btn)[data-copy-state='copied'] {
-  color: var(--open);
-  border-color: var(--open);
-}
-
-.copy-btn[data-copy-state='failed'],
-.issue-actions :global(.btn)[data-copy-state='failed'] {
-  color: var(--danger);
-  border-color: var(--danger);
-}
-
-/* copy feedback bubble: opacity keeps it in the accessibility tree */
-.copy-tip {
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  margin-inline-start: 0.4rem;
-  opacity: 0;
-  transition: opacity 0.15s;
-}
-
-.copy-tip[data-shown] {
-  opacity: 1;
-}
-
-/* "Copy as markdown" on the article action row shares the same
-   copy-tip bubble — the wrap's inline-start margin exists for the
-   comment header, flex gap already spaces the action row. */
-.issue-actions .copy-wrap {
-  margin-inline-start: 0;
-}
-
-@media (hover: hover) {
-  .copy-btn {
-    opacity: 0;
-    transition: opacity 0.15s;
-  }
-
-  .comment:hover .copy-btn,
-  .comment:focus-within .copy-btn,
-  .copy-btn:focus-visible,
-  .copy-btn[data-copy-state] {
+  .comment:hover [data-copy-variant='quiet'],
+  .comment:focus-within [data-copy-variant='quiet'] {
     opacity: 1;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .copy-btn,
-  .copy-tip {
-    transition: opacity 0.15s;
   }
 }
 
@@ -559,14 +492,6 @@
   font-size: 0.75rem;
 }
 
-.comment-form {
-  padding: 16px;
-}
-
-.comment-form :global(.field) {
-  margin-bottom: 12px;
-}
-
 /* html scroll-state container: the chip appears only once the page is
    scrolled (guide scroll-position-aware-elements). Browsers without
    scroll-state queries keep it always visible. */
@@ -635,8 +560,8 @@
   }
 
   .issue-actions :global(.btn),
-  .issue-actions .copy-wrap,
-  .issue-actions .copy-wrap :global(.btn) {
+  .issue-actions [data-copy-wrap],
+  .issue-actions [data-copy-variant='action'] {
     width: 100%;
     display: block;
     text-align: center;
@@ -647,19 +572,6 @@
   .back-to-top {
     inset-inline-end: auto;
     inset-inline-start: calc(1.25rem + env(safe-area-inset-left, 0px));
-  }
-}
-
-/* Larger touch targets for touch input, whatever the width. */
-@media (pointer: coarse) {
-  :global(.btn),
-  input:not([type='checkbox'], [type='radio']),
-  select {
-    min-block-size: 44px;
-  }
-
-  :global(.btn) {
-    padding: 9px 16px;
   }
 }
 

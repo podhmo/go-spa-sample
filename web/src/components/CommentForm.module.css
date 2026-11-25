@@ -1,3 +1,13 @@
+.form {
+  composes: card from '../styles/primitives.module.css';
+  padding: 16px;
+}
+
+.formField {
+  composes: field from '../styles/primitives.module.css';
+  margin-bottom: 12px;
+}
+
 /* Keep the short reply composer compact while field-sizing grows it. */
 .body {
   min-block-size: 4lh;

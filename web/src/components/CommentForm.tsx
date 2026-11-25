@@ -21,7 +21,7 @@ export function CommentForm({
   useLeaveGuard(body.trim() !== '', m.form.unsavedChanges)
   return (
     <form
-      className={cx('card comment-form')}
+      className={styles.form}
       aria-label={m.form.newCommentAria}
       onSubmit={(e) => {
         e.preventDefault()
@@ -42,7 +42,7 @@ export function CommentForm({
         })()
       }}
     >
-      <div className={cx('field')}>
+      <div className={styles.formField}>
         <label htmlFor="comment-body">
           {m.form.addComment}{' '}
           <span className={cx('req')} aria-hidden="true">

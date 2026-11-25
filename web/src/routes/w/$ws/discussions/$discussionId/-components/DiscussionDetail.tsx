@@ -309,7 +309,7 @@ function ThreadItem({
           </>
         )}
         <CopyButton
-          className={cx('copy-btn')}
+          variant="quiet"
           label={m.comments.copyLink}
           getText={permalink}
           pending={pending}

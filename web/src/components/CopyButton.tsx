@@ -1,6 +1,6 @@
 import { useReducer } from 'react'
 import { useMessages } from '../i18n'
-import { cx } from '../styles/cx'
+import styles from './CopyButton.module.css'
 
 type CopyState = 'idle' | 'copied' | 'failed'
 // `timer` is present-but-undefined after a dispatch without one
@@ -18,14 +18,14 @@ export function CopyButton({
   label,
   getText,
   pending,
-  className = cx('btn'),
+  variant = 'action',
 }: {
   label: string
   getText: () => string | Promise<string>
   pending?: boolean | undefined
-  // '.btn' for action rows (Copy as markdown), '.copy-btn' for the
-  // quiet hover-revealed button on comment headers (copy link).
-  className?: string
+  // `action` is the normal button primitive; `quiet` is the small
+  // hover-revealed copy-link control inside comment headers.
+  variant?: 'action' | 'quiet'
 }) {
   const [s, dispatch] = useReducer(
     (s: CopyUIState, a: CopyUIState) => {
@@ -36,10 +36,11 @@ export function CopyButton({
   )
   const m = useMessages()
   return (
-    <span className={cx('copy-wrap')}>
+    <span className={styles.root} data-copy-wrap>
       <button
         type="button"
-        className={className}
+        className={variant === 'quiet' ? styles.quiet : styles.action}
+        data-copy-variant={variant}
         data-copy-state={s.state === 'idle' ? undefined : s.state}
         disabled={pending}
         onClick={() => {
@@ -59,7 +60,7 @@ export function CopyButton({
       >
         {label}
       </button>{' '}
-      <span className={cx('copy-tip')} role="status" data-shown={s.state !== 'idle' || undefined}>
+      <span className={styles.tip} role="status" data-shown={s.state !== 'idle' || undefined}>
         {s.state === 'idle' ? '' : s.state === 'copied' ? m.copy.copied : m.copy.failed}
       </span>
     </span>

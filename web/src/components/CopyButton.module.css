@@ -1,0 +1,71 @@
+.root {
+  position: relative;
+}
+
+.action {
+  composes: btn from '../styles/primitives.module.css';
+}
+
+.quiet {
+  font: inherit;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1px 6px;
+  min-inline-size: 24px;
+  min-block-size: 24px;
+  cursor: pointer;
+}
+
+@media (hover: hover) {
+  .quiet:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+}
+
+.action[data-copy-state='copied'],
+.quiet[data-copy-state='copied'] {
+  color: var(--open);
+  border-color: var(--open);
+}
+
+.action[data-copy-state='failed'],
+.quiet[data-copy-state='failed'] {
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+/* Opacity keeps the feedback bubble in the accessibility tree. */
+.tip {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  margin-inline-start: 0.4rem;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.tip[data-shown] {
+  opacity: 1;
+}
+
+@media (hover: hover) {
+  .quiet {
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+
+  .quiet:focus-visible,
+  .quiet[data-copy-state] {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .quiet,
+  .tip {
+    transition: opacity 0.15s;
+  }
+}

@@ -4,10 +4,15 @@ import { labelStyle } from '../../../../../format'
 import { fmt, useFmtTime, useMessages } from '../../../../../i18n'
 import { cx } from '../../../../../styles/cx'
 
+const statusClasses = {
+  open: cx('badge badge-open'),
+  closed: cx('badge badge-closed'),
+} as const
+
 export function StatusBadge({ status }: { status: Issue['status'] }) {
   const m = useMessages()
   return (
-    <span className={cx(`badge badge-${status}`)}>
+    <span className={statusClasses[status]}>
       {status === 'open' ? m.issues.badgeOpen : m.issues.badgeClosed}
     </span>
   )
