@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { page } from 'vitest/browser'
-import { stubAPI, renderAt } from './test-utils'
+import { stubAPI, renderAt } from '../../test-utils'
 
 // The fetch stub can't model the cookie jar, so `loggedIn` plays the
 // session's role: /auth/me answers {user} only while it is set, and the

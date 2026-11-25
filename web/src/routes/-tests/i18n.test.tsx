@@ -1,7 +1,7 @@
 import { page } from 'vitest/browser'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { setLocale } from './i18n'
-import { renderAt, stubAPI } from './test-utils'
+import { setLocale } from '../../i18n'
+import { renderAt, stubAPI } from '../../test-utils'
 
 // setLocale pins the store regardless of navigator.language; localStorage
 // alone wouldn't — i18n.tsx caches the detected locale at module load.

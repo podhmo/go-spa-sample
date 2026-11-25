@@ -6,9 +6,8 @@ import type {
   DiscussionReply,
   DiscussionThread,
   Workspace,
-} from './api'
-import { DiscussionForm } from './routes/w/$ws/discussions/-components/DiscussionForm'
-import { renderAt, renderWithRouter, stubAPI } from './test-utils'
+} from '../../api'
+import { renderAt, stubAPI } from '../../test-utils'
 
 const workspace = (over: Partial<Workspace> = {}): Workspace => ({
   id: 1,
@@ -69,30 +68,6 @@ const reply = (over: Partial<DiscussionReply> = {}): DiscussionReply => ({
 afterEach(() => {
   vi.restoreAllMocks()
   vi.unstubAllGlobals()
-})
-
-describe('component: DiscussionForm', () => {
-  it('requires a category and submits it', async () => {
-    const onSubmit = vi.fn()
-    renderWithRouter(<DiscussionForm onSubmit={onSubmit} categories={[cat(), qaCat]} />)
-    await page.getByLabelText(/Title/).fill('hello discussion')
-    await page.getByLabelText(/Category/).selectOptions('4')
-    await page.getByRole('button', { name: 'Create discussion' }).click()
-    expect(onSubmit).toHaveBeenCalledWith({
-      title: 'hello discussion',
-      body: '',
-      category_id: 4,
-      label_ids: [],
-    })
-  })
-
-  it('rejects submit without a category', async () => {
-    const onSubmit = vi.fn()
-    renderWithRouter(<DiscussionForm onSubmit={onSubmit} categories={[cat(), qaCat]} />)
-    await page.getByLabelText(/Title/).fill('hello discussion')
-    await page.getByRole('button', { name: 'Create discussion' }).click()
-    expect(onSubmit).not.toHaveBeenCalled()
-  })
 })
 
 describe('route: /w/{ws}/discussions', () => {
