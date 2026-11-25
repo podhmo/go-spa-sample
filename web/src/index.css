@@ -1617,8 +1617,9 @@ fieldset.field:has(:is(:user-invalid, [aria-invalid='true'])) {
   padding: 0.25rem 0;
 }
 
-.pull-commits h2,
-.comments h2 {
+/* Direct children only: nested Markdown and dialogs own their heading spacing. */
+.pull-commits > h2,
+.comments > h2 {
   margin-block-end: 0.75rem;
 }
 
