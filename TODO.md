@@ -130,7 +130,7 @@ workspace → discussions → pulls → accounts へ展開する。
   - [x] **leaf componentのmodule化**: `Markdown` とdialog系component
     (`ConfirmDialog`/`HideDialog`/pull merge) のstyleをcomponent隣の
     `*.module.css` へ移す
-  - [ ] **app shellのmodule化**: `__root.tsx` のheader/nav/footer/progress/error
+  - [x] **app shellのmodule化**: `__root.tsx` のheader/nav/footer/progress/error
     pageのstyleを `routes/-components/SiteChrome.module.css` へ移す
   - [ ] **feature固有styleのmodule化**: workspace list、labels admin、pulls
     diff/PR styleをroute-local moduleへ移す
