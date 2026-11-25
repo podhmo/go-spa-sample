@@ -16,8 +16,8 @@ API サーバー部分を移植し、フロントを **SPA として作り直す
   (全フィルタ+page)/詳細/作成/編集/削除/状態変更/コメント CRUD/
   hide・unhide/permalink/labels管理/404/Markdown描画(GFM+alert)/
   markdownエクスポート。見た目は classic-mpa の app.css/ui-rules 準拠、
-  MPA/SPA のスクショ比較済み (`docs/sketch/ja/ui-parity.md` + 同ディレクトリ
-  の `ui-parity-*.png`、意図的な残差分も記録)
+  MPA/SPA のスクショ比較済み (`docs/sketch/ja/ui-parity.md` +
+  `docs/sketch/ja/images/ui-parity-*.png`、意図的な残差分も記録)
 - API: `cmd/zatudan` + `internal/` (issues/labels/comments/workspaces/
   markdown)。23 browser-mode tests 緑、CI 有り (`.github/workflows/ci.yml`)
 - **workspace スコープ `/w/{slug}` 完了**: URL は `/w/{slug}/issues…` 構造。

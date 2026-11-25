@@ -244,16 +244,18 @@ store 層の代表的 sentinel エラー: `ErrNotFound`、`ErrDuplicateSlug`、`
 
 ## 6. 受け入れ観点（SPA 移植チェックリスト）
 
+2026-11-25 に実起動した SPA + Go API で動作確認済み。確認方法と不足事項の記録は `docs/sketch/ja/feature-verification.md`。
+
 ### 全体・横断
 
-- [-] issue/discussion/PR の一覧・詳細・作成・編集・削除・status 切替ができる（issues のみ済）
+- [x] issue/discussion/PR の一覧・詳細・作成・編集・削除・status 切替ができる
 - [x] 状態は URL（パス + クエリ）に反映され、フィルタ済みビューがリンク共有可能
 - [x] バリデーション失敗時にフィールド単位のエラーと入力保持が出る（MPA の 422 再描画相当）
 - [x] 削除に確認ステップがある（MPA の確認ページ/`<dialog>` 相当）
 - [x] 存在しないリソース・未知 workspace は 404 相当の表示
 - [x] issue/discussion 本文と各種コメントが Markdown（GFM + アラート）で描画され、生 HTML / 不安全リンクが無力化される
-- [ ] workspace スコープ: `/w/{slug}` 相当のコンテキストがあり、workspace なしアクセスは default/先頭へ誘導、別 workspace のリソースは正しいスコープへ誘導（mutation は拒否）
-- [ ] ログイン中は投稿に投稿者名が付き、未ログインでも全操作可能（anonymous 表記）
+- [x] workspace スコープ: `/w/{slug}` 相当のコンテキストがあり、workspace なしアクセスは default/先頭へ誘導、別 workspace のリソースは正しいスコープへ誘導（mutation は拒否）
+- [x] ログイン中は投稿に投稿者名が付き、未ログインでも全操作可能（anonymous 表記）
 
 ### Issues
 
@@ -277,32 +279,32 @@ store 層の代表的 sentinel エラー: `ErrNotFound`、`ErrDuplicateSlug`、`
 
 ### Discussions
 
-- [ ] カテゴリ 4 種から選んで作成できる（必須）、カテゴリでフィルタできる
-- [ ] thread 投稿・thread への reply（1 段ネスト）ができる
-- [ ] qa カテゴリでのみ answer マーク/解除ができ、1 discussion 最大 1 件で印が移る
-- [ ] answered yes/no でフィルタできる
-- [ ] thread/reply の編集・削除（thread は replies ごと）・hide/unhide ができる
-- [ ] 非 qa カテゴリへの編集で answer マークが消える
+- [x] カテゴリ 4 種から選んで作成できる（必須）、カテゴリでフィルタできる
+- [x] thread 投稿・thread への reply（1 段ネスト）ができる
+- [x] qa カテゴリでのみ answer マーク/解除ができ、1 discussion 最大 1 件で印が移る
+- [x] answered yes/no でフィルタできる
+- [x] thread/reply の編集・削除（thread は replies ごと）・hide/unhide ができる
+- [x] 非 qa カテゴリへの編集で answer マークが消える
 
 ### Pull Requests（repo が結合されている場合）
 
-- [ ] repo 未検出時は PR 機能ごと非表示/404
-- [ ] base/head を指定して作成できる（同一 ref・重複 open PR はエラー）
-- [ ] 一覧で status（open/closed/merged/all）・q・sort・page フィルタ
-- [ ] 詳細で commits・merge 可否（コンフリクト表示）が見える
-- [ ] diff（Files changed）を見て、diff 行アンカー付きレビューコメントを付けられる（path+line セット必須、side left/right）
-- [ ] close/reopen、merge（merge/squash/rebase + 任意メッセージ）ができる。merged は終端
-- [ ] PR + コメントの markdown / diff エクスポート
+- [x] repo 未検出時は PR 機能ごと非表示/404
+- [x] base/head を指定して作成できる（同一 ref・重複 open PR はエラー）
+- [x] 一覧で status（open/closed/merged/all）・q・sort・page フィルタ
+- [x] 詳細で commits・merge 可否（コンフリクト表示）が見える
+- [x] diff（Files changed）を見て、diff 行アンカー付きレビューコメントを付けられる（path+line セット必須、side left/right）
+- [x] close/reopen、merge（merge/squash/rebase + 任意メッセージ）ができる。merged は終端
+- [x] PR + コメントの markdown / diff エクスポート
 
 ### アカウント
 
-- [ ] register（8〜256 文字パスワード）→ 即ログイン、login/logout ができる
-- [ ] セッションはクッキー（HttpOnly・SameSite=Lax）で持続・スライディング更新
+- [x] register（8〜256 文字パスワード）→ 即ログイン、login/logout ができる
+- [x] セッションはクッキー（HttpOnly・SameSite=Lax）で持続・スライディング更新
 
 ### API・CLI・その他
 
-- [ ] `/api/v1` 相当の JSON API が Bearer 認証付きで提供され、credential なしでは fail-closed
-- [ ] API エラーが `{"error":{"message","fields"}}` 形式
-- [ ] `zatu` 相当の CLI がローカル/リモート両バックエンドで動く
-- [ ] en/ja の UI 言語切替がある
-- [ ] SSE 等による他クライアント変更のライブ反映がある（MPA の EventSource + fragment 相当）
+- [x] `/api/v1` 相当の JSON API が Bearer 認証付きで提供され、credential なしでは fail-closed
+- [x] API エラーが `{"error":{"message","fields"}}` 形式
+- [x] `zatu` 相当の CLI がローカル/リモート両バックエンドで動く
+- [x] en/ja の UI 言語切替がある
+- [x] SSE 等による他クライアント変更のライブ反映がある（MPA の EventSource + fragment 相当）
