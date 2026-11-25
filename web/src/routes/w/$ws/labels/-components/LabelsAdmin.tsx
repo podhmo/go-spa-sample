@@ -1,8 +1,8 @@
 import { useReducer } from 'react'
-import type { Label, LabelInput } from '../api'
-import { ConfirmDialog } from './ConfirmDialog'
-import { fmt, useMessages, type Messages } from '../i18n'
-import { LabelBadge } from './IssueList'
+import type { Label, LabelInput } from '../../../../../api'
+import { ConfirmDialog } from '../../../../../components/ConfirmDialog'
+import { fmt, useMessages, type Messages } from '../../../../../i18n'
+import { LabelBadge } from '../../../../../components/LabelBadge'
 
 const scopeName = (m: Messages, l: Label) =>
   l.workspace_id == null ? m.labels.scopeNameShared : m.labels.scopeNameWorkspace

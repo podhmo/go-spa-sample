@@ -15,23 +15,28 @@ import {
 } from '@tanstack/react-router'
 import { useReducer, useTransition } from 'react'
 import { RequestError, api, type PRCommentInput, type User } from './api'
+import { AuthForm } from './routes/-auth/AuthForm'
+import { CommentForm } from './components/CommentForm'
+import { DiscussionForm } from './routes/w/$ws/discussions/-components/DiscussionForm'
+import { IssueForm } from './routes/w/$ws/issues/-components/IssueForm'
+import { PullForm } from './routes/pulls/-components/PullForm'
+import { WorkspaceForm } from './routes/workspaces/-components/WorkspaceForm'
+import { CommentList, IssueDetail } from './routes/w/$ws/issues/$issueId/-components/IssueDetail'
+import { IssueList } from './routes/w/$ws/issues/-components/IssueList'
+import { DiscussionList } from './routes/w/$ws/discussions/-components/DiscussionList'
 import {
-  AuthForm,
-  CommentForm,
-  DiscussionForm,
-  IssueForm,
-  PullForm,
-  WorkspaceForm,
-} from './components/forms'
-import { CommentList, IssueDetail } from './components/IssueDetail'
-import { IssueList } from './components/IssueList'
-import { DiscussionList } from './components/DiscussionList'
-import { DiscussionDetail, ThreadList } from './components/DiscussionDetail'
-import { LabelsAdmin } from './components/LabelsAdmin'
-import { PullList } from './components/PullList'
-import { PRCommentList, PullCommitList, PullDetail } from './components/PullDetail'
-import { PullFiles } from './components/PullFiles'
-import { WorkspaceList } from './components/Workspaces'
+  DiscussionDetail,
+  ThreadList,
+} from './routes/w/$ws/discussions/$discussionId/-components/DiscussionDetail'
+import { LabelsAdmin } from './routes/w/$ws/labels/-components/LabelsAdmin'
+import { PullList } from './routes/pulls/-components/PullList'
+import {
+  PRCommentList,
+  PullCommitList,
+  PullDetail,
+} from './routes/pulls/$pullId/-components/PullDetail'
+import { PullFiles } from './routes/pulls/$pullId/-components/PullFiles'
+import { WorkspaceList } from './routes/workspaces/-components/WorkspaceList'
 import { fmt, getLocale, setLocale, useMessages, type Locale } from './i18n'
 import { usePageTitle } from './page-title'
 

@@ -1,21 +1,13 @@
 import { Link } from '@tanstack/react-router'
-import type { Issue, IssueListFilter, Label } from '../api'
-import { labelStyle } from '../format'
-import { fmt, useFmtTime, useMessages } from '../i18n'
+import type { Issue, IssueListFilter } from '../../../../../api'
+import { labelStyle } from '../../../../../format'
+import { fmt, useFmtTime, useMessages } from '../../../../../i18n'
 
 export function StatusBadge({ status }: { status: Issue['status'] }) {
   const m = useMessages()
   return (
     <span className={`badge badge-${status}`}>
       {status === 'open' ? m.issues.badgeOpen : m.issues.badgeClosed}
-    </span>
-  )
-}
-
-export function LabelBadge({ label }: { label: Label }) {
-  return (
-    <span className="label-badge" style={labelStyle(label)}>
-      {label.name}
     </span>
   )
 }

@@ -1,6 +1,6 @@
 import { Link } from '@tanstack/react-router'
-import type { PullRequest } from '../api'
-import { fmt, useFmtTime, useMessages } from '../i18n'
+import type { PullRequest } from '../../../api'
+import { fmt, useFmtTime, useMessages } from '../../../i18n'
 
 export function PullStatusBadge({ status }: { status: PullRequest['status'] }) {
   const m = useMessages()

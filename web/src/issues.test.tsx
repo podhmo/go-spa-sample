@@ -1,8 +1,8 @@
 import { page } from 'vitest/browser'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import type { Comment, Issue, Label, LabelInput, Workspace } from './api'
-import { IssueForm } from './components/forms'
-import { IssueList } from './components/IssueList'
+import { IssueForm } from './routes/w/$ws/issues/-components/IssueForm'
+import { IssueList } from './routes/w/$ws/issues/-components/IssueList'
 import { renderAt, renderWithRouter, stubAPI } from './test-utils'
 
 const issue = (over: Partial<Issue> = {}): Issue => ({

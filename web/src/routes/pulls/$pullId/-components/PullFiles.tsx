@@ -1,8 +1,8 @@
 import { useEffect, useReducer, useRef } from 'react'
-import { useLeaveGuard } from '../leave-guard'
-import { RequestError, type PRCommentInput } from '../api'
-import { submitOnCtrlEnter } from '../enter-submit'
-import { fmt, useMessages } from '../i18n'
+import { useLeaveGuard } from '../../../../leave-guard'
+import { RequestError, type PRCommentInput } from '../../../../api'
+import { submitOnCtrlEnter } from '../../../../enter-submit'
+import { fmt, useMessages } from '../../../../i18n'
 
 // Parsed unified diff, one row per source line.
 type DiffLine = {
