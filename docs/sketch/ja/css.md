@@ -179,8 +179,8 @@ layer整理は別途行う。
 
 一度に全量を動かさず、影響範囲の小さいものからstrangler fig的に移す。
 
-1. **component単位で閉じるもの**: `Markdown`、`ConfirmDialog`+`HideDialog`
-   (両者が共有するdialog styleは同じmoduleへ)
+1. **component単位で閉じるもの**: `Markdown`、`ConfirmDialog`+`HideDialog`+
+   pull merge dialog (共有するdialog styleは同じmoduleへ)
 2. **app shell**: `__root.tsx`のheader/nav/footer/progress/error page
 3. **単一featureで閉じるもの**: workspace list、labels admin、pulls diff、
    PR badge/form

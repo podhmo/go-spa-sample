@@ -127,8 +127,9 @@ workspace → discussions → pulls → accounts へ展開する。
   `src/index.css` のglobal ruleを `*.module.css` へ移す。目安は
   `src/index.css` 300行以内、feature固有selectorはglobal fileに残さない
   ([#22](https://github.com/podhmo/go-spa-sample/issues/22))
-  - [ ] **leaf componentのmodule化**: `Markdown` と `ConfirmDialog`/`HideDialog`
-    のstyleをcomponent隣の `*.module.css` へ移す
+  - [x] **leaf componentのmodule化**: `Markdown` とdialog系component
+    (`ConfirmDialog`/`HideDialog`/pull merge) のstyleをcomponent隣の
+    `*.module.css` へ移す
   - [ ] **app shellのmodule化**: `__root.tsx` のheader/nav/footer/progress/error
     pageのstyleを `routes/-components/SiteChrome.module.css` へ移す
   - [ ] **feature固有styleのmodule化**: workspace list、labels admin、pulls
