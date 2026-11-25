@@ -5,6 +5,10 @@
 
 .formField {
   composes: field from '../styles/primitives.module.css';
+}
+
+/* Same-specificity primitive margins must not depend on stylesheet order. */
+.form .formField {
   margin-bottom: 12px;
 }
 
