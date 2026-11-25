@@ -345,7 +345,11 @@ describe('route: /issues/$issueId', () => {
     await page.getByLabelText('comment body').fill('')
     const textarea = document.getElementById('comment-edit-1') as HTMLTextAreaElement
     textarea.blur()
-    await page.getByRole('button', { name: 'Cancel' }).click()
+    const cancel = textarea
+      .closest('form')
+      ?.querySelector<HTMLButtonElement>('button[type="button"]')
+    expect(cancel?.textContent).toBe('Cancel')
+    cancel?.click()
 
     await new Promise((resolve) => setTimeout(resolve, 600))
     expect(document.querySelector('div.visually-hidden')?.textContent).toBe('')
