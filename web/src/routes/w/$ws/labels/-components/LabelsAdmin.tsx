@@ -154,7 +154,7 @@ function LabelGroup({
     <section aria-labelledby={id}>
       <h2 id={id}>{title}</h2>
       {labels.length === 0 ? (
-        <p className="empty-state">{empty}</p>
+        <p className={cx('empty-state')}>{empty}</p>
       ) : (
         <ul className={styles.labelList} role="list">
           {labels.map((l) => (

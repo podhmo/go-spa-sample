@@ -2,6 +2,7 @@ import { useReducer } from 'react'
 import { submitOnCtrlEnter } from '../enter-submit'
 import { useMessages } from '../i18n'
 import { useLeaveGuard } from '../leave-guard'
+import styles from './CommentForm.module.css'
 import { cx } from '../styles/cx'
 
 export function CommentForm({
@@ -50,6 +51,7 @@ export function CommentForm({
         </label>
         <textarea
           id="comment-body"
+          className={styles.body}
           name="body"
           value={body}
           onChange={(e) => setBody(e.target.value)}

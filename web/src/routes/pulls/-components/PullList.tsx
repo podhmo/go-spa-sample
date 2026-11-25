@@ -14,7 +14,7 @@ export function PullStatusBadge({ status }: { status: PullRequest['status'] }) {
   const m = useMessages()
   const text =
     status === 'open' ? m.filter.open : status === 'closed' ? m.filter.closed : m.filter.merged
-  return <span className={`badge ${statusClasses[status]}`}>{text}</span>
+  return <span className={`${cx('badge')} ${statusClasses[status]}`}>{text}</span>
 }
 
 const shortRef = (ref: string) => ref.replace(/^refs\/(heads|remotes|tags)\//, '')
@@ -31,8 +31,8 @@ export function PullList({
   if (pulls.length === 0) {
     if (filtered) {
       return (
-        <div className="empty-state">
-          <p className="empty-lead">{m.pulls.filteredEmpty}</p>
+        <div className={cx('empty-state')}>
+          <p className={cx('empty-lead')}>{m.pulls.filteredEmpty}</p>
           <p>
             {m.issues.tryOther} <Link to="/pulls">{m.issues.clearFilters}</Link>.
           </p>
@@ -40,8 +40,8 @@ export function PullList({
       )
     }
     return (
-      <div className="empty-state">
-        <p className="empty-lead">{m.pulls.blankEmpty}</p>
+      <div className={cx('empty-state')}>
+        <p className={cx('empty-lead')}>{m.pulls.blankEmpty}</p>
         <p>
           <Link className={cx('btn btn-primary')} to="/pulls/new">
             {m.pulls.openFirst}
@@ -51,22 +51,22 @@ export function PullList({
     )
   }
   return (
-    <ul className="issue-list" role="list">
+    <ul className={cx('issue-list')} role="list">
       {pulls.map((p) => (
-        <li className="issue-row" key={p.id}>
-          <div className="issue-row-main">
+        <li className={cx('issue-row')} key={p.id}>
+          <div className={cx('issue-row-main')}>
             <Link
               preload={false}
-              className="issue-title"
+              className={cx('issue-title')}
               to="/pulls/$pullId"
               params={{ pullId: String(p.id) }}
             >
               {p.title}
             </Link>
-            <span className="issue-num">#{p.id}</span>
+            <span className={cx('issue-num')}>#{p.id}</span>
             <PullStatusBadge status={p.status} />
           </div>
-          <p className="issue-row-meta">
+          <p className={cx('issue-row-meta')}>
             <code className={styles.prRef}>{shortRef(p.head)}</code> →{' '}
             <code className={styles.prRef}>{shortRef(p.base)}</code> ·{' '}
             {fmt(m.pulls.openedBy, { name: p.author?.name ?? m.comments.anonymous })}{' '}

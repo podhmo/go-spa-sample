@@ -7,7 +7,7 @@ import { cx } from '../../../../../styles/cx'
 export function StatusBadge({ status }: { status: Issue['status'] }) {
   const m = useMessages()
   return (
-    <span className={`badge badge-${status}`}>
+    <span className={cx(`badge badge-${status}`)}>
       {status === 'open' ? m.issues.badgeOpen : m.issues.badgeClosed}
     </span>
   )
@@ -35,8 +35,8 @@ export function IssueList({
   if (issues.length === 0) {
     if (filtered) {
       return (
-        <div className="empty-state">
-          <p className="empty-lead">{m.issues.filteredEmpty}</p>
+        <div className={cx('empty-state')}>
+          <p className={cx('empty-lead')}>{m.issues.filteredEmpty}</p>
           <p>
             {m.issues.tryOther}{' '}
             <Link to="/w/$ws/issues" params={{ ws }}>
@@ -48,8 +48,8 @@ export function IssueList({
       )
     }
     return (
-      <div className="empty-state">
-        <p className="empty-lead">{m.issues.blankEmpty}</p>
+      <div className={cx('empty-state')}>
+        <p className={cx('empty-lead')}>{m.issues.blankEmpty}</p>
         <p>
           <Link className={cx('btn btn-primary')} to="/w/$ws/issues/new" params={{ ws }}>
             {m.issues.createFirst}
@@ -59,24 +59,24 @@ export function IssueList({
     )
   }
   return (
-    <ul className="issue-list" role="list">
+    <ul className={cx('issue-list')} role="list">
       {issues.map((issue) => (
-        <li className="issue-row" key={issue.id}>
-          <div className="issue-row-main">
+        <li className={cx('issue-row')} key={issue.id}>
+          <div className={cx('issue-row-main')}>
             <Link
-              className="issue-title"
+              className={cx('issue-title')}
               to="/w/$ws/issues/$issueId"
               params={{ ws, issueId: String(issue.id) }}
             >
               {issue.title}
             </Link>
-            <span className="issue-num">#{issue.id}</span>
+            <span className={cx('issue-num')}>#{issue.id}</span>
           </div>
-          <div className="issue-row-meta">
+          <div className={cx('issue-row-meta')}>
             <StatusBadge status={issue.status} />
             {issue.labels.map((l) => (
               <Link
-                className="label-badge"
+                className={cx('label-badge')}
                 style={labelStyle(l)}
                 key={l.id}
                 to="/w/$ws/issues"
@@ -86,7 +86,7 @@ export function IssueList({
                 {l.name}
               </Link>
             ))}
-            <time className="issue-time" dateTime={issue.created_at}>
+            <time className={cx('issue-time')} dateTime={issue.created_at}>
               {fmt(m.issues.openedAt, { time: fmtTime(issue.created_at) })}
             </time>
           </div>

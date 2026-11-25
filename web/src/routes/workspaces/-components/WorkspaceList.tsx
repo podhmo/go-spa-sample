@@ -1,3 +1,4 @@
+import { cx } from '../../../styles/cx'
 import { Link } from '@tanstack/react-router'
 import type { Workspace } from '../../../api'
 import { fmt, useMessages } from '../../../i18n'
@@ -17,7 +18,7 @@ export function WorkspaceList({
 }) {
   const m = useMessages()
   if (workspaces.length === 0) {
-    return <p className="empty-state">{m.workspaces.empty}</p>
+    return <p className={cx('empty-state')}>{m.workspaces.empty}</p>
   }
   const isLast = workspaces.length <= 1
   return (

@@ -1,0 +1,5 @@
+/* Keep the short reply composer compact while field-sizing grows it. */
+.body {
+  min-block-size: 4lh;
+  max-block-size: 16lh;
+}

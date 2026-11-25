@@ -24,7 +24,7 @@ export function HideDialog({
     <>
       <button
         type="button"
-        className="comment-action"
+        className={cx('comment-action')}
         {...({ commandfor: dialogId, command: 'show-modal' } as Record<string, string>)}
         disabled={pending}
         aria-label={fmt(m.comments.ariaHide, { noun, id: itemId })}

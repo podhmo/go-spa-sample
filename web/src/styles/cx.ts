@@ -1,8 +1,11 @@
-import styles from './primitives.module.css'
+import primitiveStyles from './primitives.module.css'
+import contentStyles from './content.module.css'
 
-// Migration helper: scoped primitive classes keep their original global
-// names as compatibility hooks while list/detail selectors are modularized.
-// The compat half is removed once every cross-component selector is owned.
+const styles = { ...primitiveStyles, ...contentStyles }
+
+// Migration helper: scoped shared classes keep their original global
+// names as compatibility hooks while cross-component selectors are
+// modularized. The compat half is removed once those selectors are owned.
 export function cx(names: string) {
   return names
     .split(/\s+/)

@@ -5,6 +5,7 @@ import { submitOnCtrlEnter } from '../../../../../enter-submit'
 import { useMessages } from '../../../../../i18n'
 import { useLeaveGuard } from '../../../../../leave-guard'
 import { LabelBadge } from '../../../../../components/LabelBadge'
+import styles from './IssueForm.module.css'
 import { cx } from '../../../../../styles/cx'
 
 type IssueFormState = { title: string; body: string; label_ids: number[]; submitted: boolean }
@@ -112,6 +113,7 @@ export function IssueForm({
         <label htmlFor="issue-body">{m.form.body}</label>
         <textarea
           id="issue-body"
+          className={styles.body}
           name="body"
           value={state.body}
           onChange={(e) => dispatch({ type: 'field', field: 'body', value: e.target.value })}

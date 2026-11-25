@@ -41,11 +41,11 @@ export const Route = createFileRoute('/w/$ws/issues/')({
           <h1>{m.issues.title}</h1>
         </div>
 
-        <nav className="tabs" aria-label={m.filter.ariaByStatus}>
+        <nav className={cx('tabs')} aria-label={m.filter.ariaByStatus}>
           {STATUS_TABS.map((s) => (
             <Link
               key={s}
-              className={`tab${status === s ? ' tab-active' : ''}`}
+              className={cx(`tab${status === s ? ' tab-active' : ''}`)}
               to="/w/$ws/issues"
               params={{ ws }}
               search={{ ...search, status: s, page: undefined }}

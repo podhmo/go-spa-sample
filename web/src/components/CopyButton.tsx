@@ -36,7 +36,7 @@ export function CopyButton({
   )
   const m = useMessages()
   return (
-    <span className="copy-wrap">
+    <span className={cx('copy-wrap')}>
       <button
         type="button"
         className={className}
@@ -59,7 +59,7 @@ export function CopyButton({
       >
         {label}
       </button>{' '}
-      <span className="copy-tip" role="status" data-shown={s.state !== 'idle' || undefined}>
+      <span className={cx('copy-tip')} role="status" data-shown={s.state !== 'idle' || undefined}>
         {s.state === 'idle' ? '' : s.state === 'copied' ? m.copy.copied : m.copy.failed}
       </span>
     </span>

@@ -6,11 +6,11 @@ import { cx } from '../../../../../styles/cx'
 
 export function AnsweredBadge() {
   const m = useMessages()
-  return <span className="badge badge-answered">{m.discussions.answered}</span>
+  return <span className={cx('badge badge-answered')}>{m.discussions.answered}</span>
 }
 
 export function CategoryBadge({ name }: { name: string }) {
-  return <span className="badge badge-category">{name}</span>
+  return <span className={cx('badge badge-category')}>{name}</span>
 }
 
 export function DiscussionList({
@@ -30,8 +30,8 @@ export function DiscussionList({
   if (discussions.length === 0) {
     if (filtered) {
       return (
-        <div className="empty-state">
-          <p className="empty-lead">{m.discussions.filteredEmpty}</p>
+        <div className={cx('empty-state')}>
+          <p className={cx('empty-lead')}>{m.discussions.filteredEmpty}</p>
           <p>
             {m.issues.tryOther}{' '}
             <Link to="/w/$ws/discussions" params={{ ws }}>
@@ -43,8 +43,8 @@ export function DiscussionList({
       )
     }
     return (
-      <div className="empty-state">
-        <p className="empty-lead">{m.discussions.blankEmpty}</p>
+      <div className={cx('empty-state')}>
+        <p className={cx('empty-lead')}>{m.discussions.blankEmpty}</p>
         <p>
           <Link className={cx('btn btn-primary')} to="/w/$ws/discussions/new" params={{ ws }}>
             {m.discussions.createFirst}
@@ -54,28 +54,28 @@ export function DiscussionList({
     )
   }
   return (
-    <ul className="issue-list" role="list">
+    <ul className={cx('issue-list')} role="list">
       {discussions.map((d) => (
-        <li className="issue-row" key={d.id}>
-          <div className="issue-row-main">
+        <li className={cx('issue-row')} key={d.id}>
+          <div className={cx('issue-row-main')}>
             <Link
-              className="issue-title"
+              className={cx('issue-title')}
               to="/w/$ws/discussions/$discussionId"
               params={{ ws, discussionId: String(d.id) }}
             >
               {d.title}
             </Link>
-            <span className="issue-num">#{d.id}</span>
+            <span className={cx('issue-num')}>#{d.id}</span>
           </div>
-          <div className="issue-row-meta">
+          <div className={cx('issue-row-meta')}>
             <CategoryBadge name={d.category.name} />
             {d.answered && <AnsweredBadge />}
             {d.labels.map((l) => (
-              <span className="label-badge" style={labelStyle(l)} key={l.id}>
+              <span className={cx('label-badge')} style={labelStyle(l)} key={l.id}>
                 {l.name}
               </span>
             ))}
-            <time className="issue-time" dateTime={d.created_at}>
+            <time className={cx('issue-time')} dateTime={d.created_at}>
               {fmt(m.issues.openedAt, { time: fmtTime(d.created_at) })}
             </time>
           </div>

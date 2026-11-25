@@ -58,25 +58,22 @@ function CommentItem({
   const fmtTime = useFmtTime()
   const permalink = () => `${location.origin}${location.pathname}#comment-${c.id}`
   return (
-    <li
-      className={`${cx('card comment')}${c.hidden ? ' comment-hidden' : ''}`}
-      id={`comment-${c.id}`}
-    >
-      <header className="comment-meta">
+    <li className={cx(`card comment${c.hidden ? ' comment-hidden' : ''}`)} id={`comment-${c.id}`}>
+      <header className={cx('comment-meta')}>
         <span className="comment-author">
           {fmt(m.comments.commented, { name: c.author?.name ?? m.comments.anonymous })}
         </span>{' '}
-        <a className="comment-permalink" href={`#comment-${c.id}`}>
+        <a className={cx('comment-permalink')} href={`#comment-${c.id}`}>
           <time dateTime={c.created_at}>{fmtTime(c.created_at)}</time>
         </a>
         {c.edited_at && (
           <>
             {' '}
-            · <span className="comment-edited">{m.comments.edited}</span>
+            · <span className={cx('comment-edited')}>{m.comments.edited}</span>
           </>
         )}
         <CopyButton
-          className="copy-btn"
+          className={cx('copy-btn')}
           label={m.comments.copyLink}
           getText={permalink}
           pending={pending}
@@ -84,15 +81,15 @@ function CommentItem({
       </header>
       {c.hidden ? (
         <>
-          <p className="comment-hidden-note">
+          <p className={cx('comment-hidden-note')}>
             {fmt(m.comments.markedAs, {
               noun: m.comments.nounComment,
               reason: c.hidden_reason ?? 'hidden',
             })}
           </p>
-          <details className="comment-hidden-body">
+          <details className={cx('comment-hidden-body')}>
             <summary>{fmt(m.comments.show, { noun: m.comments.nounComment })}</summary>
-            <div className="comment-body">
+            <div className={cx('comment-body')}>
               <Markdown text={c.body} />
             </div>
           </details>
@@ -155,16 +152,16 @@ function CommentItem({
           </div>
         </form>
       ) : (
-        <div className="comment-body">
+        <div className={cx('comment-body')}>
           <Markdown text={c.body} />
         </div>
       )}
       {!ui.editing && (
-        <div className="comment-actions">
+        <div className={cx('comment-actions')}>
           {onEdit && (
             <button
               type="button"
-              className="comment-action"
+              className={cx('comment-action')}
               onClick={() => {
                 if (fieldError) onEditErrorClear?.()
                 dispatch({ type: 'start-edit', body: c.body })
@@ -178,7 +175,7 @@ function CommentItem({
             ? onUnhide && (
                 <button
                   type="button"
-                  className="comment-action"
+                  className={cx('comment-action')}
                   disabled={pending}
                   onClick={() => onUnhide(c.id)}
                   aria-label={fmt(m.comments.ariaUnhide, {
@@ -203,7 +200,7 @@ function CommentItem({
               title={fmt(m.comments.deleteTitle, { noun: m.comments.nounComment, id: c.id })}
               description={m.comments.deleteCommentBody}
               confirmLabel={fmt(m.comments.deleteConfirm, { noun: m.comments.nounComment })}
-              triggerClass="comment-action comment-action-danger"
+              triggerClass={cx('comment-action comment-action-danger')}
               pending={pending}
               onConfirm={() => onDelete(c.id)}
             />
@@ -220,7 +217,7 @@ export function CommentList({ comments, ...handlers }: { comments: Comment[] } &
     return <p className="muted">{m.comments.empty}</p>
   }
   return (
-    <ol className="comment-list" role="list">
+    <ol className={cx('comment-list')} role="list">
       {comments.map((c) => (
         <CommentItem key={c.id} comment={c} {...handlers} />
       ))}
@@ -251,18 +248,18 @@ export function IssueDetail({
   const next = issue.status === 'open' ? 'closed' : 'open'
   return (
     <article className={cx('card issue-detail')} id="issue-article">
-      <header className="issue-detail-head">
-        <div className="issue-title-row">
+      <header className={cx('issue-detail-head')}>
+        <div className={cx('issue-title-row')}>
           <StatusBadge status={issue.status} />
           <h1>
-            {issue.title} <span className="issue-num">#{issue.id}</span>
+            {issue.title} <span className={cx('issue-num')}>#{issue.id}</span>
           </h1>
         </div>
         {issue.labels.length > 0 && (
-          <div className="issue-labels">
+          <div className={cx('issue-labels')}>
             {issue.labels.map((l) => (
               <Link
-                className="label-badge"
+                className={cx('label-badge')}
                 style={labelStyle(l)}
                 key={l.id}
                 to="/w/$ws/issues"
@@ -274,7 +271,7 @@ export function IssueDetail({
             ))}
           </div>
         )}
-        <p className="issue-meta">
+        <p className={cx('issue-meta')}>
           {fmt(m.issues.openedBy, { name: issue.author?.name ?? m.comments.anonymous })}{' '}
           <time dateTime={issue.created_at}>{fmtTime(issue.created_at)}</time> ·{' '}
           {m.issues.lastUpdated}{' '}
@@ -283,16 +280,16 @@ export function IssueDetail({
       </header>
 
       {issue.body ? (
-        <div className="issue-body">
+        <div className={cx('issue-body')}>
           <Markdown text={issue.body} />
         </div>
       ) : (
-        <div className="issue-body issue-body-empty">
+        <div className={cx('issue-body issue-body-empty')}>
           <em>{m.issues.noDescription}</em>
         </div>
       )}
 
-      <div className="issue-actions">
+      <div className={cx('issue-actions')}>
         <Link
           className={cx('btn')}
           to="/w/$ws/issues/$issueId/edit"
