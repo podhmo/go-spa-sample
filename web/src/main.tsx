@@ -5,7 +5,7 @@ import './index.css'
 import { setupFieldErrorSync } from './a11y'
 import { watchLeaveGuardReset } from './leave-guard'
 import { watchLiveUpdates } from './live-updates'
-import { routeTree } from './router'
+import { routeTree } from './routeTree.gen'
 
 setupFieldErrorSync()
 

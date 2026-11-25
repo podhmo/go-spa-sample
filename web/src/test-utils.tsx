@@ -9,7 +9,7 @@ import { render } from 'vitest-browser-react'
 import { vi } from 'vitest'
 import { setupFieldErrorSync } from './a11y'
 import { watchLeaveGuardReset } from './leave-guard'
-import { routeTree } from './router'
+import { routeTree } from './routeTree.gen'
 
 // renderAt mounts the real route tree on an in-memory history — component
 // checks run inside the actual router so Link/loader/useSearch all work.
