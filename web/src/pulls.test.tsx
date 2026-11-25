@@ -349,6 +349,36 @@ describe('route: /pulls/{id}/files', () => {
     expect(diffCalls).toBe(1)
   })
 
+  it('reloads the diff after a stale-path rejection', async () => {
+    let diffCalls = 0
+    stubAPI((url, init) => {
+      if (url.endsWith('/diff')) {
+        diffCalls++
+        return { body: DIFF, headers: { 'x-anchor-sha': 'abc123' } }
+      }
+      if (url.endsWith('/comments') && init?.method === 'POST') {
+        return {
+          status: 422,
+          body: {
+            error: {
+              message: 'Validation failed.',
+              fields: { path: 'Path is not part of the pull request diff.' },
+            },
+          },
+        }
+      }
+      return { body: { pull_request: pull(), comments: [], commits: [] } }
+    })
+    renderAt('/pulls/1/files')
+    await page.getByRole('button', { name: 'Comment on a.txt line 2 (right side)' }).click()
+    await page.getByLabelText('comment').fill('stale file draft')
+    await page.getByRole('button', { name: 'Comment', exact: true }).click()
+    await expect
+      .element(page.getByText('Path is not part of the pull request diff.'))
+      .toBeInTheDocument()
+    await expect.poll(() => diffCalls).toBeGreaterThan(1)
+  })
+
   it('drops the draft when a refreshed diff puts different code at its anchor', async () => {
     // Force-push rewrites the line at the same path:side:line — a retry
     // must not attach the old draft to the replacement code.

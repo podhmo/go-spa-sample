@@ -524,9 +524,11 @@ export function DiscussionForm({
 export function CommentForm({
   onSubmit,
   submitting,
+  error,
 }: {
   onSubmit: (body: string) => void | boolean | Promise<void | boolean>
   submitting?: boolean
+  error?: string | null | undefined
 }) {
   const [body, setBody] = useReducer((_: string, v: string) => v, '')
   const [sending, setSending] = useReducer((_: boolean, v: boolean) => v, false)
@@ -573,12 +575,19 @@ export function CommentForm({
           required
           disabled={busy}
           data-error="comment-body-error"
-          aria-invalid="false"
-          aria-describedby="comment-body-hint"
+          aria-invalid={error ? 'true' : 'false'}
+          aria-describedby={
+            error ? 'comment-body-api-error comment-body-hint' : 'comment-body-hint'
+          }
         />
         <span id="comment-body-error" className="error-msg">
           {m.form.bodyRequired}
         </span>
+        {error && (
+          <em id="comment-body-api-error" role="alert">
+            {error}
+          </em>
+        )}
         <p className="field-hint" id="comment-body-hint">
           {m.form.bodyHintShort}
         </p>

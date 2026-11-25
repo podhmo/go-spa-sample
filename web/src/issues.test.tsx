@@ -339,6 +339,9 @@ describe('route: /issues/$issueId', () => {
     await expect
       .element(page.getByText('Body must be at most 10,000 characters.'))
       .toBeInTheDocument()
+    const textarea = document.getElementById('comment-body')
+    expect(textarea?.getAttribute('aria-invalid')).toBe('true')
+    expect(textarea?.getAttribute('aria-describedby')).toContain('comment-body-api-error')
   })
 
   it('confirms before leaving with a comment draft, and navigates on accept', async () => {
