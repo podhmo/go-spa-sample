@@ -13,6 +13,12 @@
   white-space: nowrap;
 }
 
+/* Keep neutral button links above the global anchor color while staying
+   earlier than the one-class variants below. */
+.btn {
+  color: var(--text);
+}
+
 @media (hover: hover) {
   .btn:hover {
     background: var(--bg);
@@ -195,12 +201,14 @@
   display: flex;
 }
 
-.field :is(input, select, textarea):is(:user-invalid, [aria-invalid='true']) {
+:is(.field, .validation-scope)
+  :is(input, select, textarea):is(:user-invalid, [aria-invalid='true']) {
   border-color: var(--danger);
   background-color: var(--danger-bg);
 }
 
-.field :is(input, select, textarea):is(:user-invalid, [aria-invalid='true']):focus-visible {
+:is(.field, .validation-scope)
+  :is(input, select, textarea):is(:user-invalid, [aria-invalid='true']):focus-visible {
   outline: 2px solid var(--danger);
   outline-offset: 2px;
 }

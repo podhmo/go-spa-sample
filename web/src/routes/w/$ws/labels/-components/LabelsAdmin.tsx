@@ -47,6 +47,7 @@ function LabelRow({
     return (
       <li>
         <form
+          className={cx('validation-scope')}
           aria-label={fmt(m.labels.editAria, { name: l.name })}
           onSubmit={(e) => {
             e.preventDefault()
