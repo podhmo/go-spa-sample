@@ -163,7 +163,11 @@ function LogoutButton() {
       >
         {m.nav.logOut}
       </button>
-      {state === 'failed' && <em role="alert">{m.nav.logOutFailed}</em>}
+      {state === 'failed' && (
+        <em className={cx('error-msg')} role="alert">
+          {m.nav.logOutFailed}
+        </em>
+      )}
     </>
   )
 }

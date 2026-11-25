@@ -242,7 +242,7 @@ export function LabelsAdmin({
               {m.labels.nameRequired}
             </span>
             {errors?.name && (
-              <em id="new-label-name-api-error" role="alert">
+              <em className={cx('error-msg')} id="new-label-name-api-error" role="alert">
                 {errors.name}
               </em>
             )}
@@ -260,7 +260,7 @@ export function LabelsAdmin({
               aria-describedby={errors?.color ? 'new-label-color-api-error' : undefined}
             />
             {errors?.color && (
-              <em id="new-label-color-api-error" role="alert">
+              <em className={cx('error-msg')} id="new-label-color-api-error" role="alert">
                 {errors.color}
               </em>
             )}

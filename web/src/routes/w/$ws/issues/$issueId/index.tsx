@@ -110,7 +110,11 @@ export const Route = createFileRoute('/w/$ws/issues/$issueId/')({
             {m.issues.comments}
             {comments.length > 0 && <span className="comment-count"> ({comments.length})</span>}
           </h2>
-          {actionError && <em role="alert">{actionError}</em>}
+          {actionError && (
+            <em className={cx('error-msg')} role="alert">
+              {actionError}
+            </em>
+          )}
           <CommentList
             comments={comments}
             pending={isPending}

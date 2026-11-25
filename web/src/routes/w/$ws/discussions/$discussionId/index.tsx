@@ -150,7 +150,11 @@ export const Route = createFileRoute('/w/$ws/discussions/$discussionId/')({
               onUnhide: (tid, cid) => mutate(() => api.unhideReply(ws, did, tid, cid)),
             }}
           />
-          {error && <em role="alert">{error}</em>}
+          {error && (
+            <em className={cx('error-msg')} role="alert">
+              {error}
+            </em>
+          )}
           <CommentForm
             submitting={isPending}
             onSubmit={(body) =>

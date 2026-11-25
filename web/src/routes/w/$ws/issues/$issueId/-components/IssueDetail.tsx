@@ -129,7 +129,7 @@ function CommentItem({
               {m.form.bodyRequired}
             </span>
             {fieldError && (
-              <em id={`comment-edit-${c.id}-api-error`} role="alert">
+              <em className={cx('error-msg')} id={`comment-edit-${c.id}-api-error`} role="alert">
                 {fieldError}
               </em>
             )}

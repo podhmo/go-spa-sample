@@ -103,7 +103,7 @@ export function IssueForm({
           {m.form.titleRequired}
         </span>
         {errors?.title && (
-          <em id="issue-title-api-error" role="alert">
+          <em className={cx('error-msg')} id="issue-title-api-error" role="alert">
             {errors.title}
           </em>
         )}
@@ -123,7 +123,7 @@ export function IssueForm({
           }
         />
         {errors?.body && (
-          <em id="issue-body-api-error" role="alert">
+          <em className={cx('error-msg')} id="issue-body-api-error" role="alert">
             {errors.body}
           </em>
         )}
@@ -148,7 +148,7 @@ export function IssueForm({
             </label>
           ))}
           {errors?.labels && (
-            <em id="issue-labels-api-error" role="alert">
+            <em className={cx('error-msg')} id="issue-labels-api-error" role="alert">
               {errors.labels}
             </em>
           )}

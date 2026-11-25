@@ -119,7 +119,7 @@ export function PullForm({
               {m.pulls.headRequired}
             </span>
             {errors?.head && (
-              <em id="pull-head-api-error" role="alert">
+              <em className={cx('error-msg')} id="pull-head-api-error" role="alert">
                 {errors.head}
               </em>
             )}
@@ -154,7 +154,7 @@ export function PullForm({
               {m.pulls.baseRequired}
             </span>
             {errors?.base && (
-              <em id="pull-base-api-error" role="alert">
+              <em className={cx('error-msg')} id="pull-base-api-error" role="alert">
                 {errors.base}
               </em>
             )}
@@ -183,7 +183,7 @@ export function PullForm({
           {m.form.titleRequired}
         </span>
         {errors?.title && (
-          <em id="pull-title-api-error" role="alert">
+          <em className={cx('error-msg')} id="pull-title-api-error" role="alert">
             {errors.title}
           </em>
         )}
@@ -201,7 +201,7 @@ export function PullForm({
           aria-describedby={errors?.body ? 'pull-body-api-error' : undefined}
         />
         {errors?.body && (
-          <em id="pull-body-api-error" role="alert">
+          <em className={cx('error-msg')} id="pull-body-api-error" role="alert">
             {errors.body}
           </em>
         )}

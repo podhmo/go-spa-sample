@@ -134,7 +134,7 @@ export function DiscussionForm({
           {m.discussions.categoryRequired}
         </span>
         {errors?.category && (
-          <em id="discussion-category-api-error" role="alert">
+          <em className={cx('error-msg')} id="discussion-category-api-error" role="alert">
             {errors.category}
           </em>
         )}
@@ -161,7 +161,7 @@ export function DiscussionForm({
           {m.form.titleRequired}
         </span>
         {errors?.title && (
-          <em id="discussion-title-api-error" role="alert">
+          <em className={cx('error-msg')} id="discussion-title-api-error" role="alert">
             {errors.title}
           </em>
         )}
@@ -181,7 +181,7 @@ export function DiscussionForm({
           }
         />
         {errors?.body && (
-          <em id="discussion-body-api-error" role="alert">
+          <em className={cx('error-msg')} id="discussion-body-api-error" role="alert">
             {errors.body}
           </em>
         )}
@@ -206,7 +206,7 @@ export function DiscussionForm({
             </label>
           ))}
           {errors?.labels && (
-            <em id="discussion-labels-api-error" role="alert">
+            <em className={cx('error-msg')} id="discussion-labels-api-error" role="alert">
               {errors.labels}
             </em>
           )}

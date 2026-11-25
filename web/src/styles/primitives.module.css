@@ -1,4 +1,4 @@
-.btn {
+:where(.btn) {
   display: inline-block;
   padding: 6px 14px;
   font: inherit;
@@ -68,14 +68,14 @@
   opacity: 0.7;
 }
 
-.card {
+:where(.card) {
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: 20px;
 }
 
-.page-head {
+:where(.page-head) {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -155,8 +155,7 @@
      spans sit next to their input and are revealed by the sibling
      selector (a11y.ts syncs the aria side). */
 
-.error-msg,
-em[role='alert'] {
+.error-msg {
   display: none;
   align-items: baseline;
   gap: 6px;
@@ -169,8 +168,7 @@ em[role='alert'] {
 
 /* Decorative icon; the empty alt text keeps it out of the accessible
    name. */
-.error-msg::before,
-em[role='alert']::before {
+.error-msg::before {
   content: '!' / '';
   flex: 0 0 auto;
   display: inline-grid;
@@ -193,16 +191,16 @@ em[role='alert']::before {
 }
 
 /* Server-rendered errors (<em role="alert">) are always visible. */
-em[role='alert'] {
+.error-msg[role='alert'] {
   display: flex;
 }
 
-:is(input, select, textarea):is(:user-invalid, [aria-invalid='true']) {
+.field :is(input, select, textarea):is(:user-invalid, [aria-invalid='true']) {
   border-color: var(--danger);
   background-color: var(--danger-bg);
 }
 
-:is(input, select, textarea):is(:user-invalid, [aria-invalid='true']):focus-visible {
+.field :is(input, select, textarea):is(:user-invalid, [aria-invalid='true']):focus-visible {
   outline: 2px solid var(--danger);
   outline-offset: 2px;
 }

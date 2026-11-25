@@ -41,7 +41,7 @@ export function AuthForm({
         {m.form.requiredPost}
       </p>
       {errors?.form && (
-        <em className="form-error" role="alert">
+        <em className={cx('error-msg')} role="alert">
           {errors.form}
         </em>
       )}
@@ -73,7 +73,7 @@ export function AuthForm({
           {m.form.nameRequired}
         </span>
         {errors?.name && (
-          <em id={`${id}-name-api-error`} role="alert">
+          <em className={cx('error-msg')} id={`${id}-name-api-error`} role="alert">
             {errors.name}
           </em>
         )}
@@ -102,7 +102,7 @@ export function AuthForm({
           {mode === 'register' ? m.form.passwordMin : m.form.passwordRequired}
         </span>
         {errors?.password && (
-          <em id={`${id}-password-api-error`} role="alert">
+          <em className={cx('error-msg')} id={`${id}-password-api-error`} role="alert">
             {errors.password}
           </em>
         )}

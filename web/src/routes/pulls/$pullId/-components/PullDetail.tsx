@@ -236,7 +236,7 @@ export function PullDetail({
         )}
       </div>
       {actionError && (
-        <em className={styles.pullActionError} role="alert">
+        <em className={`${cx('error-msg')} ${styles.pullActionError}`} role="alert">
           {actionError}
         </em>
       )}

@@ -236,7 +236,11 @@ function DiffRow({
                 <span id={`dc-${line.path}-${line.line}-error`} className={cx('error-msg')}>
                   {m.form.bodyRequired}
                 </span>
-                {postError && <em role="alert">{postError}</em>}
+                {postError && (
+                  <em className={cx('error-msg')} role="alert">
+                    {postError}
+                  </em>
+                )}
               </div>
               <div className={cx('form-actions')}>
                 <button type="button" className={cx('btn btn-quiet')} onClick={toggle}>

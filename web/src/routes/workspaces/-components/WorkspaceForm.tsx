@@ -79,7 +79,7 @@ export function WorkspaceForm({
           {m.workspaces.slugPattern}
         </span>
         {errors?.slug && (
-          <em id="workspace-slug-api-error" role="alert">
+          <em className={cx('error-msg')} id="workspace-slug-api-error" role="alert">
             {errors.slug}
           </em>
         )}
@@ -101,7 +101,7 @@ export function WorkspaceForm({
           aria-describedby="workspace-name-hint"
         />
         {errors?.name && (
-          <em id="workspace-name-api-error" role="alert">
+          <em className={cx('error-msg')} id="workspace-name-api-error" role="alert">
             {errors.name}
           </em>
         )}
@@ -120,7 +120,7 @@ export function WorkspaceForm({
           aria-invalid={errors?.description ? 'true' : 'false'}
         />
         {errors?.description && (
-          <em id="workspace-description-api-error" role="alert">
+          <em className={cx('error-msg')} id="workspace-description-api-error" role="alert">
             {errors.description}
           </em>
         )}

@@ -67,7 +67,7 @@ export function CommentForm({
           {m.form.bodyRequired}
         </span>
         {error && (
-          <em id="comment-body-api-error" role="alert">
+          <em className={cx('error-msg')} id="comment-body-api-error" role="alert">
             {error}
           </em>
         )}

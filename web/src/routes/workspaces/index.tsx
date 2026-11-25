@@ -37,7 +37,11 @@ export const Route = createFileRoute('/workspaces/')({
         </div>
         {/* em role=alert is the always-visible server-error idiom;
             .error-msg alone stays hidden (field-sibling reveal only) */}
-        {error && <em role="alert">{error}</em>}
+        {error && (
+          <em className={cx('error-msg')} role="alert">
+            {error}
+          </em>
+        )}
         <WorkspaceList
           workspaces={workspaces}
           pending={isPending}
