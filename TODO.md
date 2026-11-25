@@ -127,5 +127,15 @@ workspace → discussions → pulls → accounts へ展開する。
   `src/index.css` のglobal ruleを `*.module.css` へ移す。目安は
   `src/index.css` 300行以内、feature固有selectorはglobal fileに残さない
   ([#22](https://github.com/podhmo/go-spa-sample/issues/22))
+  - [ ] **leaf componentのmodule化**: `Markdown` と `ConfirmDialog`/`HideDialog`
+    のstyleをcomponent隣の `*.module.css` へ移す
+  - [ ] **app shellのmodule化**: `__root.tsx` のheader/nav/footer/progress/error
+    pageのstyleを `routes/-components/SiteChrome.module.css` へ移す
+  - [ ] **feature固有styleのmodule化**: workspace list、labels admin、pulls
+    diff/PR styleをroute-local moduleへ移す
+  - [ ] **共有primitiveのmodule化**: `btn`, `field`, `form-actions`, `card`,
+    `page-head`, `filter`, `pagination`, `breadcrumb`をexplicit importへ移す
+  - [ ] **list/comment/detailのmodule化**: issue/discussion/pull跨ぎのlist row、
+    comment、detail、copy/label関連styleを共有関係ごと整理して移す
 - [ ] **本番構成の決定**: dev proxy の `Bearer dev-token` 注入は開発専用。
   embed 配信+セッション or 別配備+token のどちらにするか
