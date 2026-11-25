@@ -1,45 +1,45 @@
 /* Pull requests: GitHub's palette — open = green, merged = purple (the
    --closed pair), closed-without-merge = neutral gray. */
 
-.badgePrOpen {
+:global(.badge).badgePrOpen {
   color: var(--open);
   background: var(--open-bg);
   border-color: var(--open-border);
 }
 
-.badgePrOpen::before {
+:global(.badge).badgePrOpen::before {
   border: 2px solid var(--open);
   background: transparent;
 }
 
-.badgePrMerged {
+:global(.badge).badgePrMerged {
   color: var(--closed);
   background: var(--closed-bg);
   border-color: var(--closed-border);
 }
 
-.badgePrMerged::before {
+:global(.badge).badgePrMerged::before {
   background: var(--closed);
 }
 
-.badgePrClosed {
+:global(.badge).badgePrClosed {
   color: var(--text-muted);
   background: transparent;
   border-color: var(--text-muted);
 }
 
-.badgePrClosed::before {
+:global(.badge).badgePrClosed::before {
   border: 2px solid var(--text-muted);
   background: transparent;
 }
 
-.badgePrConflict {
+:global(.badge).badgePrConflict {
   color: var(--danger);
   background: var(--danger-bg);
   border-color: var(--danger);
 }
 
-.badgePrConflict::before {
+:global(.badge).badgePrConflict::before {
   background: var(--danger);
 }
 
@@ -60,129 +60,4 @@
 
 .pullRefsRow :global(.field) {
   flex: 1 1 12rem;
-}
-
-.mergeMethod {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-weight: 400;
-  padding: 0.25rem 0;
-}
-
-/* Direct children only: nested Markdown and dialogs own their heading spacing. */
-.pullCommits > h2 {
-  margin-block-end: 0.75rem;
-}
-
-.diffSnippet {
-  font-size: 0.8rem;
-  line-height: 1.4;
-  padding: 0.5rem 0.75rem;
-  margin: 0.25rem 0 0.5rem;
-  border-radius: 6px;
-  overflow-x: auto;
-  background: var(--accent-soft);
-  white-space: pre;
-}
-
-/* Files changed tab: a table so the comment "+" button can sit in its
-   own column beside each anchorable line. */
-.diffFiles {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.diffFileName {
-  font-size: 0.95rem;
-  margin-block-end: 0.5rem;
-}
-
-.diffTable {
-  width: 100%;
-  border-collapse: collapse;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-  font-size: 0.8rem;
-  line-height: 1.45;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  overflow: hidden;
-}
-
-.diffTable td {
-  padding: 0 0.5rem;
-  vertical-align: top;
-  white-space: pre;
-}
-
-.diffCommentCell {
-  width: 2rem;
-  text-align: end;
-  padding-inline-end: 0 !important;
-}
-
-.diffAddComment {
-  /* opacity, not visibility:hidden — a hidden button can't be reached
-     by keyboard, so it would never get :focus-visible. */
-  opacity: 0;
-  width: 1.5rem;
-  height: 1.5rem;
-  border: 1px solid var(--accent);
-  border-radius: 4px;
-  background: var(--accent-soft);
-  color: var(--accent);
-  font-weight: 700;
-  line-height: 1;
-  cursor: pointer;
-}
-
-.diffLine:hover .diffAddComment,
-.diffLine:focus-within .diffAddComment,
-.diffAddComment:focus-visible,
-.diffAddComment[aria-expanded='true'] {
-  opacity: 1;
-}
-
-.diffAddComment:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 1px;
-}
-
-.pullActionError {
-  margin-block-start: 0.5rem;
-}
-
-.notice {
-  margin: 0 0 0.75rem;
-  padding: 0.5rem 0.75rem;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--accent-soft);
-  color: var(--text-muted);
-}
-
-.diffLineno {
-  width: 4rem;
-  text-align: end;
-  color: var(--text-muted);
-  user-select: none;
-}
-
-.diffAdd {
-  background: color-mix(in srgb, var(--open) 12%, transparent);
-}
-
-.diffDel {
-  background: color-mix(in srgb, var(--danger) 10%, transparent);
-}
-
-.diffMeta {
-  color: var(--text-muted);
-  background: var(--accent-soft);
-}
-
-.diffCommentForm td {
-  padding: 0.75rem;
-  white-space: normal;
 }

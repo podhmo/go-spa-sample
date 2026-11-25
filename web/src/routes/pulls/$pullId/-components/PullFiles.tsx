@@ -4,7 +4,7 @@ import { RequestError, type PRCommentInput } from '../../../../api'
 import { submitOnCtrlEnter } from '../../../../enter-submit'
 import { fmt, useMessages } from '../../../../i18n'
 import { parseDiff, type DiffLine } from '../-lib/diff'
-import styles from '../../-components/pulls.module.css'
+import styles from './PullFiles.module.css'
 
 // The open draft anchors to a coordinate AND that row's code when the
 // form opened (without the +/-/space diff marker — a rebase can turn an

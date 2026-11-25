@@ -10,7 +10,8 @@ import { fmt, useFmtTime, useMessages } from '../../../../i18n'
 import { HideDialog } from '../../../../components/HideDialog'
 import { Markdown } from '../../../../components/Markdown'
 import { PullStatusBadge } from '../../-components/PullList'
-import styles from '../../-components/pulls.module.css'
+import pullStyles from '../../-components/pulls.module.css'
+import styles from './PullDetail.module.css'
 
 const shortRef = (ref: string) => ref.replace(/^refs\/(heads|remotes|tags)\//, '')
 
@@ -19,11 +20,11 @@ export function MergeableBadge({ mergeable }: { mergeable: PullMergeable }) {
   const m = useMessages()
   if (!mergeable) return null
   if (mergeable.status === 'clean') {
-    return <span className={`badge ${styles.badgePrOpen}`}>{m.pulls.mergeable}</span>
+    return <span className={`badge ${pullStyles.badgePrOpen}`}>{m.pulls.mergeable}</span>
   }
   if (mergeable.status === 'conflicting') {
     return (
-      <span className={`badge ${styles.badgePrConflict}`} title={mergeable.files?.join(', ')}>
+      <span className={`badge ${pullStyles.badgePrConflict}`} title={mergeable.files?.join(', ')}>
         {mergeable.files?.length
           ? fmt(m.pulls.conflicting, { n: mergeable.files.length })
           : m.pulls.conflictNoFiles}
@@ -157,8 +158,8 @@ export function PullDetail({
           </h1>
         </div>
         <p className="issue-meta">
-          <code className={styles.prRef}>{shortRef(p.head)}</code> →{' '}
-          <code className={styles.prRef}>{shortRef(p.base)}</code> ·{' '}
+          <code className={pullStyles.prRef}>{shortRef(p.head)}</code> →{' '}
+          <code className={pullStyles.prRef}>{shortRef(p.base)}</code> ·{' '}
           {fmt(m.pulls.openedBy, { name: p.author?.name ?? m.comments.anonymous })}{' '}
           <time dateTime={p.created_at}>{fmtTime(p.created_at)}</time>
           {p.status === 'merged' && p.merge_method && (
@@ -253,7 +254,7 @@ export function PullCommitList({ commits }: { commits: PRCommit[] }) {
         {commits.map((c) => (
           <li className="card comment" key={c.sha}>
             <header className="comment-meta">
-              <code className={styles.prSha}>{c.sha.slice(0, 10)}</code>{' '}
+              <code className={pullStyles.prSha}>{c.sha.slice(0, 10)}</code>{' '}
               <span className="comment-author">{c.subject}</span>{' '}
               <span className="muted">
                 {fmt(m.pulls.by, { author: c.author })}{' '}
@@ -309,7 +310,7 @@ export function PRCommentItem({
           <>
             {' '}
             {m.pulls.onFile}{' '}
-            <code className={styles.prRef}>
+            <code className={pullStyles.prRef}>
               {c.path}:{c.line}
             </code>{' '}
           </>

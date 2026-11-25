@@ -4,7 +4,7 @@ import { RequestError, api, type PRCommentInput } from '../../../api'
 import { getPullFilesOrNotFound } from '../-lib/pull-or-not-found'
 import { PullFiles } from './-components/PullFiles'
 import { useMessages } from '../../../i18n'
-import styles from '../-components/pulls.module.css'
+import styles from './-components/PullFiles.module.css'
 
 export const Route = createFileRoute('/pulls/$pullId/files')({
   loader: ({ params }) => getPullFilesOrNotFound(Number(params.pullId)),
