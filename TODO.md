@@ -134,7 +134,7 @@ workspace → discussions → pulls → accounts へ展開する。
     pageのstyleを `routes/-components/SiteChrome.module.css` へ移す
   - [x] **feature固有styleのmodule化**: workspace list、labels admin、pulls
     diff/PR styleをroute-local moduleへ移す
-  - [ ] **共有primitiveのmodule化**: `btn`, `field`, `form-actions`, `card`,
+  - [x] **共有primitiveのmodule化**: `btn`, `field`, `form-actions`, `card`,
     `page-head`, `filter`, `pagination`, `breadcrumb`をexplicit importへ移す
   - [ ] **list/comment/detailのmodule化**: issue/discussion/pull跨ぎのlist row、
     comment、detail、copy/label関連styleを共有関係ごと整理して移す
