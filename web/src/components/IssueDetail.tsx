@@ -31,7 +31,7 @@ const commentUIReducer = (s: CommentUIState, a: CommentUIAction): CommentUIState
 // legitimately pass explicit undefined (exactOptionalPropertyTypes).
 export type CommentHandlers = {
   pending?: boolean | undefined
-  onEdit?: ((cid: number, body: string) => void) | undefined
+  onEdit?: ((cid: number, body: string) => void | boolean | Promise<void | boolean>) | undefined
   onDelete?: ((cid: number) => void) | undefined
   onHide?: ((cid: number, reason: string) => void) | undefined
   onUnhide?: ((cid: number) => void) | undefined
@@ -182,8 +182,10 @@ function CommentItem({
           aria-label={fmt(m.comments.editFormAria, { noun: m.comments.nounComment, id: c.id })}
           onSubmit={(e) => {
             e.preventDefault()
-            onEdit?.(c.id, ui.draft)
-            dispatch({ type: 'cancel' })
+            void (async () => {
+              const ok = await onEdit?.(c.id, ui.draft)
+              if (ok !== false) dispatch({ type: 'cancel' })
+            })()
           }}
         >
           <div className="field">

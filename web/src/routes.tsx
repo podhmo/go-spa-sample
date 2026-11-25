@@ -966,6 +966,10 @@ const issueRoute = createRoute({
     // off by router.invalidate() can suspend on a loader thenable that a
     // later invalidation supersedes, which would pin isPending forever.
     const [isPending, setPending] = useReducer((_: boolean, v: boolean) => v, false)
+    const [actionError, setActionError] = useReducer(
+      (_: string | null, v: string | null) => v,
+      null,
+    )
     const [commentError, setCommentError] = useReducer(
       (_: string | null, v: string | null) => v,
       null,
@@ -982,6 +986,7 @@ const issueRoute = createRoute({
     }
     const mutate = (fn: () => Promise<unknown>, onError?: (err: unknown) => void) => {
       setPending(true)
+      setActionError(null)
       return (async () => {
         try {
           await fn()
@@ -990,7 +995,8 @@ const issueRoute = createRoute({
         } catch (err) {
           // A failed mutation changed nothing; refetching here can drop
           // the whole page into the route error boundary during an outage.
-          onError?.(err)
+          if (onError) onError(err)
+          else setActionError(errorMessage(err))
           return false
         } finally {
           setPending(false)
@@ -1040,6 +1046,7 @@ const issueRoute = createRoute({
             {m.issues.comments}
             {comments.length > 0 && <span className="comment-count"> ({comments.length})</span>}
           </h2>
+          {actionError && <em role="alert">{actionError}</em>}
           <CommentList
             comments={comments}
             pending={isPending}

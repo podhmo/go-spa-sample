@@ -26,7 +26,9 @@
 | 不足 | 再現 | 対応 | 状態 |
 | --- | --- | --- | --- |
 | コメント投稿成功後に、空になったフォームへ `Body is required.` が表示される | issue/discussion/PR の詳細でコメント投稿 | `CommentForm` が mutation 結果を待ち、成功時だけ native `form.reset()` を呼ぶようにした。controlled value を空にするだけでは `:user-invalid` の interaction state が残るため。投稿中は textarea も disabled にし、成功後の reset が後続入力を消さないようにした | 修正済み |
-| backend 停止中の投稿失敗で route error boundary に落ち、draft が見えなくなる | PR detail で本文入力後、backend を止めて投稿 | mutation 失敗時は `router.invalidate()` しないようにした。成功時だけ再取得する。Files tab の行コメントだけ、stale anchor エラー時は新しい diff が必要なので例外的に再取得する。backend 停止中も PR detail と draft が残り、復帰後に同じ本文を投稿できることを確認 | 修正済み |
+| backend 停止中の投稿失敗で route error boundary に落ち、draft が見えなくなる | PR detail で本文入力後、backend を止めて投稿 | mutation 失敗時は `router.invalidate()` しないようにした。成功時だけ再取得する。Files tab の行コメントだけ、stale anchor/path エラー時は新しい diff が必要なので例外的に再取得する。backend 停止中も PR detail と draft が残り、復帰後に同じ本文を投稿できることを確認 | 修正済み |
+| issue comment の API validation error がフォームの textarea と accessibility 上関連付いていない | 10,001 文字のコメント投稿を 422 で拒否 | `CommentForm` に error を渡し、textarea の `aria-invalid` / `aria-describedby` から alert を参照するようにした | 修正済み |
+| comment 編集の保存失敗で editor が閉じ、失敗理由が表示されない | comment 編集 API が 422/network error を返す | mutation の戻り値が失敗のときは editor を開いたままにし、issue detail では status/edit/delete/hide/unhide の失敗を `role="alert"` で表示するようにした | 修正済み |
 
 422 validation failure（10,001 文字のコメント）では、入力本文が保持され、issue 側でも field error がフォーム近くに表示されることを確認した。
 
