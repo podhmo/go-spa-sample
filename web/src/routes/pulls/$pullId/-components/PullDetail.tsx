@@ -115,7 +115,7 @@ export function MergeDialog({
               />
             </div>
           )}
-          <div className={cx('form-actions')}>
+          <div className={`${cx('form-actions')} ${dialogStyles.actions}`}>
             <button type="submit" className={cx('btn')} value="cancel" formNoValidate autoFocus>
               {mm.copy.cancel}
             </button>

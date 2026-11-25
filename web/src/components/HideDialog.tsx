@@ -77,7 +77,7 @@ export function HideDialog({
               {m.comments.reasonRequired}
             </span>
           </div>
-          <div className={cx('form-actions')}>
+          <div className={`${cx('form-actions')} ${dialogStyles.actions}`}>
             {/* Chrome validates required controls even on method="dialog"
                 submits — formnovalidate lets Cancel close without a reason. */}
             <button type="submit" className={cx('btn')} value="cancel" formNoValidate autoFocus>
