@@ -10,6 +10,7 @@ import { labelStyle } from '../../../../../../format'
 import { fmt, useFmtTime, useMessages } from '../../../../../../i18n'
 import { StatusBadge } from '../../-components/IssueList'
 import { Markdown } from '../../../../../../components/Markdown'
+import { cx } from '../../../../../../styles/cx'
 
 type CommentUIState = { editing: boolean; draft: string }
 type CommentUIAction =
@@ -57,7 +58,10 @@ function CommentItem({
   const fmtTime = useFmtTime()
   const permalink = () => `${location.origin}${location.pathname}#comment-${c.id}`
   return (
-    <li className={`card comment${c.hidden ? ' comment-hidden' : ''}`} id={`comment-${c.id}`}>
+    <li
+      className={`${cx('card comment')}${c.hidden ? ' comment-hidden' : ''}`}
+      id={`comment-${c.id}`}
+    >
       <header className="comment-meta">
         <span className="comment-author">
           {fmt(m.comments.commented, { name: c.author?.name ?? m.comments.anonymous })}
@@ -104,7 +108,7 @@ function CommentItem({
             })()
           }}
         >
-          <div className="field">
+          <div className={cx('field')}>
             <label htmlFor={`comment-edit-${c.id}`} className="visually-hidden">
               {m.comments.commentBodyLabel}
             </label>
@@ -121,19 +125,19 @@ function CommentItem({
               aria-describedby={fieldError ? `comment-edit-${c.id}-api-error` : undefined}
               aria-label={m.comments.commentBodyLabel}
             />
-            <span id={`comment-edit-${c.id}-error`} className="error-msg">
+            <span id={`comment-edit-${c.id}-error`} className={cx('error-msg')}>
               {m.form.bodyRequired}
             </span>
             {fieldError && (
-              <em id={`comment-edit-${c.id}-api-error`} role="alert">
+              <em className={cx('error-msg')} id={`comment-edit-${c.id}-api-error`} role="alert">
                 {fieldError}
               </em>
             )}
           </div>
-          <div className="form-actions">
+          <div className={cx('form-actions')}>
             <button
               type="button"
-              className="btn btn-quiet"
+              className={cx('btn btn-quiet')}
               onClick={() => {
                 if (fieldError) onEditErrorClear?.()
                 dispatch({ type: 'cancel' })
@@ -143,7 +147,7 @@ function CommentItem({
             </button>
             <button
               type="submit"
-              className="btn btn-primary"
+              className={cx('btn btn-primary')}
               disabled={pending || !ui.draft.trim()}
             >
               {m.form.saveChanges}
@@ -246,7 +250,7 @@ export function IssueDetail({
   const fmtTime = useFmtTime()
   const next = issue.status === 'open' ? 'closed' : 'open'
   return (
-    <article className="card issue-detail" id="issue-article">
+    <article className={cx('card issue-detail')} id="issue-article">
       <header className="issue-detail-head">
         <div className="issue-title-row">
           <StatusBadge status={issue.status} />
@@ -290,7 +294,7 @@ export function IssueDetail({
 
       <div className="issue-actions">
         <Link
-          className="btn"
+          className={cx('btn')}
           to="/w/$ws/issues/$issueId/edit"
           params={{ ws, issueId: String(issue.id) }}
         >
@@ -299,7 +303,7 @@ export function IssueDetail({
         {onSetStatus && (
           <button
             type="button"
-            className="btn"
+            className={cx('btn')}
             onClick={() => onSetStatus(next)}
             disabled={pending}
           >

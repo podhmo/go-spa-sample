@@ -2,6 +2,7 @@ import { useReducer, type ReactNode } from 'react'
 import type { WorkspaceInput } from '../../../api'
 import { useMessages } from '../../../i18n'
 import { useLeaveGuard } from '../../../leave-guard'
+import { cx } from '../../../styles/cx'
 
 type WorkspaceFormState = { slug: string; name: string; description: string }
 
@@ -39,7 +40,7 @@ export function WorkspaceForm({
   )
   return (
     <form
-      className="card issue-form"
+      className={cx('card issue-form')}
       aria-label={m.workspaces.formAria}
       onSubmit={(e) => {
         e.preventDefault()
@@ -48,13 +49,13 @@ export function WorkspaceForm({
         onSubmit(input)
       }}
     >
-      <p className="form-note">
-        {m.form.requiredPre} <span className="req">*</span> {m.form.requiredPost}
+      <p className={cx('form-note')}>
+        {m.form.requiredPre} <span className={cx('req')}>*</span> {m.form.requiredPost}
       </p>
-      <div className="field">
+      <div className={cx('field')}>
         <label htmlFor="workspace-slug">
           {m.workspaces.slug}{' '}
-          <span className="req" aria-hidden="true">
+          <span className={cx('req')} aria-hidden="true">
             *
           </span>
         </label>
@@ -74,19 +75,19 @@ export function WorkspaceForm({
             errors?.slug ? 'workspace-slug-api-error workspace-slug-hint' : 'workspace-slug-hint'
           }
         />
-        <span id="workspace-slug-error" className="error-msg">
+        <span id="workspace-slug-error" className={cx('error-msg')}>
           {m.workspaces.slugPattern}
         </span>
         {errors?.slug && (
-          <em id="workspace-slug-api-error" role="alert">
+          <em className={cx('error-msg')} id="workspace-slug-api-error" role="alert">
             {errors.slug}
           </em>
         )}
-        <p className="field-hint" id="workspace-slug-hint">
+        <p className={cx('field-hint')} id="workspace-slug-hint">
           {m.workspaces.slugHint}
         </p>
       </div>
-      <div className="field">
+      <div className={cx('field')}>
         <label htmlFor="workspace-name">{m.workspaces.name}</label>
         <input
           type="text"
@@ -100,15 +101,15 @@ export function WorkspaceForm({
           aria-describedby="workspace-name-hint"
         />
         {errors?.name && (
-          <em id="workspace-name-api-error" role="alert">
+          <em className={cx('error-msg')} id="workspace-name-api-error" role="alert">
             {errors.name}
           </em>
         )}
-        <p className="field-hint" id="workspace-name-hint">
+        <p className={cx('field-hint')} id="workspace-name-hint">
           {m.workspaces.nameHint}
         </p>
       </div>
-      <div className="field">
+      <div className={cx('field')}>
         <label htmlFor="workspace-description">{m.workspaces.description}</label>
         <textarea
           id="workspace-description"
@@ -119,14 +120,14 @@ export function WorkspaceForm({
           aria-invalid={errors?.description ? 'true' : 'false'}
         />
         {errors?.description && (
-          <em id="workspace-description-api-error" role="alert">
+          <em className={cx('error-msg')} id="workspace-description-api-error" role="alert">
             {errors.description}
           </em>
         )}
       </div>
-      <div className="form-actions">
+      <div className={cx('form-actions')}>
         {cancelLink}
-        <button type="submit" className="btn btn-primary" disabled={submitting}>
+        <button type="submit" className={cx('btn btn-primary')} disabled={submitting}>
           {submitting ? m.form.saving : m.workspaces.create}
         </button>
       </div>

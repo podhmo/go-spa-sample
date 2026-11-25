@@ -2,6 +2,7 @@ import { Link } from '@tanstack/react-router'
 import type { Issue, IssueListFilter } from '../../../../../api'
 import { labelStyle } from '../../../../../format'
 import { fmt, useFmtTime, useMessages } from '../../../../../i18n'
+import { cx } from '../../../../../styles/cx'
 
 export function StatusBadge({ status }: { status: Issue['status'] }) {
   const m = useMessages()
@@ -50,7 +51,7 @@ export function IssueList({
       <div className="empty-state">
         <p className="empty-lead">{m.issues.blankEmpty}</p>
         <p>
-          <Link className="btn btn-primary" to="/w/$ws/issues/new" params={{ ws }}>
+          <Link className={cx('btn btn-primary')} to="/w/$ws/issues/new" params={{ ws }}>
             {m.issues.createFirst}
           </Link>
         </p>

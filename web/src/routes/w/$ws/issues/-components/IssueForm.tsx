@@ -5,6 +5,7 @@ import { submitOnCtrlEnter } from '../../../../../enter-submit'
 import { useMessages } from '../../../../../i18n'
 import { useLeaveGuard } from '../../../../../leave-guard'
 import { LabelBadge } from '../../../../../components/LabelBadge'
+import { cx } from '../../../../../styles/cx'
 
 type IssueFormState = { title: string; body: string; label_ids: number[]; submitted: boolean }
 type IssueFormAction =
@@ -68,7 +69,7 @@ export function IssueForm({
   )
   return (
     <form
-      className="card issue-form"
+      className={cx('card issue-form')}
       aria-label={initial ? m.issues.editAria : m.issues.newAria}
       onSubmit={(e) => {
         e.preventDefault()
@@ -77,13 +78,13 @@ export function IssueForm({
         onSubmit(input)
       }}
     >
-      <p className="form-note">
-        {m.form.requiredPre} <span className="req">*</span> {m.form.requiredPost}
+      <p className={cx('form-note')}>
+        {m.form.requiredPre} <span className={cx('req')}>*</span> {m.form.requiredPost}
       </p>
-      <div className="field">
+      <div className={cx('field')}>
         <label htmlFor="issue-title">
           {m.form.title}{' '}
-          <span className="req" aria-hidden="true">
+          <span className={cx('req')} aria-hidden="true">
             *
           </span>
         </label>
@@ -98,16 +99,16 @@ export function IssueForm({
           aria-invalid={errors?.title ? 'true' : 'false'}
           aria-describedby={errors?.title ? 'issue-title-api-error' : undefined}
         />
-        <span id="issue-title-error" className="error-msg">
+        <span id="issue-title-error" className={cx('error-msg')}>
           {m.form.titleRequired}
         </span>
         {errors?.title && (
-          <em id="issue-title-api-error" role="alert">
+          <em className={cx('error-msg')} id="issue-title-api-error" role="alert">
             {errors.title}
           </em>
         )}
       </div>
-      <div className="field">
+      <div className={cx('field')}>
         <label htmlFor="issue-body">{m.form.body}</label>
         <textarea
           id="issue-body"
@@ -122,19 +123,19 @@ export function IssueForm({
           }
         />
         {errors?.body && (
-          <em id="issue-body-api-error" role="alert">
+          <em className={cx('error-msg')} id="issue-body-api-error" role="alert">
             {errors.body}
           </em>
         )}
-        <p className="field-hint" id="issue-body-hint">
+        <p className={cx('field-hint')} id="issue-body-hint">
           {m.form.bodyHint}
         </p>
       </div>
       {labels && labels.length > 0 && (
-        <fieldset className="field label-picker">
+        <fieldset className={cx('field label-picker')}>
           <legend>{m.form.labels}</legend>
           {labels.map((l) => (
-            <label className="label-option" key={l.id} htmlFor={`label-${l.id}`}>
+            <label className={cx('label-option')} key={l.id} htmlFor={`label-${l.id}`}>
               <input
                 type="checkbox"
                 id={`label-${l.id}`}
@@ -147,19 +148,19 @@ export function IssueForm({
             </label>
           ))}
           {errors?.labels && (
-            <em id="issue-labels-api-error" role="alert">
+            <em className={cx('error-msg')} id="issue-labels-api-error" role="alert">
               {errors.labels}
             </em>
           )}
         </fieldset>
       )}
-      <div className="form-actions">
+      <div className={cx('form-actions')}>
         {cancelLink ?? (
-          <Link className="btn btn-quiet" to="/issues">
+          <Link className={cx('btn btn-quiet')} to="/issues">
             {m.copy.cancel}
           </Link>
         )}
-        <button type="submit" className="btn btn-primary" disabled={submitting}>
+        <button type="submit" className={cx('btn btn-primary')} disabled={submitting}>
           {submitting ? m.form.saving : (submitLabel ?? m.issues.create)}
         </button>
       </div>

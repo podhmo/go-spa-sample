@@ -2,6 +2,7 @@ import { Link } from '@tanstack/react-router'
 import type { PullRequest } from '../../../api'
 import { fmt, useFmtTime, useMessages } from '../../../i18n'
 import styles from './pulls.module.css'
+import { cx } from '../../../styles/cx'
 
 const statusClasses = {
   open: styles.badgePrOpen,
@@ -42,7 +43,7 @@ export function PullList({
       <div className="empty-state">
         <p className="empty-lead">{m.pulls.blankEmpty}</p>
         <p>
-          <Link className="btn btn-primary" to="/pulls/new">
+          <Link className={cx('btn btn-primary')} to="/pulls/new">
             {m.pulls.openFirst}
           </Link>
         </p>

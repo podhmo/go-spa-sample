@@ -5,6 +5,7 @@ import { getPullOrNotFound } from '../-lib/pull-or-not-found'
 import { CommentForm } from '../../../components/CommentForm'
 import { PRCommentList, PullCommitList, PullDetail } from './-components/PullDetail'
 import { useMessages } from '../../../i18n'
+import { cx } from '../../../styles/cx'
 
 export const Route = createFileRoute('/pulls/$pullId/')({
   loader: ({ params }) => getPullOrNotFound(Number(params.pullId)),
@@ -40,7 +41,7 @@ export const Route = createFileRoute('/pulls/$pullId/')({
     const m = useMessages()
     return (
       <div>
-        <nav className="breadcrumb" aria-label={m.chrome.breadcrumb}>
+        <nav className={cx('breadcrumb')} aria-label={m.chrome.breadcrumb}>
           <ol>
             <li>
               <Link to="/pulls" activeOptions={{ exact: true }}>

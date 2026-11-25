@@ -5,6 +5,7 @@ import { getPullFilesOrNotFound } from '../-lib/pull-or-not-found'
 import { PullFiles } from './-components/PullFiles'
 import { useMessages } from '../../../i18n'
 import styles from './-components/PullFiles.module.css'
+import { cx } from '../../../styles/cx'
 
 export const Route = createFileRoute('/pulls/$pullId/files')({
   loader: ({ params }) => getPullFilesOrNotFound(Number(params.pullId)),
@@ -18,7 +19,7 @@ export const Route = createFileRoute('/pulls/$pullId/files')({
     const m = useMessages()
     return (
       <div>
-        <nav className="breadcrumb" aria-label={m.chrome.breadcrumb}>
+        <nav className={cx('breadcrumb')} aria-label={m.chrome.breadcrumb}>
           <ol>
             <li>
               <Link to="/pulls" activeOptions={{ exact: true }}>
@@ -38,11 +39,11 @@ export const Route = createFileRoute('/pulls/$pullId/files')({
           </ol>
         </nav>
 
-        <div className="page-head">
+        <div className={cx('page-head')}>
           <h1>
             {pull_request.title} <span className="issue-num">#{pull_request.id}</span>
           </h1>
-          <Link preload={false} className="btn" to="/pulls/$pullId" params={{ pullId }}>
+          <Link preload={false} className={cx('btn')} to="/pulls/$pullId" params={{ pullId }}>
             {m.pulls.conversation}
           </Link>
         </div>

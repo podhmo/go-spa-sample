@@ -1,0 +1,323 @@
+:where(.btn) {
+  display: inline-block;
+  padding: 6px 14px;
+  font: inherit;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--text);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  cursor: pointer;
+  text-align: center;
+  white-space: nowrap;
+}
+
+/* Keep neutral button links above the global anchor color while staying
+   earlier than the one-class variants below. */
+.btn {
+  color: var(--text);
+}
+
+@media (hover: hover) {
+  .btn:hover {
+    background: var(--bg);
+    text-decoration: none;
+  }
+}
+
+.btn-primary {
+  color: var(--on-emphasis);
+  background: var(--accent-emphasis);
+  border-color: var(--accent-emphasis);
+}
+
+@media (hover: hover) {
+  .btn-primary:hover {
+    background: var(--accent-hover);
+    border-color: var(--accent-hover);
+  }
+}
+
+.btn-danger {
+  color: var(--danger);
+  background: var(--surface);
+  border-color: var(--border);
+}
+
+@media (hover: hover) {
+  .btn-danger:hover {
+    color: var(--on-emphasis);
+    background: var(--danger-emphasis);
+    border-color: var(--danger-emphasis);
+  }
+}
+
+.btn-quiet {
+  border-color: transparent;
+  background: transparent;
+  color: var(--text-muted);
+}
+
+@media (hover: hover) {
+  .btn-quiet:hover {
+    background: var(--bg);
+    color: var(--text);
+  }
+}
+
+.btn-disabled,
+.btn[disabled] {
+  color: var(--text-muted);
+  background: var(--bg);
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+:where(.card) {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+}
+
+:where(.page-head) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+/* Reflowing columns instead of a breakpoint: four in a row when they
+   fit, then two, then one. rem keeps the threshold in step with the
+   text size. */
+.filter-bar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 10rem), 1fr));
+  align-items: end;
+  gap: 12px;
+  padding: 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  margin-bottom: 16px;
+}
+
+.filter-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.filter-field label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.filter-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.filter-actions .btn {
+  flex: 1;
+}
+
+.field {
+  margin-bottom: 16px;
+}
+
+.field > label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.req {
+  color: var(--danger);
+}
+
+.field-hint {
+  margin: 4px 0 0;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.form-note {
+  margin: 0 0 16px;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+/* Two sources mark a field invalid, styled the same way:
+   - the server, after a failed submit: aria-invalid="true" plus a
+     rendered <em role="alert"> message;
+   - the browser, before submitting: :user-invalid, which only matches
+     after the user has edited and left the field. The SPA's .error-msg
+     spans sit next to their input and are revealed by the sibling
+     selector (a11y.ts syncs the aria side). */
+
+.error-msg {
+  display: none;
+  align-items: baseline;
+  gap: 6px;
+  margin: 6px 0 0;
+  font-size: 0.85rem;
+  font-weight: 500;
+  font-style: normal;
+  color: var(--danger);
+}
+
+/* Decorative icon; the empty alt text keeps it out of the accessible
+   name. */
+.error-msg::before {
+  content: '!' / '';
+  flex: 0 0 auto;
+  display: inline-grid;
+  place-items: center;
+  width: 1.1em;
+  height: 1.1em;
+  border-radius: 50%;
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1;
+  color: var(--on-emphasis);
+  background: var(--danger-emphasis);
+}
+
+/* The browser-side message stays hidden until its field is
+   :user-invalid. Where :user-invalid is unsupported the message simply
+   never shows. */
+:is(input, select, textarea):user-invalid ~ .error-msg {
+  display: flex;
+}
+
+/* Server-rendered errors (<em role="alert">) are always visible. */
+.error-msg[role='alert'] {
+  display: flex;
+}
+
+:is(.field, .validation-scope)
+  :is(input, select, textarea):is(:user-invalid, [aria-invalid='true']) {
+  border-color: var(--danger);
+  background-color: var(--danger-bg);
+}
+
+:is(.field, .validation-scope)
+  :is(input, select, textarea):is(:user-invalid, [aria-invalid='true']):focus-visible {
+  outline: 2px solid var(--danger);
+  outline-offset: 2px;
+}
+
+.field:has(:is(input, select, textarea):is(:user-invalid, [aria-invalid='true']))
+  > :is(label, legend) {
+  color: var(--danger);
+}
+
+fieldset.field:has(:is(:user-invalid, [aria-invalid='true'])) {
+  border-color: var(--danger);
+}
+
+/* min-inline-size: 0 overrides the fieldset default (min-content),
+   which would let a long label name widen the page instead of
+   truncating. */
+.label-picker {
+  min-inline-size: 0;
+  border: 1px solid var(--border-muted);
+  border-radius: var(--radius);
+  padding: 12px 14px;
+  margin-bottom: 16px;
+}
+
+.label-picker legend {
+  font-weight: 600;
+  font-size: 0.9rem;
+  padding: 0 6px;
+}
+
+/* .label-picker > prefix: .field > label (display: block) would
+   otherwise win, and the truncating badge would then drop below its
+   checkbox. */
+.label-picker > .label-option {
+  display: flex;
+  inline-size: fit-content;
+  max-inline-size: 100%;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 14px 4px 0;
+  cursor: pointer;
+  font-weight: 400;
+}
+
+/* Button order everywhere: cancel-type action on the left, confirming
+   action on the right, the row right-aligned (MPA ui-rules §1). */
+.form-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 8px;
+}
+
+.result-count {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin: 0 0 8px;
+}
+
+.pagination {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 20px;
+}
+
+.page-info {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.breadcrumb {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 10px;
+}
+
+/* Structured trail: the ordered list carries the hierarchy and the
+   separator is generated, never in the markup (guide breadcrumbs). */
+.breadcrumb > ol {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+}
+
+.breadcrumb > ol > li {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.breadcrumb > ol > li + li::before {
+  content: '/' / '';
+}
+
+/* The current page reads differently from its ancestors: weight is the
+   non-color cue on top of the accent underline. */
+.breadcrumb a[aria-current='page'] {
+  color: var(--text);
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-color: var(--accent);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}

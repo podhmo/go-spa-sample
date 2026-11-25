@@ -3,6 +3,7 @@ import { useReducer } from 'react'
 import { RequestError, api } from '../../api'
 import { AuthForm } from './AuthForm'
 import { useMessages } from '../../i18n'
+import { cx } from '../../styles/cx'
 
 // /login and /register share this page; only the endpoint, autocomplete
 // hints, and cross-link differ. A signed-in visitor is bounced to `next`
@@ -20,7 +21,7 @@ export function AuthPage({ mode, next }: { mode: 'login' | 'register'; next: str
   const m = useMessages()
   return (
     <div>
-      <div className="page-head">
+      <div className={cx('page-head')}>
         <h1>{mode === 'login' ? m.nav.logIn : m.nav.register}</h1>
       </div>
       <AuthForm

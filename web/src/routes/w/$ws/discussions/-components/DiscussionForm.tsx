@@ -4,6 +4,7 @@ import { submitOnCtrlEnter } from '../../../../../enter-submit'
 import { useMessages } from '../../../../../i18n'
 import { useLeaveGuard } from '../../../../../leave-guard'
 import { LabelBadge } from '../../../../../components/LabelBadge'
+import { cx } from '../../../../../styles/cx'
 
 type DiscussionFormState = {
   title: string
@@ -87,7 +88,7 @@ export function DiscussionForm({
   )
   return (
     <form
-      className="card issue-form"
+      className={cx('card issue-form')}
       aria-label={initial ? m.discussions.editAria : m.discussions.newAria}
       onSubmit={(e) => {
         e.preventDefault()
@@ -100,13 +101,13 @@ export function DiscussionForm({
         })
       }}
     >
-      <p className="form-note">
-        {m.form.requiredPre} <span className="req">*</span> {m.form.requiredPost}
+      <p className={cx('form-note')}>
+        {m.form.requiredPre} <span className={cx('req')}>*</span> {m.form.requiredPost}
       </p>
-      <div className="field">
+      <div className={cx('field')}>
         <label htmlFor="discussion-category">
           {m.discussions.category}{' '}
-          <span className="req" aria-hidden="true">
+          <span className={cx('req')} aria-hidden="true">
             *
           </span>
         </label>
@@ -129,19 +130,19 @@ export function DiscussionForm({
             </option>
           ))}
         </select>
-        <span id="discussion-category-error" className="error-msg">
+        <span id="discussion-category-error" className={cx('error-msg')}>
           {m.discussions.categoryRequired}
         </span>
         {errors?.category && (
-          <em id="discussion-category-api-error" role="alert">
+          <em className={cx('error-msg')} id="discussion-category-api-error" role="alert">
             {errors.category}
           </em>
         )}
       </div>
-      <div className="field">
+      <div className={cx('field')}>
         <label htmlFor="discussion-title">
           {m.form.title}{' '}
-          <span className="req" aria-hidden="true">
+          <span className={cx('req')} aria-hidden="true">
             *
           </span>
         </label>
@@ -156,16 +157,16 @@ export function DiscussionForm({
           aria-invalid={errors?.title ? 'true' : 'false'}
           aria-describedby={errors?.title ? 'discussion-title-api-error' : undefined}
         />
-        <span id="discussion-title-error" className="error-msg">
+        <span id="discussion-title-error" className={cx('error-msg')}>
           {m.form.titleRequired}
         </span>
         {errors?.title && (
-          <em id="discussion-title-api-error" role="alert">
+          <em className={cx('error-msg')} id="discussion-title-api-error" role="alert">
             {errors.title}
           </em>
         )}
       </div>
-      <div className="field">
+      <div className={cx('field')}>
         <label htmlFor="discussion-body">{m.form.body}</label>
         <textarea
           id="discussion-body"
@@ -180,19 +181,19 @@ export function DiscussionForm({
           }
         />
         {errors?.body && (
-          <em id="discussion-body-api-error" role="alert">
+          <em className={cx('error-msg')} id="discussion-body-api-error" role="alert">
             {errors.body}
           </em>
         )}
-        <p className="field-hint" id="discussion-body-hint">
+        <p className={cx('field-hint')} id="discussion-body-hint">
           {m.form.bodyHint}
         </p>
       </div>
       {labels && labels.length > 0 && (
-        <fieldset className="field label-picker">
+        <fieldset className={cx('field label-picker')}>
           <legend>{m.form.labels}</legend>
           {labels.map((l) => (
-            <label className="label-option" key={l.id} htmlFor={`dlabel-${l.id}`}>
+            <label className={cx('label-option')} key={l.id} htmlFor={`dlabel-${l.id}`}>
               <input
                 type="checkbox"
                 id={`dlabel-${l.id}`}
@@ -205,15 +206,15 @@ export function DiscussionForm({
             </label>
           ))}
           {errors?.labels && (
-            <em id="discussion-labels-api-error" role="alert">
+            <em className={cx('error-msg')} id="discussion-labels-api-error" role="alert">
               {errors.labels}
             </em>
           )}
         </fieldset>
       )}
-      <div className="form-actions">
+      <div className={cx('form-actions')}>
         {cancelLink}
-        <button type="submit" className="btn btn-primary" disabled={submitting}>
+        <button type="submit" className={cx('btn btn-primary')} disabled={submitting}>
           {submitting ? m.form.saving : (submitLabel ?? m.discussions.create)}
         </button>
       </div>

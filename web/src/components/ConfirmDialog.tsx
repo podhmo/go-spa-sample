@@ -1,6 +1,7 @@
 import { useId } from 'react'
 import { useMessages } from '../i18n'
 import styles from './ConfirmDialog.module.css'
+import { cx } from '../styles/cx'
 
 // Native <dialog> confirmation, styled like the MPA's .confirm-dialog.
 // The trigger opens it declaratively via Invoker Commands
@@ -12,7 +13,7 @@ export function ConfirmDialog({
   title,
   description,
   confirmLabel,
-  triggerClass = 'btn btn-danger',
+  triggerClass = cx('btn btn-danger'),
   pending,
   onConfirm,
 }: {
@@ -55,12 +56,12 @@ export function ConfirmDialog({
       >
         <h2 id={`${dialogId}-title`}>{title}</h2>
         {description && <p>{description}</p>}
-        <form method="dialog" className="form-actions">
+        <form method="dialog" className={cx('form-actions')}>
           {/* safe action first: it also receives initial focus */}
-          <button type="submit" className="btn" value="cancel" autoFocus>
+          <button type="submit" className={cx('btn')} value="cancel" autoFocus>
             {m.copy.cancel}
           </button>
-          <button type="submit" className="btn btn-danger" value="confirm">
+          <button type="submit" className={cx('btn btn-danger')} value="confirm">
             {confirmLabel ?? m.copy.confirm}
           </button>
         </form>

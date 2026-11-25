@@ -4,6 +4,7 @@ import { scoped } from '../../../-lib/scoped'
 import { discussionSearch, str } from '../../../-lib/search'
 import { DiscussionList } from './-components/DiscussionList'
 import { fmt, useMessages } from '../../../../i18n'
+import { cx } from '../../../../styles/cx'
 
 export const Route = createFileRoute('/w/$ws/discussions/')({
   validateSearch: discussionSearch,
@@ -33,9 +34,9 @@ export const Route = createFileRoute('/w/$ws/discussions/')({
     const m = useMessages()
     return (
       <div>
-        <div className="page-head">
+        <div className={cx('page-head')}>
           <h1>{m.discussions.title}</h1>
-          <Link className="btn" to="/w/$ws/discussions/new" params={{ ws }}>
+          <Link className={cx('btn')} to="/w/$ws/discussions/new" params={{ ws }}>
             {m.discussions.new}
           </Link>
         </div>
@@ -44,7 +45,7 @@ export const Route = createFileRoute('/w/$ws/discussions/')({
           {/* key remounts the uncontrolled inputs when the URL filters change */}
           <form
             key={JSON.stringify(search)}
-            className="filter-bar"
+            className={cx('filter-bar')}
             aria-label={m.filter.ariaDiscussions}
             onSubmit={(e) => {
               e.preventDefault()
@@ -61,7 +62,7 @@ export const Route = createFileRoute('/w/$ws/discussions/')({
               })
             }}
           >
-            <div className="filter-field">
+            <div className={cx('filter-field')}>
               <label htmlFor="filter-category">{m.filter.category}</label>
               <select id="filter-category" name="category" defaultValue={search.category ?? ''}>
                 <option value="">{m.filter.allCategories}</option>
@@ -72,7 +73,7 @@ export const Route = createFileRoute('/w/$ws/discussions/')({
                 ))}
               </select>
             </div>
-            <div className="filter-field">
+            <div className={cx('filter-field')}>
               <label htmlFor="filter-answered">{m.filter.answered}</label>
               <select id="filter-answered" name="answered" defaultValue={search.answered ?? ''}>
                 <option value="">{m.filter.all}</option>
@@ -80,7 +81,7 @@ export const Route = createFileRoute('/w/$ws/discussions/')({
                 <option value="no">{m.filter.unanswered}</option>
               </select>
             </div>
-            <div className="filter-field">
+            <div className={cx('filter-field')}>
               <label htmlFor="filter-dq">{m.filter.search}</label>
               <input
                 type="search"
@@ -90,19 +91,19 @@ export const Route = createFileRoute('/w/$ws/discussions/')({
                 defaultValue={search.q}
               />
             </div>
-            <div className="filter-field">
+            <div className={cx('filter-field')}>
               <label htmlFor="filter-dsort">{m.filter.sort}</label>
               <select id="filter-dsort" name="sort" defaultValue={search.sort ?? 'newest'}>
                 <option value="newest">{m.filter.newest}</option>
                 <option value="oldest">{m.filter.oldest}</option>
               </select>
             </div>
-            <div className="filter-actions">
-              <button type="submit" className="btn">
+            <div className={cx('filter-actions')}>
+              <button type="submit" className={cx('btn')}>
                 {m.filter.apply}
               </button>
               {hasActiveFilter && (
-                <Link className="btn btn-quiet" to="/w/$ws/discussions" params={{ ws }}>
+                <Link className={cx('btn btn-quiet')} to="/w/$ws/discussions" params={{ ws }}>
                   {m.filter.clear}
                 </Link>
               )}
@@ -111,7 +112,7 @@ export const Route = createFileRoute('/w/$ws/discussions/')({
         </search>
 
         {data.discussions.length > 0 && (
-          <p className="result-count">
+          <p className={cx('result-count')}>
             {fmt(m.pager.showingDiscussions, {
               start: rangeStart,
               end: rangeEnd,
@@ -122,10 +123,10 @@ export const Route = createFileRoute('/w/$ws/discussions/')({
         <DiscussionList discussions={data.discussions} ws={ws} filtered={hasActiveFilter} />
 
         {totalPages > 1 && (
-          <nav className="pagination" aria-label={m.pager.aria}>
+          <nav className={cx('pagination')} aria-label={m.pager.aria}>
             {data.page > 1 ? (
               <Link
-                className="btn"
+                className={cx('btn')}
                 to="/w/$ws/discussions"
                 params={{ ws }}
                 search={{ ...search, page: data.page - 1 }}
@@ -133,16 +134,16 @@ export const Route = createFileRoute('/w/$ws/discussions/')({
                 {m.pager.prev}
               </Link>
             ) : (
-              <span className="btn btn-disabled" aria-disabled="true">
+              <span className={cx('btn btn-disabled')} aria-disabled="true">
                 {m.pager.prev}
               </span>
             )}
-            <span className="page-info">
+            <span className={cx('page-info')}>
               {fmt(m.pager.info, { page: data.page, total: totalPages })}
             </span>
             {data.page < totalPages ? (
               <Link
-                className="btn"
+                className={cx('btn')}
                 to="/w/$ws/discussions"
                 params={{ ws }}
                 search={{ ...search, page: data.page + 1 }}
@@ -150,7 +151,7 @@ export const Route = createFileRoute('/w/$ws/discussions/')({
                 {m.pager.next}
               </Link>
             ) : (
-              <span className="btn btn-disabled" aria-disabled="true">
+              <span className={cx('btn btn-disabled')} aria-disabled="true">
                 {m.pager.next}
               </span>
             )}

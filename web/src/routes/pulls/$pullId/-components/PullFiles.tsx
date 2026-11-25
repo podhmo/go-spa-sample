@@ -5,6 +5,7 @@ import { submitOnCtrlEnter } from '../../../../enter-submit'
 import { fmt, useMessages } from '../../../../i18n'
 import { parseDiff, type DiffLine } from '../-lib/diff'
 import styles from './PullFiles.module.css'
+import { cx } from '../../../../styles/cx'
 
 // The open draft anchors to a coordinate AND that row's code when the
 // form opened (without the +/-/space diff marker — a rebase can turn an
@@ -212,7 +213,7 @@ function DiffRow({
                 })()
               }}
             >
-              <div className="field">
+              <div className={cx('field')}>
                 <label
                   htmlFor={`dc-${line.path}-${line.side}-${line.line}`}
                   className="visually-hidden"
@@ -232,16 +233,20 @@ function DiffRow({
                   data-error={`dc-${line.path}-${line.line}-error`}
                   placeholder={m.pulls.reviewCommentPh}
                 />
-                <span id={`dc-${line.path}-${line.line}-error`} className="error-msg">
+                <span id={`dc-${line.path}-${line.line}-error`} className={cx('error-msg')}>
                   {m.form.bodyRequired}
                 </span>
-                {postError && <em role="alert">{postError}</em>}
+                {postError && (
+                  <em className={cx('error-msg')} role="alert">
+                    {postError}
+                  </em>
+                )}
               </div>
-              <div className="form-actions">
-                <button type="button" className="btn btn-quiet" onClick={toggle}>
+              <div className={cx('form-actions')}>
+                <button type="button" className={cx('btn btn-quiet')} onClick={toggle}>
                   {m.copy.cancel}
                 </button>
-                <button type="submit" className="btn btn-primary" disabled={pending || blank}>
+                <button type="submit" className={cx('btn btn-primary')} disabled={pending || blank}>
                   {m.pulls.commentSubmit}
                 </button>
               </div>

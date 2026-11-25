@@ -4,6 +4,7 @@ import { ConfirmDialog } from '../../../../../components/ConfirmDialog'
 import { fmt, useMessages, type Messages } from '../../../../../i18n'
 import { LabelBadge } from '../../../../../components/LabelBadge'
 import styles from './LabelsAdmin.module.css'
+import { cx } from '../../../../../styles/cx'
 
 const scopeName = (m: Messages, l: Label) =>
   l.workspace_id == null ? m.labels.scopeNameShared : m.labels.scopeNameWorkspace
@@ -46,6 +47,7 @@ function LabelRow({
     return (
       <li>
         <form
+          className={cx('validation-scope')}
           aria-label={fmt(m.labels.editAria, { name: l.name })}
           onSubmit={(e) => {
             e.preventDefault()
@@ -73,15 +75,15 @@ function LabelRow({
             onChange={(e) => dispatch({ type: 'field', field: 'color', value: e.target.value })}
             required
           />
-          <div className="form-actions">
+          <div className={cx('form-actions')}>
             <button
               type="button"
-              className="btn btn-quiet"
+              className={cx('btn btn-quiet')}
               onClick={() => dispatch({ type: 'cancel' })}
             >
               {m.copy.cancel}
             </button>
-            <button type="submit" className="btn btn-primary" disabled={pending}>
+            <button type="submit" className={cx('btn btn-primary')} disabled={pending}>
               {m.form.saveChanges}
             </button>
           </div>
@@ -100,7 +102,7 @@ function LabelRow({
       </span>{' '}
       <button
         type="button"
-        className="btn btn-quiet"
+        className={cx('btn btn-quiet')}
         onClick={() => dispatch({ type: 'edit', name: l.name, color: l.color })}
       >
         {m.labels.edit}
@@ -109,7 +111,7 @@ function LabelRow({
         ? onRestore && (
             <button
               type="button"
-              className="btn btn-quiet"
+              className={cx('btn btn-quiet')}
               disabled={pending}
               onClick={() => onRestore(l)}
             >
@@ -122,7 +124,7 @@ function LabelRow({
               title={fmt(m.labels.deleteTitle, { name: l.name })}
               description={m.labels.deleteBody}
               confirmLabel={m.labels.delete}
-              triggerClass="btn btn-quiet"
+              triggerClass={cx('btn btn-quiet')}
               pending={pending}
               onConfirm={() => onArchive(l.id)}
             />
@@ -205,10 +207,13 @@ export function LabelsAdmin({
   const m = useMessages()
   return (
     <div>
-      <div className="page-head">
+      <div className={cx('page-head')}>
         <h1>{m.labels.title}</h1>
       </div>
-      <section className={`card ${styles.labelAdminForm}`} aria-labelledby="new-label-heading">
+      <section
+        className={`${cx('card')} ${styles.labelAdminForm}`}
+        aria-labelledby="new-label-heading"
+      >
         <h2 id="new-label-heading">{m.labels.new}</h2>
         <form
           className="form-inline"
@@ -218,7 +223,7 @@ export function LabelsAdmin({
             onCreate({ name: form.name, color: form.color, kind: form.kind, shared: form.shared })
           }}
         >
-          <div className="field">
+          <div className={cx('field')}>
             <label htmlFor="new-label-name">{m.labels.name}</label>
             <input
               type="text"
@@ -234,16 +239,16 @@ export function LabelsAdmin({
               aria-invalid={errors?.name ? 'true' : 'false'}
               aria-describedby={errors?.name ? 'new-label-name-api-error' : undefined}
             />
-            <span id="new-label-name-error" className="error-msg">
+            <span id="new-label-name-error" className={cx('error-msg')}>
               {m.labels.nameRequired}
             </span>
             {errors?.name && (
-              <em id="new-label-name-api-error" role="alert">
+              <em className={cx('error-msg')} id="new-label-name-api-error" role="alert">
                 {errors.name}
               </em>
             )}
           </div>
-          <div className="field">
+          <div className={cx('field')}>
             <label htmlFor="new-label-color">{m.labels.color}</label>
             <input
               id="new-label-color"
@@ -256,12 +261,12 @@ export function LabelsAdmin({
               aria-describedby={errors?.color ? 'new-label-color-api-error' : undefined}
             />
             {errors?.color && (
-              <em id="new-label-color-api-error" role="alert">
+              <em className={cx('error-msg')} id="new-label-color-api-error" role="alert">
                 {errors.color}
               </em>
             )}
           </div>
-          <div className="field">
+          <div className={cx('field')}>
             <label htmlFor="new-label-kind">{m.labels.kind}</label>
             <select
               id="new-label-kind"
@@ -273,7 +278,7 @@ export function LabelsAdmin({
               <option value="discussion">{m.labels.kindDiscussion}</option>
             </select>
           </div>
-          <div className="field">
+          <div className={cx('field')}>
             <label htmlFor="new-label-scope">{m.labels.scope}</label>
             <select
               id="new-label-scope"
@@ -287,7 +292,7 @@ export function LabelsAdmin({
           </div>
           {/* the MPA's form-inline keeps the submit unwrapped at the
               bottom-left of the form */}
-          <button type="submit" className="btn btn-primary" disabled={pending}>
+          <button type="submit" className={cx('btn btn-primary')} disabled={pending}>
             {m.labels.create}
           </button>
         </form>
@@ -314,7 +319,7 @@ export function LabelsAdmin({
       {archived.length > 0 && (
         <section aria-labelledby="archived-labels-heading">
           <h2 id="archived-labels-heading">{m.labels.archived}</h2>
-          <p className="field-hint">{m.labels.archivedHint}</p>
+          <p className={cx('field-hint')}>{m.labels.archivedHint}</p>
           <ul className={styles.labelList} role="list">
             {archived.map((l) => (
               <LabelRow

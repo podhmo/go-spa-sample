@@ -5,6 +5,7 @@ import { PullForm } from '../-components/PullForm'
 import { getPullOrNotFound } from '../-lib/pull-or-not-found'
 import { apiFieldErrors } from '../../-lib/mutation'
 import { fmt, useMessages } from '../../../i18n'
+import { cx } from '../../../styles/cx'
 
 export const Route = createFileRoute('/pulls/$pullId/edit')({
   loader: ({ params }) => getPullOrNotFound(Number(params.pullId)),
@@ -20,7 +21,7 @@ export const Route = createFileRoute('/pulls/$pullId/edit')({
     const m = useMessages()
     return (
       <div>
-        <div className="page-head">
+        <div className={cx('page-head')}>
           <h1>{fmt(m.pulls.editTitle, { id: pull_request.id })}</h1>
         </div>
         <PullForm
@@ -29,7 +30,12 @@ export const Route = createFileRoute('/pulls/$pullId/edit')({
           initial={{ title: pull_request.title, body: pull_request.body }}
           submitLabel={m.form.saveChanges}
           cancelLink={
-            <Link preload={false} className="btn btn-quiet" to="/pulls/$pullId" params={{ pullId }}>
+            <Link
+              preload={false}
+              className={cx('btn btn-quiet')}
+              to="/pulls/$pullId"
+              params={{ pullId }}
+            >
               {m.copy.cancel}
             </Link>
           }

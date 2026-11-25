@@ -12,6 +12,7 @@ import { Markdown } from '../../../../components/Markdown'
 import { PullStatusBadge } from '../../-components/PullList'
 import pullStyles from '../../-components/pulls.module.css'
 import styles from './PullDetail.module.css'
+import { cx } from '../../../../styles/cx'
 
 const shortRef = (ref: string) => ref.replace(/^refs\/(heads|remotes|tags)\//, '')
 
@@ -55,7 +56,7 @@ export function MergeDialog({
     <>
       <button
         type="button"
-        className="btn btn-primary"
+        className={cx('btn btn-primary')}
         {...({ commandfor: dialogId, command: 'show-modal' } as Record<string, string>)}
         disabled={pending}
       >
@@ -82,7 +83,7 @@ export function MergeDialog({
       >
         <h2 id={`${dialogId}-title`}>{fmt(mm.pulls.mergeTitle, { id: pullId })}</h2>
         <form method="dialog">
-          <div className="field" role="radiogroup" aria-label={mm.pulls.mergeMethod}>
+          <div className={cx('field')} role="radiogroup" aria-label={mm.pulls.mergeMethod}>
             {(['merge', 'squash', 'rebase'] as const).map((m) => (
               <label key={m} className={styles.mergeMethod}>
                 <input
@@ -101,7 +102,7 @@ export function MergeDialog({
             ))}
           </div>
           {method !== 'rebase' && (
-            <div className="field">
+            <div className={cx('field')}>
               <label htmlFor={`${dialogId}-message`}>{mm.pulls.commitMessage}</label>
               <textarea
                 id={`${dialogId}-message`}
@@ -111,11 +112,11 @@ export function MergeDialog({
               />
             </div>
           )}
-          <div className="form-actions">
-            <button type="submit" className="btn" value="cancel" formNoValidate autoFocus>
+          <div className={cx('form-actions')}>
+            <button type="submit" className={cx('btn')} value="cancel" formNoValidate autoFocus>
               {mm.copy.cancel}
             </button>
-            <button type="submit" className="btn btn-primary" value="merge">
+            <button type="submit" className={cx('btn btn-primary')} value="merge">
               {mm.pulls.mergeConfirm}
             </button>
           </div>
@@ -149,7 +150,7 @@ export function PullDetail({
   const m = useMessages()
   const fmtTime = useFmtTime()
   return (
-    <article className="card issue-detail" id="pull-article">
+    <article className={cx('card issue-detail')} id="pull-article">
       <header className="issue-detail-head">
         <div className="issue-title-row">
           <PullStatusBadge status={p.status} />
@@ -192,7 +193,7 @@ export function PullDetail({
         {onSetStatus && p.status === 'open' && (
           <button
             type="button"
-            className="btn"
+            className={cx('btn')}
             disabled={pending}
             onClick={() => onSetStatus('closed')}
           >
@@ -202,7 +203,7 @@ export function PullDetail({
         {onSetStatus && p.status === 'closed' && (
           <button
             type="button"
-            className="btn"
+            className={cx('btn')}
             disabled={pending}
             onClick={() => onSetStatus('open')}
           >
@@ -211,13 +212,13 @@ export function PullDetail({
         )}
         <Link
           preload={false}
-          className="btn"
+          className={cx('btn')}
           to="/pulls/$pullId/files"
           params={{ pullId: String(p.id) }}
         >
           {m.pulls.files}
         </Link>
-        <Link className="btn" to="/pulls/$pullId/edit" params={{ pullId: String(p.id) }}>
+        <Link className={cx('btn')} to="/pulls/$pullId/edit" params={{ pullId: String(p.id) }}>
           {m.comments.edit}
         </Link>
         {onCopyMarkdown && (
@@ -235,7 +236,7 @@ export function PullDetail({
         )}
       </div>
       {actionError && (
-        <em className={styles.pullActionError} role="alert">
+        <em className={`${cx('error-msg')} ${styles.pullActionError}`} role="alert">
           {actionError}
         </em>
       )}
@@ -252,7 +253,7 @@ export function PullCommitList({ commits }: { commits: PRCommit[] }) {
       <h2>{fmt(m.pulls.commits, { n: commits.length })}</h2>
       <ol className="comment-list" role="list">
         {commits.map((c) => (
-          <li className="card comment" key={c.sha}>
+          <li className={cx('card comment')} key={c.sha}>
             <header className="comment-meta">
               <code className={pullStyles.prSha}>{c.sha.slice(0, 10)}</code>{' '}
               <span className="comment-author">{c.subject}</span>{' '}
@@ -301,7 +302,7 @@ export function PRCommentItem({
   const fmtTime = useFmtTime()
   const id = `comment-${c.id}`
   return (
-    <li className={`card comment${c.hidden ? ' comment-hidden' : ''}`} id={id}>
+    <li className={`${cx('card comment')}${c.hidden ? ' comment-hidden' : ''}`} id={id}>
       <header className="comment-meta">
         <span className="comment-author">
           {fmt(m.comments.commented, { name: c.author?.name ?? m.comments.anonymous })}
@@ -355,7 +356,7 @@ export function PRCommentItem({
             toggleEditing()
           }}
         >
-          <div className="field">
+          <div className={cx('field')}>
             <label htmlFor={`edit-${c.id}`} className="visually-hidden">
               {m.comments.bodyLabel}
             </label>
@@ -372,15 +373,15 @@ export function PRCommentItem({
               required
               data-error={`edit-${c.id}-error`}
             />
-            <span id={`edit-${c.id}-error`} className="error-msg">
+            <span id={`edit-${c.id}-error`} className={cx('error-msg')}>
               {m.form.bodyRequired}
             </span>
           </div>
-          <div className="form-actions">
-            <button type="button" className="btn btn-quiet" onClick={toggleEditing}>
+          <div className={cx('form-actions')}>
+            <button type="button" className={cx('btn btn-quiet')} onClick={toggleEditing}>
               {m.copy.cancel}
             </button>
-            <button type="submit" className="btn btn-primary" disabled={pending || blank}>
+            <button type="submit" className={cx('btn btn-primary')} disabled={pending || blank}>
               {m.form.saveChanges}
             </button>
           </div>
