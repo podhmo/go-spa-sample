@@ -1,13 +1,13 @@
 import { createFileRoute, Link, useNavigate, useRouter } from '@tanstack/react-router'
 import { useReducer } from 'react'
 import { RequestError, api } from '../../../api'
-import { pullOrNotFound } from '../-lib/pull-or-not-found'
+import { getPullOrNotFound } from '../-lib/pull-or-not-found'
 import { CommentForm } from '../../../components/CommentForm'
 import { PRCommentList, PullCommitList, PullDetail } from './-components/PullDetail'
 import { useMessages } from '../../../i18n'
 
 export const Route = createFileRoute('/pulls/$pullId/')({
-  loader: ({ params }) => pullOrNotFound(api.getPull(Number(params.pullId))),
+  loader: ({ params }) => getPullOrNotFound(Number(params.pullId)),
   component: function PullPage() {
     const { pull_request, comments, commits, mergeable } = Route.useLoaderData()
     const { pullId } = Route.useParams()

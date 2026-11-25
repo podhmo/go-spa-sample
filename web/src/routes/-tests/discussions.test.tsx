@@ -5,10 +5,10 @@ import type {
   DiscussionCategory,
   DiscussionReply,
   DiscussionThread,
+  Label,
   Workspace,
-} from './api'
-import { DiscussionForm } from './routes/w/$ws/discussions/-components/DiscussionForm'
-import { renderAt, renderWithRouter, stubAPI } from './test-utils'
+} from '../../api'
+import { renderAt, stubAPI } from '../../test-utils'
 
 const workspace = (over: Partial<Workspace> = {}): Workspace => ({
   id: 1,
@@ -31,6 +31,16 @@ const cat = (over: Partial<DiscussionCategory> = {}): DiscussionCategory => ({
 })
 
 const qaCat = cat({ id: 4, name: 'Q&A', slug: 'qa', format: 'qa' })
+
+const label = (over: Partial<Label> = {}): Label => ({
+  id: 1,
+  name: 'Question',
+  color: '#0969da',
+  kind: 'discussion',
+  workspace_id: null,
+  archived: false,
+  ...over,
+})
 
 const discussion = (over: Partial<Discussion> = {}): Discussion => ({
   id: 1,
@@ -71,30 +81,6 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-describe('component: DiscussionForm', () => {
-  it('requires a category and submits it', async () => {
-    const onSubmit = vi.fn()
-    renderWithRouter(<DiscussionForm onSubmit={onSubmit} categories={[cat(), qaCat]} />)
-    await page.getByLabelText(/Title/).fill('hello discussion')
-    await page.getByLabelText(/Category/).selectOptions('4')
-    await page.getByRole('button', { name: 'Create discussion' }).click()
-    expect(onSubmit).toHaveBeenCalledWith({
-      title: 'hello discussion',
-      body: '',
-      category_id: 4,
-      label_ids: [],
-    })
-  })
-
-  it('rejects submit without a category', async () => {
-    const onSubmit = vi.fn()
-    renderWithRouter(<DiscussionForm onSubmit={onSubmit} categories={[cat(), qaCat]} />)
-    await page.getByLabelText(/Title/).fill('hello discussion')
-    await page.getByRole('button', { name: 'Create discussion' }).click()
-    expect(onSubmit).not.toHaveBeenCalled()
-  })
-})
-
 describe('route: /w/{ws}/discussions', () => {
   it('lists discussions and forwards the filters', async () => {
     const calls: string[] = []
@@ -127,6 +113,52 @@ describe('route: /w/{ws}/discussions', () => {
     const { router } = renderAt('/discussions')
     await expect.element(page.getByRole('heading', { name: 'Discussions' })).toBeInTheDocument()
     expect(router.state.location.pathname).toBe('/w/default/discussions')
+  })
+})
+
+describe('route: discussion forms', () => {
+  it('loads create-form categories and labels through the route loader', async () => {
+    const calls: string[] = []
+    stubAPI((url) => {
+      calls.push(url)
+      if (url.includes('/pulls')) return { status: 404, body: {} }
+      if (url.endsWith('/api/v1/discussion-categories'))
+        return { body: { categories: [cat(), qaCat] } }
+      if (url.endsWith('/api/v1/w/default/labels?kind=discussion'))
+        return { body: { labels: [label()] } }
+      return { status: 404, body: {} }
+    })
+    renderAt('/w/default/discussions/new')
+    await expect.element(page.getByRole('option', { name: 'Q&A' })).toBeInTheDocument()
+    await expect.element(page.getByRole('checkbox', { name: 'Question' })).toBeInTheDocument()
+    expect(calls.some((u) => u.endsWith('/api/v1/discussion-categories'))).toBe(true)
+    expect(calls.some((u) => u.includes('/labels') && u.includes('kind=discussion'))).toBe(true)
+  })
+
+  it('loads edit-form categories, labels, and initial selections through the route loader', async () => {
+    stubAPI((url) => {
+      if (url.includes('/pulls')) return { status: 404, body: {} }
+      if (url.endsWith('/api/v1/discussion-categories'))
+        return { body: { categories: [cat(), qaCat] } }
+      if (url.endsWith('/api/v1/w/default/labels?kind=discussion'))
+        return { body: { labels: [label()] } }
+      if (url.endsWith('/api/v1/w/default/discussions/1')) {
+        return {
+          body: {
+            discussion: discussion({ labels: [label()] }),
+            threads: [],
+          },
+        }
+      }
+      return { status: 404, body: {} }
+    })
+    renderAt('/w/default/discussions/1/edit')
+    await expect.element(page.getByLabelText(/Category/)).toHaveValue('2')
+    await expect.element(page.getByRole('option', { name: 'Q&A' })).toBeInTheDocument()
+    await expect.element(page.getByRole('checkbox', { name: 'Question' })).toBeInTheDocument()
+    await expect
+      .poll(() => document.querySelector<HTMLInputElement>('#dlabel-1')?.checked)
+      .toBe(true)
   })
 })
 

@@ -1,6 +1,7 @@
 import { createFileRoute, Link, redirect, useNavigate } from '@tanstack/react-router'
 import { useReducer, useTransition } from 'react'
 import { api } from '../../../../../api'
+import { listIssueFormLabels } from '../-data'
 import { IssueForm } from '../-components/IssueForm'
 import { apiFieldErrors } from '../../../../-lib/mutation'
 import { scoped } from '../../../../-lib/scoped'
@@ -17,7 +18,7 @@ export const Route = createFileRoute('/w/$ws/issues/$issueId/edit')({
     const [detail, labels] = await scoped(
       Promise.all([
         api.getIssue(params.ws, Number(params.issueId)),
-        api.listLabels(params.ws, { kind: 'issue' }),
+        listIssueFormLabels(params.ws),
       ]),
       rebase,
     )

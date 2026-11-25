@@ -3,21 +3,16 @@ import { useReducer, useTransition } from 'react'
 import { api } from '../../../../api'
 import { apiFieldErrors } from '../../../-lib/mutation'
 import { scoped } from '../../../-lib/scoped'
+import { listDiscussionFormData } from './-data'
 import { DiscussionForm } from './-components/DiscussionForm'
 import { useMessages } from '../../../../i18n'
 
 export const Route = createFileRoute('/w/$ws/discussions/new')({
   loader: async ({ params }) => {
-    const [categories, labels] = await scoped(
-      Promise.all([
-        api.listDiscussionCategories(),
-        api.listLabels(params.ws, { kind: 'discussion' }),
-      ]),
-      (real) => {
-        throw redirect({ to: '/w/$ws/discussions/new', params: { ws: real } })
-      },
-    )
-    return { categories: categories.categories, labels: labels.labels }
+    const { categories, labels } = await scoped(listDiscussionFormData(params.ws), (real) => {
+      throw redirect({ to: '/w/$ws/discussions/new', params: { ws: real } })
+    })
+    return { categories, labels }
   },
   component: function NewDiscussionPage() {
     const { categories, labels } = Route.useLoaderData()

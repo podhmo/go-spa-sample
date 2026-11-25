@@ -1,18 +1,12 @@
 import { createFileRoute, Link, useNavigate, useRouter } from '@tanstack/react-router'
 import { useReducer } from 'react'
 import { RequestError, api, type PRCommentInput } from '../../../api'
-import { pullOrNotFound } from '../-lib/pull-or-not-found'
+import { getPullFilesOrNotFound } from '../-lib/pull-or-not-found'
 import { PullFiles } from './-components/PullFiles'
 import { useMessages } from '../../../i18n'
 
 export const Route = createFileRoute('/pulls/$pullId/files')({
-  loader: ({ params }) =>
-    pullOrNotFound(
-      Promise.all([
-        api.getPull(Number(params.pullId)),
-        api.getPullDiff(Number(params.pullId)),
-      ]).then(([detail, diff]) => ({ ...detail, diff })),
-    ),
+  loader: ({ params }) => getPullFilesOrNotFound(Number(params.pullId)),
   component: function PullFilesPage() {
     const { pull_request, diff } = Route.useLoaderData()
     const { text: diffText, head_sha: headSha, truncated } = diff

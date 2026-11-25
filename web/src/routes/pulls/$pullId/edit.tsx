@@ -2,12 +2,12 @@ import { createFileRoute, Link, useNavigate } from '@tanstack/react-router'
 import { useReducer, useTransition } from 'react'
 import { api } from '../../../api'
 import { PullForm } from '../-components/PullForm'
-import { pullOrNotFound } from '../-lib/pull-or-not-found'
+import { getPullOrNotFound } from '../-lib/pull-or-not-found'
 import { apiFieldErrors } from '../../-lib/mutation'
 import { fmt, useMessages } from '../../../i18n'
 
 export const Route = createFileRoute('/pulls/$pullId/edit')({
-  loader: ({ params }) => pullOrNotFound(api.getPull(Number(params.pullId))),
+  loader: ({ params }) => getPullOrNotFound(Number(params.pullId)),
   component: function EditPullPage() {
     const { pull_request } = Route.useLoaderData()
     const { pullId } = Route.useParams()

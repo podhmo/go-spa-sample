@@ -1,9 +1,7 @@
 import { page } from 'vitest/browser'
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import type { Comment, Issue, Label, LabelInput, Workspace } from './api'
-import { IssueForm } from './routes/w/$ws/issues/-components/IssueForm'
-import { IssueList } from './routes/w/$ws/issues/-components/IssueList'
-import { renderAt, renderWithRouter, stubAPI } from './test-utils'
+import type { Comment, Issue, Label, LabelInput, Workspace } from '../../api'
+import { renderAt, stubAPI } from '../../test-utils'
 
 const issue = (over: Partial<Issue> = {}): Issue => ({
   id: 1,
@@ -50,23 +48,6 @@ const workspace = (over: Partial<Workspace> = {}): Workspace => ({
   discussion_count: 0,
   created_at: '2026-01-01T00:00:00Z',
   ...over,
-})
-
-describe('component: IssueList', () => {
-  it('renders issues and an empty state', async () => {
-    renderWithRouter(<IssueList issues={[]} ws="default" />)
-    await expect.element(page.getByText('No issues here yet.')).toBeInTheDocument()
-  })
-})
-
-describe('component: IssueForm', () => {
-  it('submits entered values', async () => {
-    const onSubmit = vi.fn()
-    renderWithRouter(<IssueForm onSubmit={onSubmit} />)
-    await page.getByLabelText(/Title/).fill('hello from test')
-    await page.getByRole('button', { name: 'Create issue' }).click()
-    expect(onSubmit).toHaveBeenCalledWith({ title: 'hello from test', body: '', label_ids: [] })
-  })
 })
 
 describe('route: /issues', () => {
