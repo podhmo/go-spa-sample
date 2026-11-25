@@ -1,0 +1,79 @@
+/* The /workspaces management list — same card-list idiom as the shared
+   issue list: a slug link + name/description on the left, counts and the
+   delete action on the right. */
+.workspaceList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+.workspaceRow {
+  display: grid;
+  gap: 8px 16px;
+  padding: 14px 16px;
+}
+
+@media (min-width: 48em) {
+  .workspaceRow {
+    grid-template-columns: minmax(0, 3fr) minmax(min-content, 2fr);
+    align-items: baseline;
+  }
+
+  .workspaceMeta {
+    justify-content: flex-end;
+  }
+}
+
+.workspaceRow + .workspaceRow {
+  border-top: 1px solid var(--border-muted);
+}
+
+@media (hover: hover) {
+  .workspaceRow:hover {
+    background: var(--surface-hover);
+  }
+}
+
+.workspaceMain {
+  min-width: 0;
+}
+
+.workspaceSlug {
+  font-weight: 600;
+  font-size: 1rem;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+@media (hover: hover) {
+  .workspaceSlug:hover {
+    color: var(--accent);
+  }
+}
+
+.workspaceName {
+  margin-left: 0.5em;
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+
+.workspaceDesc {
+  margin: 4px 0 0;
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  overflow-wrap: anywhere;
+}
+
+.workspaceMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}

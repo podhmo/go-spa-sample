@@ -1,12 +1,19 @@
 import { Link } from '@tanstack/react-router'
 import type { PullRequest } from '../../../api'
 import { fmt, useFmtTime, useMessages } from '../../../i18n'
+import styles from './pulls.module.css'
+
+const statusClasses = {
+  open: styles.badgePrOpen,
+  closed: styles.badgePrClosed,
+  merged: styles.badgePrMerged,
+} as const
 
 export function PullStatusBadge({ status }: { status: PullRequest['status'] }) {
   const m = useMessages()
   const text =
     status === 'open' ? m.filter.open : status === 'closed' ? m.filter.closed : m.filter.merged
-  return <span className={`badge badge-pr-${status}`}>{text}</span>
+  return <span className={`badge ${statusClasses[status]}`}>{text}</span>
 }
 
 const shortRef = (ref: string) => ref.replace(/^refs\/(heads|remotes|tags)\//, '')
@@ -59,8 +66,8 @@ export function PullList({
             <PullStatusBadge status={p.status} />
           </div>
           <p className="issue-row-meta">
-            <code className="pr-ref">{shortRef(p.head)}</code> →{' '}
-            <code className="pr-ref">{shortRef(p.base)}</code> ·{' '}
+            <code className={styles.prRef}>{shortRef(p.head)}</code> →{' '}
+            <code className={styles.prRef}>{shortRef(p.base)}</code> ·{' '}
             {fmt(m.pulls.openedBy, { name: p.author?.name ?? m.comments.anonymous })}{' '}
             <time dateTime={p.created_at}>{fmtTime(p.created_at)}</time>
           </p>

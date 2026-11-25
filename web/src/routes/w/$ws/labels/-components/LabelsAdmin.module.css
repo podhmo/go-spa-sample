@@ -1,0 +1,15 @@
+/* Labels admin: the MPA's labels.html intentionally leaves rows and the
+   inline form unstyled — plain bulleted rows with inline content, matching
+   its minimal admin look. Only spacing between sections is needed. */
+.labelAdminForm {
+  margin-bottom: 24px;
+}
+
+.labelList {
+  margin-bottom: 24px;
+}
+
+.labelScope {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}

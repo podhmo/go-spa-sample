@@ -3,6 +3,7 @@ import type { Label, LabelInput } from '../../../../../api'
 import { ConfirmDialog } from '../../../../../components/ConfirmDialog'
 import { fmt, useMessages, type Messages } from '../../../../../i18n'
 import { LabelBadge } from '../../../../../components/LabelBadge'
+import styles from './LabelsAdmin.module.css'
 
 const scopeName = (m: Messages, l: Label) =>
   l.workspace_id == null ? m.labels.scopeNameShared : m.labels.scopeNameWorkspace
@@ -43,7 +44,7 @@ function LabelRow({
   const m = useMessages()
   if (ui.editing) {
     return (
-      <li className="label-row">
+      <li>
         <form
           aria-label={fmt(m.labels.editAria, { name: l.name })}
           onSubmit={(e) => {
@@ -91,9 +92,9 @@ function LabelRow({
   // Plain <li> like the MPA: badge, scope (and kind for archived rows),
   // then quiet action buttons flowing inline.
   return (
-    <li className="label-row">
+    <li>
       <LabelBadge label={l} />{' '}
-      <span className="label-scope">
+      <span className={styles.labelScope}>
         {scopeName(m, l)}
         {archived ? ` · ${kindName(m, l.kind)}` : ''}
       </span>{' '}
@@ -153,7 +154,7 @@ function LabelGroup({
       {labels.length === 0 ? (
         <p className="empty-state">{empty}</p>
       ) : (
-        <ul className="label-list" role="list">
+        <ul className={styles.labelList} role="list">
           {labels.map((l) => (
             <LabelRow
               key={l.id}
@@ -207,7 +208,7 @@ export function LabelsAdmin({
       <div className="page-head">
         <h1>{m.labels.title}</h1>
       </div>
-      <section className="card label-admin-form" aria-labelledby="new-label-heading">
+      <section className={`card ${styles.labelAdminForm}`} aria-labelledby="new-label-heading">
         <h2 id="new-label-heading">{m.labels.new}</h2>
         <form
           className="form-inline"
@@ -314,7 +315,7 @@ export function LabelsAdmin({
         <section aria-labelledby="archived-labels-heading">
           <h2 id="archived-labels-heading">{m.labels.archived}</h2>
           <p className="field-hint">{m.labels.archivedHint}</p>
-          <ul className="label-list" role="list">
+          <ul className={styles.labelList} role="list">
             {archived.map((l) => (
               <LabelRow
                 key={l.id}

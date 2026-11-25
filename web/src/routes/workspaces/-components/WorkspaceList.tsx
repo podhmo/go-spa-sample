@@ -2,6 +2,7 @@ import { Link } from '@tanstack/react-router'
 import type { Workspace } from '../../../api'
 import { fmt, useMessages } from '../../../i18n'
 import { ConfirmDialog } from '../../../components/ConfirmDialog'
+import styles from './WorkspaceList.module.css'
 
 // The MPA's /workspaces index: one row per workspace — slug link, name
 // (when it differs from the slug), description, counts, delete action.
@@ -20,17 +21,17 @@ export function WorkspaceList({
   }
   const isLast = workspaces.length <= 1
   return (
-    <ul className="workspace-list">
+    <ul className={styles.workspaceList}>
       {workspaces.map((w) => (
-        <li className="workspace-row" key={w.id}>
-          <div className="workspace-main">
-            <Link className="workspace-slug" to="/w/$ws/issues" params={{ ws: w.slug }}>
+        <li className={styles.workspaceRow} key={w.id}>
+          <div className={styles.workspaceMain}>
+            <Link className={styles.workspaceSlug} to="/w/$ws/issues" params={{ ws: w.slug }}>
               w/{w.slug}
             </Link>
-            {w.name !== w.slug && <span className="workspace-name">{w.name}</span>}
-            {w.description !== '' && <p className="workspace-desc">{w.description}</p>}
+            {w.name !== w.slug && <span className={styles.workspaceName}>{w.name}</span>}
+            {w.description !== '' && <p className={styles.workspaceDesc}>{w.description}</p>}
           </div>
-          <div className="workspace-meta">
+          <div className={styles.workspaceMeta}>
             <span>{fmt(m.workspaces.issuesCount, { n: w.issue_count })}</span>
             <span>{fmt(m.workspaces.discussionsCount, { n: w.discussion_count })}</span>
             {isLast ? (

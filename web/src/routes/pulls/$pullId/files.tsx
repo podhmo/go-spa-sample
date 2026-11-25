@@ -4,6 +4,7 @@ import { RequestError, api, type PRCommentInput } from '../../../api'
 import { getPullFilesOrNotFound } from '../-lib/pull-or-not-found'
 import { PullFiles } from './-components/PullFiles'
 import { useMessages } from '../../../i18n'
+import styles from '../-components/pulls.module.css'
 
 export const Route = createFileRoute('/pulls/$pullId/files')({
   loader: ({ params }) => getPullFilesOrNotFound(Number(params.pullId)),
@@ -47,7 +48,7 @@ export const Route = createFileRoute('/pulls/$pullId/files')({
         </div>
 
         {truncated && (
-          <p className="notice" role="status">
+          <p className={styles.notice} role="status">
             {m.pulls.truncated}
           </p>
         )}
